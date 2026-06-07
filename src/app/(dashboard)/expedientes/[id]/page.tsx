@@ -585,24 +585,38 @@ export default function ExpedienteDetailPage() {
 
                     {expediente.cotizaciones && expediente.cotizaciones.length > 0 && (
                       <div className="space-y-3">
-                        <h4 className="text-sm font-bold text-foreground">Historial de Cotizaciones Presentadas</h4>
-                        <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-card">
-                          {expediente.cotizaciones.map((cot, i) => (
-                            <div key={cot.id || i} className="flex items-center justify-between p-3 text-sm hover:bg-secondary/10 transition-colors">
-                              <div className="flex items-center gap-2.5">
-                                <span className={`w-2 h-2 rounded-full ${cot.seleccionada ? 'bg-green-400' : 'bg-muted-foreground/30'}`} />
-                                <span className={`font-semibold ${cot.seleccionada ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
-                                  {cot.proveedor || `Cotización ${i + 1}`}
-                                </span>
-                                {cot.seleccionada && (
-                                  <Badge variant="success" className="text-[10px] py-0 px-1.5">Activa</Badge>
-                                )}
-                              </div>
-                              <span className={`font-mono font-semibold ${cot.seleccionada ? 'text-green-400 font-bold' : 'text-muted-foreground'}`}>
-                                {formatCOP(cot.valor)}
-                              </span>
-                            </div>
-                          ))}
+                        <h4 className="text-sm font-bold text-foreground">Detalle de Cotizaciones Asociadas</h4>
+                        <div className="border border-border rounded-xl overflow-hidden bg-card">
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                              <thead className="text-xs uppercase bg-secondary/40 text-muted-foreground border-b border-border">
+                                <tr>
+                                  <th className="px-4 py-3 font-semibold">Taller / Proveedor</th>
+                                  <th className="px-4 py-3 font-semibold">Concepto</th>
+                                  <th className="px-4 py-3 font-semibold text-right">Valor Cotizado</th>
+                                  <th className="px-4 py-3 font-semibold text-right">Valor Negociado</th>
+                                  <th className="px-4 py-3 font-semibold text-center">Deducible (%)</th>
+                                  <th className="px-4 py-3 font-semibold text-right">Valor Deducible</th>
+                                  <th className="px-4 py-3 font-semibold text-right">Valor a Pagar</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border/60">
+                                {expediente.cotizaciones.map((cot, i) => (
+                                  <tr key={cot.id || i} className="hover:bg-secondary/10 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-foreground">{cot.proveedor}</td>
+                                    <td className="px-4 py-3 text-muted-foreground">
+                                      {cot.concepto === 'OTROS' ? (cot.concepto_otro || 'OTROS') : cot.concepto}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-mono">{formatCOP(cot.valor_cotizacion)}</td>
+                                    <td className="px-4 py-3 text-right font-mono text-foreground font-semibold">{formatCOP(cot.valor_negociado)}</td>
+                                    <td className="px-4 py-3 text-center text-yellow-400 font-semibold">{cot.porcentaje_deducible}%</td>
+                                    <td className="px-4 py-3 text-right font-mono text-yellow-500/95">{formatCOP(cot.valor_deducible)}</td>
+                                    <td className="px-4 py-3 text-right font-mono text-green-400 font-bold">{formatCOP(cot.valor_a_pagar)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
                     )}

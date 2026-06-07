@@ -83,8 +83,13 @@ const expedienteSchema = z.object({
   cotizaciones: z.array(z.object({
     id: z.string(),
     proveedor: z.string().min(1, 'Requerido'),
-    valor: z.number().min(0),
-    seleccionada: z.boolean(),
+    concepto: z.string().min(1, 'Requerido'),
+    concepto_otro: z.string().optional(),
+    valor_cotizacion: z.number().min(0),
+    valor_negociado: z.number().min(0),
+    porcentaje_deducible: z.number().min(0),
+    valor_deducible: z.number().min(0).optional().nullable(),
+    valor_a_pagar: z.number().min(0).optional().nullable(),
   })).optional().nullable(),
   valor_negociado: z.number().min(0).optional().nullable(),
   porcentaje_deducible: z.number().optional().nullable(),
@@ -154,7 +159,17 @@ export function ExpedienteForm({
     defaultValues: {
       tipo_reclamacion: 'Siniestro',
       culpabilidad: 'Sin definir',
-      cotizaciones: defaultValues?.cotizaciones || [{ id: '1', proveedor: '', valor: 0, seleccionada: true }],
+      cotizaciones: defaultValues?.cotizaciones || [{ 
+        id: '1', 
+        proveedor: '', 
+        concepto: 'SINIESTRO', 
+        concepto_otro: '', 
+        valor_cotizacion: 0, 
+        valor_negociado: 0, 
+        porcentaje_deducible: 0, 
+        valor_deducible: 0, 
+        valor_a_pagar: 0 
+      }],
       ...defaultValues,
     },
   });
@@ -168,37 +183,58 @@ export function ExpedienteForm({
 
   const cotizaciones = watch('cotizaciones') || [];
 
-  // Actualiza automáticamente el valor_cotizacion principal basado en la cotización seleccionada
-  useEffect(() => {
-    const selected = cotizaciones.find((c) => c.seleccionada);
-    if (selected) {
-      setValue('valor_cotizacion', selected.valor || 0);
-    } else if (cotizaciones.length > 0) {
-      setValue('valor_cotizacion', cotizaciones[0].valor || 0);
-    } else {
-      setValue('valor_cotizacion', 0);
-    }
-  }, [cotizaciones, setValue]);
+  // Calcular totales financieros de cotizaciones en tiempo de renderizado
+  let totalCotizacion = 0;
+  let totalNegociado = 0;
+  let totalDeducible = 0;
+  let totalAPagar = 0;
 
-  const valorNegociado = watch('valor_negociado') || 0;
-  const porcentajeDeducible = watch('porcentaje_deducible') || 0;
-  const deducibleCalc = calcDeducible(valorNegociado, porcentajeDeducible);
-  const aPagarCalc = calcValorAPagar(valorNegociado, deducibleCalc);
+  cotizaciones.forEach((cot) => {
+    const vCot = cot.valor_cotizacion || 0;
+    const vNeg = cot.valor_negociado || 0;
+    const pct = cot.porcentaje_deducible || 0;
+    const vDed = Math.round((vNeg * pct) / 100);
+    const vPag = Math.max(0, vNeg - vDed);
+
+    totalCotizacion += vCot;
+    totalNegociado += vNeg;
+    totalDeducible += vDed;
+    totalAPagar += vPag;
+  });
 
   const valorRecVehiculo = watch('valor_recobro_vehiculo') || 0;
   const valorRecAbogado = watch('valor_recobro_abogado') || 0;
   const valorRecEmpresa = watch('valor_recobro_empresa') || 0;
-  const pctVehiculo = calcPorcentajeRecobro(valorRecVehiculo, valorNegociado);
-  const pctAbogado = calcPorcentajeRecobro(valorRecAbogado, valorNegociado);
-  const pctEmpresa = calcPorcentajeRecobro(valorRecEmpresa, valorNegociado);
+  
+  const pctVehiculo = calcPorcentajeRecobro(valorRecVehiculo, totalNegociado);
+  const pctAbogado = calcPorcentajeRecobro(valorRecAbogado, totalNegociado);
+  const pctEmpresa = calcPorcentajeRecobro(valorRecEmpresa, totalNegociado);
 
   const onSubmit = async (data: ExpedienteFormData) => {
     setIsSubmitting(true);
     try {
+      // Calcular valores deducibles y a pagar para cada cotización individual para el payload
+      const updatedCotizaciones = (data.cotizaciones || []).map((cot) => {
+        const vNeg = cot.valor_negociado || 0;
+        const pct = cot.porcentaje_deducible || 0;
+        const vDed = Math.round((vNeg * pct) / 100);
+        const vPag = Math.max(0, vNeg - vDed);
+        return {
+          ...cot,
+          valor_deducible: vDed,
+          valor_a_pagar: vPag,
+        };
+      });
+
       const finalData = {
         ...data,
-        valor_deducible: deducibleCalc,
-        valor_a_pagar: aPagarCalc,
+        cotizaciones: updatedCotizaciones,
+        valor_cotizacion: totalCotizacion,
+        valor_negociado: totalNegociado,
+        valor_deducible: totalDeducible,
+        valor_a_pagar: totalAPagar,
+        // porcentaje_deducible se guarda como el de la primera cotización
+        porcentaje_deducible: updatedCotizaciones[0]?.porcentaje_deducible || null,
         porcentaje_recobro_vehiculo: pctVehiculo,
         porcentaje_recobro_abogado: pctAbogado,
         porcentaje_recobro_empresa: pctEmpresa,
@@ -330,136 +366,164 @@ export function ExpedienteForm({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => append({ id: Math.random().toString(36).substring(2, 9), proveedor: '', valor: 0, seleccionada: false })}
+                      onClick={() => append({ 
+                        id: Math.random().toString(36).substring(2, 9), 
+                        proveedor: '', 
+                        concepto: 'SINIESTRO', 
+                        concepto_otro: '', 
+                        valor_cotizacion: 0, 
+                        valor_negociado: 0, 
+                        porcentaje_deducible: 0, 
+                        valor_deducible: 0, 
+                        valor_a_pagar: 0 
+                      })}
                     >
                       + Añadir Cotización
                     </Button>
                   </div>
 
-                  <div className="space-y-3">
-                    {fields.map((fieldItem, idx) => (
-                      <div key={fieldItem.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-secondary/10">
-                        {/* Radio button to select */}
-                        <div className="flex items-center justify-center" title="Marcar como cotización activa para deducible">
-                          <input
-                            type="radio"
-                            name="selected_cotizacion"
-                            checked={watch(`cotizaciones.${idx}.seleccionada`) || false}
-                            onChange={() => {
-                              // Set all others to false, this one to true
-                              fields.forEach((_, fIdx) => {
-                                setValue(`cotizaciones.${fIdx}.seleccionada`, fIdx === idx);
-                              });
-                            }}
-                            className="w-4 h-4 text-primary focus:ring-primary border-border bg-background"
-                          />
+                  <div className="space-y-4">
+                    {fields.map((fieldItem, idx) => {
+                      const watchConcepto = watch(`cotizaciones.${idx}.concepto`);
+                      const vNeg = watch(`cotizaciones.${idx}.valor_negociado`) || 0;
+                      const pct = watch(`cotizaciones.${idx}.porcentaje_deducible`) || 0;
+                      const vDed = Math.round((vNeg * pct) / 100);
+                      const vPag = Math.max(0, vNeg - vDed);
+
+                      return (
+                        <div key={fieldItem.id} className="relative p-5 rounded-2xl border border-border bg-card shadow-sm space-y-4">
+                          {/* Header / Delete button */}
+                          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                            <span className="text-xs font-bold text-primary uppercase tracking-wider font-mono">
+                              Cotización #{idx + 1}
+                            </span>
+                            {fields.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-400 hover:text-red-500 hover:bg-red-500/10 h-7 w-7 rounded-lg"
+                                onClick={() => remove(idx)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Row 1: Provider and Concept */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField label="Taller / Proveedor" required>
+                              <Input
+                                placeholder="Ej: Talleres Unidos"
+                                {...register(`cotizaciones.${idx}.proveedor` as const)}
+                                className={inputClass}
+                              />
+                              {errors.cotizaciones?.[idx]?.proveedor && (
+                                <p className="text-red-400 text-xs mt-1">Requerido</p>
+                              )}
+                            </FormField>
+
+                            <FormField label="Concepto de la Cotización" required>
+                              <select
+                                {...register(`cotizaciones.${idx}.concepto` as const)}
+                                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                              >
+                                {['SINIESTRO', 'FACTURA', 'ELECTRICO', 'LLANTAS', 'PANORAMICO', 'PARABRISAS', 'INSTALACIÓN', 'VIDRIOS', 'ESPEJOS', 'OTROS'].map((c) => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                            </FormField>
+
+                            {watchConcepto === 'OTROS' && (
+                              <div className="md:col-span-2">
+                                <FormField label="Especificar Concepto" required>
+                                  <Input
+                                    placeholder="Especifica el concepto alternativo..."
+                                    {...register(`cotizaciones.${idx}.concepto_otro` as const)}
+                                    className={inputClass}
+                                  />
+                                </FormField>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Row 2: Financial amounts */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                            <FormField label="Valor Cotización">
+                              <CurrencyInputField
+                                control={control}
+                                name={`cotizaciones.${idx}.valor_cotizacion`}
+                                placeholder="$ 0"
+                                className={`${inputClass} number-font`}
+                              />
+                            </FormField>
+
+                            <FormField label="Valor Negociado">
+                              <CurrencyInputField
+                                control={control}
+                                name={`cotizaciones.${idx}.valor_negociado`}
+                                placeholder="$ 0"
+                                className={`${inputClass} number-font`}
+                              />
+                            </FormField>
+
+                            <FormField label="Deducible (%)">
+                              <select
+                                {...register(`cotizaciones.${idx}.porcentaje_deducible` as const, { valueAsNumber: true })}
+                                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                              >
+                                <option value={0}>Sin deducible (0%)</option>
+                                <option value={10}>10%</option>
+                                <option value={15}>15%</option>
+                                <option value={50}>50%</option>
+                              </select>
+                            </FormField>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Valor Deducible</Label>
+                              <Input
+                                readOnly
+                                value={formatCOPInput(vDed)}
+                                className={`${inputClass} number-font bg-secondary/50 text-yellow-500 cursor-not-allowed`}
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground font-bold">Valor a Pagar</Label>
+                              <Input
+                                readOnly
+                                value={formatCOPInput(vPag)}
+                                className={`${inputClass} number-font bg-secondary/50 font-bold text-green-400 cursor-not-allowed`}
+                              />
+                            </div>
+                          </div>
                         </div>
-
-                        {/* Provider */}
-                        <div className="flex-[2] min-w-[150px]">
-                          <Input
-                            placeholder="Taller / Proveedor / Concepto"
-                            {...register(`cotizaciones.${idx}.proveedor` as const)}
-                            className={inputClass}
-                          />
-                          {errors.cotizaciones?.[idx]?.proveedor && (
-                            <p className="text-red-400 text-xs mt-1">Requerido</p>
-                          )}
-                        </div>
-
-                        {/* Value */}
-                        <div className="flex-[1.5] min-w-[120px]">
-                          <CurrencyInputField
-                            control={control}
-                            name={`cotizaciones.${idx}.valor`}
-                            placeholder="$ 0"
-                            className={`${inputClass} number-font`}
-                          />
-                        </div>
-
-                        {/* Delete button */}
-                        {fields.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-400 hover:text-red-500 hover:bg-red-500/10 flex-shrink-0"
-                            onClick={() => {
-                              const wasSelected = watch(`cotizaciones.${idx}.seleccionada`);
-                              remove(idx);
-                              if (wasSelected && fields.length > 1) {
-                                // Select the first remaining
-                                const nextIndex = idx === 0 ? 0 : idx - 1;
-                                setTimeout(() => {
-                                  setValue(`cotizaciones.${nextIndex}.seleccionada`, true);
-                                }, 50);
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Summary of active quote */}
-                  <div className="text-xs text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg p-3 flex justify-between items-center">
-                    <span>Valor Cotización Activo (para deducible):</span>
-                    <span className="font-bold text-sm text-foreground number-font">
-                      {formatCOPInput(watch('valor_cotizacion'))}
-                    </span>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <FieldGroup>
-                  <FormField label="Valor Negociado (COP)">
-                    <CurrencyInputField
-                      control={control}
-                      name="valor_negociado"
-                      placeholder="$ 0"
-                      className={`${inputClass} number-font`}
-                    />
-                  </FormField>
-                </FieldGroup>
-
-                <Separator />
-                <p className="text-sm font-semibold text-foreground">Deducible</p>
-
-                <FieldGroup>
-                  <FormField label="Porcentaje Deducible">
-                    <select
-                      {...register('porcentaje_deducible', { valueAsNumber: true })}
-                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <option value="">Sin deducible</option>
-                      {PORCENTAJES_DEDUCIBLE.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <FormField label="Valor Deducible (calculado)">
-                    <Input
-                      readOnly
-                      value={formatCOPInput(deducibleCalc)}
-                      className={`${inputClass} number-font bg-secondary/50 cursor-not-allowed`}
-                    />
-                  </FormField>
-                </FieldGroup>
-
-                <div className="rounded-lg bg-secondary/50 border border-border p-4 space-y-2">
+                {/* Summary of totals */}
+                <div className="rounded-xl border border-border p-5 bg-secondary/20 space-y-3">
+                  <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                    Consolidado de Cotizaciones
+                  </h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Valor Negociado:</span>
-                    <span className="number-font font-semibold">{formatCOPInput(valorNegociado)}</span>
+                    <span className="text-muted-foreground">Total Cotizado:</span>
+                    <span className="number-font text-foreground font-semibold">{formatCOPInput(totalCotizacion)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Deducible ({porcentajeDeducible}%):</span>
-                    <span className="number-font font-semibold text-yellow-400">- {formatCOPInput(deducibleCalc)}</span>
+                    <span className="text-muted-foreground">Total Negociado:</span>
+                    <span className="number-font text-foreground font-semibold">{formatCOPInput(totalNegociado)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Deducibles Aplicados:</span>
+                    <span className="number-font text-yellow-400 font-semibold">- {formatCOPInput(totalDeducible)}</span>
                   </div>
                   <Separator />
-                  <div className="flex justify-between text-sm font-bold">
-                    <span>Valor a Pagar:</span>
-                    <span className="number-font text-green-400">{formatCOPInput(aPagarCalc)}</span>
+                  <div className="flex justify-between text-base font-bold">
+                    <span>Total Neto a Pagar:</span>
+                    <span className="number-font text-green-400">{formatCOPInput(totalAPagar)}</span>
                   </div>
                 </div>
 
