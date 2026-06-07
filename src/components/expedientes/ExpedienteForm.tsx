@@ -88,6 +88,8 @@ const expedienteSchema = z.object({
   cotizaciones: z.array(z.object({
     id: z.string(),
     proveedor: z.string().min(1, 'Requerido'),
+    tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
+    numero_documento: z.string().optional().nullable(),
     concepto: z.string().min(1, 'Requerido'),
     concepto_otro: z.string().optional(),
     valor_cotizacion: z.number().min(0),
@@ -172,7 +174,6 @@ export function ExpedienteForm({
 
   // Estados para archivos adjuntos durante la creación/edición
   const [archivosPaso1, setArchivosPaso1] = useState<{ id: string; file: File; tipo: string }[]>([]);
-  const [archivosPaso2, setArchivosPaso2] = useState<{ id: string; file: File; tipo: string }[]>([]);
   const [cotizacionFiles, setCotizacionFiles] = useState<Record<string, File>>({});
 
   const handleAddArchivoPaso1 = (file: File, tipo: string) => {
@@ -186,19 +187,6 @@ export function ExpedienteForm({
       return;
     }
     setArchivosPaso1(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), file, tipo }]);
-  };
-
-  const handleAddArchivoPaso2 = (file: File, tipo: string) => {
-    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      toast.error('Solo se permiten documentos en formato PDF.');
-      return;
-    }
-    const MAX_SIZE = 5 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      toast.error('El tamaño máximo permitido es de 5MB por documento.');
-      return;
-    }
-    setArchivosPaso2(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), file, tipo }]);
   };
 
   const handleCotizacionFileChange = (cotId: string, idx: number, file: File) => {
@@ -227,6 +215,8 @@ export function ExpedienteForm({
       cotizaciones: defaultValues?.cotizaciones || [{ 
         id: '1', 
         proveedor: '', 
+        tipo_documento: 'NIT',
+        numero_documento: '',
         concepto: 'SINIESTRO', 
         concepto_otro: '', 
         valor_cotizacion: 0, 
@@ -626,13 +616,17 @@ export function ExpedienteForm({
                       onClick={() => append({ 
                         id: Math.random().toString(36).substring(2, 9), 
                         proveedor: '', 
+                        tipo_documento: 'NIT',
+                        numero_documento: '',
                         concepto: 'SINIESTRO', 
                         concepto_otro: '', 
                         valor_cotizacion: 0, 
                         valor_negociado: 0, 
                         porcentaje_deducible: 0, 
                         valor_deducible: 0, 
-                        valor_a_pagar: 0 
+                        valor_a_pagar: 0,
+                        nombre_archivo: null,
+                        storage_path: null
                       })}
                     >
                       + Añadir Cotización
@@ -667,19 +661,49 @@ export function ExpedienteForm({
                             )}
                           </div>
 
-                          {/* Row 1: Provider and Concept */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField label="Taller / Proveedor" required>
-                              <Input
-                                placeholder="Ej: Talleres Unidos"
-                                {...register(`cotizaciones.${idx}.proveedor` as const)}
-                                className={inputClass}
-                              />
-                              {errors.cotizaciones?.[idx]?.proveedor && (
-                                <p className="text-red-400 text-xs mt-1">Requerido</p>
-                              )}
-                            </FormField>
+                          {/* Row 1: Provider Identity */}
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <div className="md:col-span-5">
+                              <FormField label="Taller / Proveedor" required>
+                                <Input
+                                  placeholder="Ej: Talleres Unidos"
+                                  {...register(`cotizaciones.${idx}.proveedor` as const)}
+                                  className={inputClass}
+                                />
+                                {errors.cotizaciones?.[idx]?.proveedor && (
+                                  <p className="text-red-400 text-xs mt-1">Requerido</p>
+                                )}
+                              </FormField>
+                            </div>
 
+                            <div className="md:col-span-3">
+                              <FormField label="Tipo de Documento">
+                                <select
+                                  {...register(`cotizaciones.${idx}.tipo_documento` as const)}
+                                  className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                >
+                                  <option value="NIT">NIT - NIT</option>
+                                  <option value="CC">CC - Cédula de Ciudadanía</option>
+                                  <option value="CE">CE - Cédula de Extranjería</option>
+                                  <option value="TI">TI - Tarjeta de Identidad</option>
+                                  <option value="PP">PP - Pasaporte</option>
+                                </select>
+                              </FormField>
+                            </div>
+
+                            <div className="md:col-span-4">
+                              <FormField label="Número de Documento">
+                                <Input
+                                  placeholder="Número de doc"
+                                  {...register(`cotizaciones.${idx}.numero_documento` as const)}
+                                  className={`${inputClass} number-font`}
+                                />
+                              </FormField>
+                            </div>
+                          </div>
+
+                          {/* Row 1.5: Concept */}
+                          <div className="grid grid-cols-1 gap-4">
                             <FormField label="Concepto de la Cotización" required>
                               <select
                                 {...register(`cotizaciones.${idx}.concepto` as const)}
@@ -692,20 +716,18 @@ export function ExpedienteForm({
                             </FormField>
 
                             {watchConcepto === 'OTROS' && (
-                              <div className="md:col-span-2">
-                                <FormField label="Especificar Concepto" required>
-                                  <Input
-                                    placeholder="Especifica el concepto alternativo..."
-                                    {...register(`cotizaciones.${idx}.concepto_otro` as const)}
-                                    className={inputClass}
-                                  />
-                                  {errors.cotizaciones?.[idx]?.concepto_otro && (
-                                    <p className="text-red-400 text-xs mt-1">
-                                      {errors.cotizaciones[idx]?.concepto_otro?.message || 'Requerido'}
-                                    </p>
-                                  )}
-                                </FormField>
-                              </div>
+                              <FormField label="Especificar Concepto" required>
+                                <Input
+                                  placeholder="Especifica el concepto alternativo..."
+                                  {...register(`cotizaciones.${idx}.concepto_otro` as const)}
+                                  className={inputClass}
+                                />
+                                {errors.cotizaciones?.[idx]?.concepto_otro && (
+                                  <p className="text-red-400 text-xs mt-1">
+                                    {errors.cotizaciones[idx]?.concepto_otro?.message || 'Requerido'}
+                                  </p>
+                                )}
+                              </FormField>
                             )}
                           </div>
 
@@ -856,60 +878,6 @@ export function ExpedienteForm({
                     />
                   </FormField>
                 </FieldGroup>
-
-                <div className="space-y-3 pt-4 border-t border-border/60">
-                  <Label className="text-sm font-bold text-foreground">Soportes de Cotizaciones (PDF, máx. 5MB)</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-secondary/10 p-4 rounded-xl border border-border">
-                    <div className="space-y-1.5 col-span-2">
-                      <Label className="text-xs text-muted-foreground">Seleccionar PDF de Cotización</Label>
-                      <Input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-1 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium text-foreground cursor-pointer"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleAddArchivoPaso2(file, 'Cotización');
-                            e.target.value = ''; // Limpiar el input
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="text-xs text-muted-foreground pb-2.5">
-                      Soporta únicamente archivos PDF de hasta 5MB.
-                    </div>
-                  </div>
-
-                  {archivosPaso2.length > 0 && (
-                    <div className="space-y-2">
-                      <span className="text-xs font-semibold text-muted-foreground">Cotizaciones seleccionadas:</span>
-                      <div className="border border-border rounded-xl divide-y divide-border/60 bg-card overflow-hidden">
-                        {archivosPaso2.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between p-3 hover:bg-secondary/10 transition-colors">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-primary" />
-                              <span className="text-sm font-medium text-foreground truncate max-w-[250px] sm:max-w-md">
-                                {item.file.name}
-                              </span>
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">
-                                {item.tipo}
-                              </span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-400 hover:text-red-500 hover:bg-red-500/10 h-7 w-7 rounded-lg"
-                              onClick={() => setArchivosPaso2(prev => prev.filter(f => f.id !== item.id))}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </>
             )}
 

@@ -308,6 +308,43 @@ export default function ExpedienteDetailPage() {
         },
       });
 
+      // Detalle de Cotizaciones
+      if (expediente.cotizaciones && expediente.cotizaciones.length > 0) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(27, 54, 93);
+        doc.text('DETALLE DE COTIZACIONES', 12, (doc as any).lastAutoTable.finalY + 10);
+
+        const cotHeaders = [['Proveedor / Taller', 'Concepto', 'V. Cotizado', 'V. Negociado', 'Deducible', 'V. Deducible', 'V. a Pagar']];
+        const cotRows = expediente.cotizaciones.map((cot) => [
+          `${cot.proveedor}${cot.tipo_documento && cot.numero_documento ? ` (${cot.tipo_documento}: ${cot.numero_documento})` : ''}`,
+          cot.concepto === 'OTROS' ? (cot.concepto_otro || 'OTROS') : cot.concepto,
+          formatCOP(cot.valor_cotizacion),
+          formatCOP(cot.valor_negociado),
+          `${cot.porcentaje_deducible}%`,
+          formatCOP(cot.valor_deducible),
+          formatCOP(cot.valor_a_pagar),
+        ]);
+
+        autoTable(doc, {
+          startY: (doc as any).lastAutoTable.finalY + 13,
+          head: cotHeaders,
+          body: cotRows,
+          theme: 'striped',
+          headStyles: { fillColor: [27, 54, 93] },
+          styles: { fontSize: 8, cellPadding: 2 },
+          columnStyles: {
+            0: { cellWidth: 50 },
+            1: { cellWidth: 25 },
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+            4: { halign: 'center' },
+            5: { halign: 'right' },
+            6: { halign: 'right' },
+          },
+        });
+      }
+
       // Conductor & Recobros
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
@@ -644,7 +681,14 @@ export default function ExpedienteDetailPage() {
                               <tbody className="divide-y divide-border/60">
                                 {expediente.cotizaciones.map((cot, i) => (
                                   <tr key={cot.id || i} className="hover:bg-secondary/10 transition-colors">
-                                    <td className="px-4 py-3 font-medium text-foreground">{cot.proveedor}</td>
+                                    <td className="px-4 py-3">
+                                      <span className="font-medium text-foreground block">{cot.proveedor}</span>
+                                      {cot.tipo_documento && cot.numero_documento && (
+                                        <span className="text-xs text-muted-foreground font-mono">
+                                          {cot.tipo_documento}: {cot.numero_documento}
+                                        </span>
+                                      )}
+                                    </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                       {cot.concepto === 'OTROS' ? (cot.concepto_otro || 'OTROS') : cot.concepto}
                                     </td>

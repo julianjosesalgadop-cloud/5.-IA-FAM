@@ -28,6 +28,8 @@ export interface Expediente {
   cotizaciones?: {
     id: string;
     proveedor: string;
+    tipo_documento?: 'CC' | 'CE' | 'TI' | 'NIT' | 'PP' | null;
+    numero_documento?: string | null;
     concepto: string;
     concepto_otro?: string;
     valor_cotizacion: number;
