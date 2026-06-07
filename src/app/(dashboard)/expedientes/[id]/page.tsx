@@ -50,7 +50,7 @@ export default function ExpedienteDetailPage() {
   
   // Document Upload State
   const [uploading, setUploading] = useState(false);
-  const [tipoDocumento, setTipoDocumento] = useState<string>('Factura');
+  const [tipoDocumento, setTipoDocumento] = useState<string>('Solicitud');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const currentUser = getMockUser();
@@ -109,6 +109,34 @@ export default function ExpedienteDetailPage() {
       console.error(error);
       toast.error('Error al eliminar el expediente');
     }
+  };
+
+  // Handle file selection with type and size validation
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    // Validar tipo de archivo (PDF)
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Solo se permiten documentos en formato PDF.');
+      e.target.value = ''; // Limpiar el input
+      setSelectedFile(null);
+      return;
+    }
+
+    // Validar tamaño máximo (5MB)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_SIZE) {
+      toast.error('El tamaño máximo permitido es de 5MB por documento.');
+      e.target.value = ''; // Limpiar el input
+      setSelectedFile(null);
+      return;
+    }
+
+    setSelectedFile(file);
   };
 
   // Upload File handler
@@ -821,8 +849,9 @@ export default function ExpedienteDetailPage() {
                                   Examinar...
                                   <input
                                     type="file"
+                                    accept=".pdf,application/pdf"
                                     className="hidden"
-                                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                    onChange={handleFileChange}
                                   />
                                 </label>
                               )}

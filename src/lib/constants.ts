@@ -11,7 +11,7 @@ export const PORCENTAJES_DEDUCIBLE = [
 ] as const;
 
 export const TIPOS_DOCUMENTO = [
-  'Fotografía', 'PDF', 'Factura', 'Cotización', 'Acta', 'Memorando', 'Soporte de pago', 'Otro',
+  'Solicitud', 'Cotización', 'Documento Vario', 'Fotografía', 'Factura', 'Acta', 'Memorando', 'Soporte de pago', 'Otro',
 ] as const;
 
 export const CAUSAS_RAIZ_DEFAULT = [
