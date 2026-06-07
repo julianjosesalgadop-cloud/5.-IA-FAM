@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Save, ChevronLeft, ChevronRight, Trash2, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -162,6 +162,36 @@ export function ExpedienteForm({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estados para archivos adjuntos durante la creación/edición
+  const [archivosPaso1, setArchivosPaso1] = useState<{ id: string; file: File; tipo: string }[]>([]);
+  const [archivosPaso2, setArchivosPaso2] = useState<{ id: string; file: File; tipo: string }[]>([]);
+
+  const handleAddArchivoPaso1 = (file: File, tipo: string) => {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Solo se permiten documentos en formato PDF.');
+      return;
+    }
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('El tamaño máximo permitido es de 5MB por documento.');
+      return;
+    }
+    setArchivosPaso1(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), file, tipo }]);
+  };
+
+  const handleAddArchivoPaso2 = (file: File, tipo: string) => {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Solo se permiten documentos en formato PDF.');
+      return;
+    }
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('El tamaño máximo permitido es de 5MB por documento.');
+      return;
+    }
+    setArchivosPaso2(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), file, tipo }]);
+  };
+
   const form = useForm<ExpedienteFormData>({
     resolver: zodResolver(expedienteSchema),
     defaultValues: {
@@ -248,12 +278,27 @@ export function ExpedienteForm({
         porcentaje_recobro_empresa: pctEmpresa,
       };
 
+      let createdId = id;
       if (id) {
         await dbService.updateExpediente(id, finalData as any);
         toast.success('Expediente actualizado exitosamente');
       } else {
         const created = await dbService.createExpediente(finalData as any);
+        createdId = created.id;
         toast.success(`Expediente creado exitosamente: ${created.numero_expediente}`);
+      }
+
+      // Subir los archivos adjuntos vinculados al expediente
+      if (createdId) {
+        const allFiles = [...archivosPaso1, ...archivosPaso2];
+        for (const item of allFiles) {
+          try {
+            await dbService.uploadDocumento(createdId, item.file, item.tipo);
+          } catch (uploadError) {
+            console.error('Error al subir documento adjunto:', uploadError);
+            toast.error(`No se pudo cargar el archivo ${item.file.name}`);
+          }
+        }
       }
 
       if (onSuccess) {
@@ -361,6 +406,71 @@ export function ExpedienteForm({
                     className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   />
                 </FormField>
+
+                <div className="space-y-3 pt-4 border-t border-border/60">
+                  <Label className="text-sm font-bold text-foreground">Documentos Adjuntos (PDF, máx. 5MB)</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-secondary/10 p-4 rounded-xl border border-border">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Tipo de Documento</Label>
+                      <select
+                        id="step1_doc_type"
+                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="Solicitud">Solicitud</option>
+                        <option value="Documento Vario">Documento Vario</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Seleccionar PDF</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-1 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium text-foreground cursor-pointer"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const selectEl = document.getElementById('step1_doc_type') as HTMLSelectElement;
+                            handleAddArchivoPaso1(file, selectEl?.value || 'Solicitud');
+                            e.target.value = ''; // Limpiar el input
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground pb-2.5">
+                      Soporta únicamente archivos PDF de hasta 5MB.
+                    </div>
+                  </div>
+
+                  {archivosPaso1.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-muted-foreground">Archivos seleccionados:</span>
+                      <div className="border border-border rounded-xl divide-y divide-border/60 bg-card overflow-hidden">
+                        {archivosPaso1.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 hover:bg-secondary/10 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-primary" />
+                              <span className="text-sm font-medium text-foreground truncate max-w-[250px] sm:max-w-md">
+                                {item.file.name}
+                              </span>
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">
+                                {item.tipo}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-400 hover:text-red-500 hover:bg-red-500/10 h-7 w-7 rounded-lg"
+                              onClick={() => setArchivosPaso1(prev => prev.filter(f => f.id !== item.id))}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -558,6 +668,60 @@ export function ExpedienteForm({
                     />
                   </FormField>
                 </FieldGroup>
+
+                <div className="space-y-3 pt-4 border-t border-border/60">
+                  <Label className="text-sm font-bold text-foreground">Soportes de Cotizaciones (PDF, máx. 5MB)</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-secondary/10 p-4 rounded-xl border border-border">
+                    <div className="space-y-1.5 col-span-2">
+                      <Label className="text-xs text-muted-foreground">Seleccionar PDF de Cotización</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-1 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium text-foreground cursor-pointer"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleAddArchivoPaso2(file, 'Cotización');
+                            e.target.value = ''; // Limpiar el input
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground pb-2.5">
+                      Soporta únicamente archivos PDF de hasta 5MB.
+                    </div>
+                  </div>
+
+                  {archivosPaso2.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-muted-foreground">Cotizaciones seleccionadas:</span>
+                      <div className="border border-border rounded-xl divide-y divide-border/60 bg-card overflow-hidden">
+                        {archivosPaso2.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 hover:bg-secondary/10 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-primary" />
+                              <span className="text-sm font-medium text-foreground truncate max-w-[250px] sm:max-w-md">
+                                {item.file.name}
+                              </span>
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">
+                                {item.tipo}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-400 hover:text-red-500 hover:bg-red-500/10 h-7 w-7 rounded-lg"
+                              onClick={() => setArchivosPaso2(prev => prev.filter(f => f.id !== item.id))}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
