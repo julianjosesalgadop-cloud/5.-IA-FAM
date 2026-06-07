@@ -127,6 +127,7 @@ const expedienteSchema = z.object({
   // Comité
   fecha_comite: z.string().optional(),
   causa_raiz: z.string().optional(),
+  causa_raiz_otra: z.string().optional(),
   observaciones_comite: z.string().optional(),
   // Autorización
   autorizado_por: z.string().optional(),
@@ -255,6 +256,10 @@ export function ExpedienteForm({
     setValue(`cotizaciones.${idx}.nombre_archivo`, file.name);
   };
 
+  // Check if initial causa_raiz is custom
+  const initialCausaRaiz = defaultValues?.causa_raiz;
+  const isCustomCausaRaiz = initialCausaRaiz && !CAUSAS_RAIZ_DEFAULT.includes(initialCausaRaiz as any);
+
   const form = useForm<ExpedienteFormData>({
     resolver: zodResolver(expedienteSchema),
     defaultValues: {
@@ -280,6 +285,8 @@ export function ExpedienteForm({
         storage_path: null
       }],
       ...defaultValues,
+      causa_raiz: isCustomCausaRaiz ? 'Otro' : (initialCausaRaiz || ''),
+      causa_raiz_otra: isCustomCausaRaiz ? initialCausaRaiz : '',
     },
   });
 
@@ -296,6 +303,7 @@ export function ExpedienteForm({
   });
 
   const cotizaciones = watch('cotizaciones') || [];
+  const watchCausaRaiz = watch('causa_raiz');
 
   // Calcular totales financieros de cotizaciones en tiempo de renderizado
   let totalCotizacion = 0;
@@ -340,8 +348,10 @@ export function ExpedienteForm({
         };
       });
 
+      const finalCausaRaiz = data.causa_raiz === 'Otro' ? (data.causa_raiz_otra || 'Otro') : data.causa_raiz;
       const finalData = {
         ...data,
+        causa_raiz: finalCausaRaiz,
         propietario: data.propietarios && data.propietarios.length > 0
           ? data.propietarios.map((p) => p.nombre).join(', ')
           : '',
@@ -1046,13 +1056,19 @@ export function ExpedienteForm({
                   <FormField label="Causa Raíz">
                     <select
                       {...register('causa_raiz')}
-                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring mb-2"
                     >
                       <option value="">Seleccionar causa...</option>
                       {CAUSAS_RAIZ_DEFAULT.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
+                      <option value="Otro">Otro (Especificar)</option>
                     </select>
+                    <Input
+                      placeholder="Escriba la causa raíz del incidente"
+                      {...register('causa_raiz_otra')}
+                      className={`${inputClass} ${watchCausaRaiz === 'Otro' ? '' : 'hidden'}`}
+                    />
                   </FormField>
                 </FieldGroup>
                 <FormField label="Observaciones del Comité">
