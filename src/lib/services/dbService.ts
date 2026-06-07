@@ -1,0 +1,569 @@
+import { createClient as createActualBrowserClient } from '@/lib/supabase/client';
+const createBrowserClient = () => createActualBrowserClient() as any;
+import type { Expediente, Documento, AuditoriaEntry, RolUsuario } from '@/types/database';
+
+const IS_MOCK_MODE =
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.includes('your-anon-key');
+
+// --- LOCAL STORAGE MOCK DATABASE IMPLEMENTATION ---
+const MOCK_STORAGE_KEYS = {
+  EXPEDIENTES: 'fam_mock_expedientes',
+  DOCUMENTOS: 'fam_mock_documentos',
+  AUDITORIA: 'fam_mock_auditoria',
+  USER: 'fam_mock_user',
+};
+
+const INITIAL_EXPEDIENTES: Expediente[] = [
+  {
+    id: '1',
+    numero_expediente: 'FAM-2025-001',
+    fecha_incidente: '2025-01-15',
+    placa: 'ABC-123',
+    numero_interno: '0042',
+    propietario: 'Transportes Norte S.A.',
+    tipo_reclamacion: 'Siniestro',
+    ciudad_origen: 'Sogamoso',
+    ciudad_destino: 'Bogotá',
+    concepto: 'Choque simple por detrás con camión de carga en la salida de Sogamoso.',
+    valor_cotizacion: 12000000,
+    valor_negociado: 10000000,
+    porcentaje_deducible: 15,
+    valor_deducible: 1500000,
+    valor_a_pagar: 8500000,
+    valor_salvamento: 1200000,
+    valor_final_aprobado: 8500000,
+    nombre_conductor: 'Carlos Morales',
+    id_conductor: '74125896',
+    celular_conductor: '3124567890',
+    culpabilidad: 'Conductor',
+    valor_descuento_conductor: 1500000,
+    memorando_descuento: 'MEMO-2025-001',
+    valor_recobro_vehiculo: 2000000,
+    porcentaje_recobro_vehiculo: 20,
+    valor_recobro_abogado: 500000,
+    porcentaje_recobro_abogado: 5,
+    valor_recobro_empresa: 1000000,
+    porcentaje_recobro_empresa: 10,
+    fecha_comite: '2025-01-20',
+    causa_raiz: 'Error humano',
+    observaciones_comite: 'El conductor no guardó la distancia de seguridad reglamentaria.',
+    autorizado_por: 'Dr. Alejandro Restrepo',
+    cargo_autorizador: 'Gerente General',
+    fecha_autorizacion: '2025-01-22',
+    estado: 'Aprobado',
+    created_at: new Date('2025-01-16T10:00:00Z').toISOString(),
+    updated_at: new Date('2025-01-22T15:30:00Z').toISOString(),
+    created_by: 'mock-user-id',
+    deleted_at: null,
+  },
+  {
+    id: '2',
+    numero_expediente: 'FAM-2025-002',
+    fecha_incidente: '2025-01-22',
+    placa: 'XYZ-789',
+    numero_interno: '0108',
+    propietario: 'Flota Central Ltda.',
+    tipo_reclamacion: 'Carrocería',
+    ciudad_origen: 'Duitama',
+    ciudad_destino: 'Yopal',
+    concepto: 'Daño en lateral izquierdo al rozar contra poste en parqueadero.',
+    valor_cotizacion: 4500000,
+    valor_negociado: 3800000,
+    porcentaje_deducible: 10,
+    valor_deducible: 380000,
+    valor_a_pagar: 3420000,
+    valor_salvamento: 0,
+    valor_final_aprobado: 3200000,
+    nombre_conductor: 'Ana González',
+    id_conductor: '1052347891',
+    celular_conductor: '3157891234',
+    culpabilidad: 'Tercero',
+    valor_descuento_conductor: null,
+    memorando_descuento: null,
+    valor_recobro_vehiculo: 3800000,
+    porcentaje_recobro_vehiculo: 100,
+    valor_recobro_abogado: 0,
+    porcentaje_recobro_abogado: 0,
+    valor_recobro_empresa: 0,
+    porcentaje_recobro_empresa: 0,
+    fecha_comite: '2025-01-28',
+    causa_raiz: 'Tercero involucrado',
+    observaciones_comite: 'El choque fue responsabilidad del vehículo de servicios públicos.',
+    autorizado_por: null,
+    cargo_autorizador: null,
+    fecha_autorizacion: null,
+    estado: 'Pendiente',
+    created_at: new Date('2025-01-23T09:00:00Z').toISOString(),
+    updated_at: new Date('2025-01-23T09:00:00Z').toISOString(),
+    created_by: 'mock-user-id',
+    deleted_at: null,
+  },
+  {
+    id: '3',
+    numero_expediente: 'FAM-2025-003',
+    fecha_incidente: '2025-02-03',
+    placa: 'DEF-456',
+    numero_interno: '0015',
+    propietario: 'Cooperativa Sugamuxi',
+    tipo_reclamacion: 'Vidrios',
+    ciudad_origen: 'Tunja',
+    ciudad_destino: 'Sogamoso',
+    concepto: 'Piedra expulsada por camión contrario fractura el parabrisas delantero.',
+    valor_cotizacion: 2200000,
+    valor_negociado: 1850000,
+    porcentaje_deducible: 50,
+    valor_deducible: 925000,
+    valor_a_pagar: 925000,
+    valor_salvamento: 0,
+    valor_final_aprobado: 1850000,
+    nombre_conductor: 'Pedro Jiménez',
+    id_conductor: '9547123',
+    celular_conductor: '3201234567',
+    culpabilidad: 'Sin definir',
+    valor_descuento_conductor: null,
+    memorando_descuento: null,
+    valor_recobro_vehiculo: 0,
+    porcentaje_recobro_vehiculo: 0,
+    valor_recobro_abogado: 0,
+    porcentaje_recobro_abogado: 0,
+    valor_recobro_empresa: 0,
+    porcentaje_recobro_empresa: 0,
+    fecha_comite: '2025-02-06',
+    causa_raiz: 'Condiciones climáticas',
+    observaciones_comite: 'Incidente fortuito en carretera.',
+    autorizado_por: 'Ing. Mauricio Gómez',
+    cargo_autorizador: 'Director Operaciones',
+    fecha_autorizacion: '2025-02-08',
+    estado: 'Revisado',
+    created_at: new Date('2025-02-04T11:00:00Z').toISOString(),
+    updated_at: new Date('2025-02-08T10:00:00Z').toISOString(),
+    created_by: 'mock-user-id',
+    deleted_at: null,
+  },
+];
+
+const INITIAL_AUDITORIA: AuditoriaEntry[] = [
+  {
+    id: 'a1',
+    expediente_id: '1',
+    usuario_id: 'mock-user-id',
+    usuario_email: 'admin@flotasugamuxi.co',
+    accion: 'CREAR',
+    campo_modificado: null,
+    valor_anterior: null,
+    valor_nuevo: 'Expediente creado en el sistema.',
+    created_at: new Date('2025-01-16T10:00:00Z').toISOString(),
+  },
+  {
+    id: 'a2',
+    expediente_id: '1',
+    usuario_id: 'mock-user-id',
+    usuario_email: 'admin@flotasugamuxi.co',
+    accion: 'ESTADO',
+    campo_modificado: 'estado',
+    valor_anterior: 'Pendiente',
+    valor_nuevo: 'Aprobado',
+    created_at: new Date('2025-01-22T15:30:00Z').toISOString(),
+  },
+];
+
+function getLocalData<T>(key: string, initial: T[]): T[] {
+  if (typeof window === 'undefined') return initial;
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initial));
+    return initial;
+  }
+  return JSON.parse(data);
+}
+
+function setLocalData<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+}
+
+// Helper to log audit in Mock Mode
+function logMockAudit(
+  expedienteId: string | null,
+  accion: 'CREAR' | 'EDITAR' | 'ELIMINAR' | 'ESTADO' | 'FINANCIERO' | 'DOCUMENTO',
+  campo: string | null = null,
+  anterior: string | null = null,
+  nuevo: string | null = null
+) {
+  const user = getMockUser();
+  const audits = getLocalData<AuditoriaEntry>(MOCK_STORAGE_KEYS.AUDITORIA, INITIAL_AUDITORIA);
+  const newEntry: AuditoriaEntry = {
+    id: Math.random().toString(36).substring(2, 9),
+    expediente_id: expedienteId,
+    usuario_id: user.id,
+    usuario_email: user.email,
+    accion,
+    campo_modificado: campo,
+    valor_anterior: anterior,
+    valor_nuevo: nuevo,
+    created_at: new Date().toISOString(),
+  };
+  audits.unshift(newEntry); // Newest first
+  setLocalData(MOCK_STORAGE_KEYS.AUDITORIA, audits);
+}
+
+// Mock active user profile
+export function getMockUser() {
+  if (typeof window === 'undefined') {
+    return { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador FAM', rol: 'admin' as RolUsuario };
+  }
+  const userStr = localStorage.getItem(MOCK_STORAGE_KEYS.USER);
+  if (userStr) return JSON.parse(userStr);
+  
+  const defaultUser = { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador FAM', rol: 'admin' as RolUsuario };
+  localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(defaultUser));
+  return defaultUser;
+}
+
+export function setMockUser(rol: RolUsuario, nombre: string = '') {
+  const email = `${rol}@flotasugamuxi.co`;
+  const name = nombre || (rol === 'admin' ? 'Administrador FAM' : rol === 'analista' ? 'Analista de Casos' : 'Consultor Invitado');
+  const user = { id: 'mock-user-id', email, nombre: name, rol };
+  localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(user));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('storage'));
+  }
+  return user;
+}
+
+// --- CORE DB SERVICE EXPORT ---
+export const dbService = {
+  isMockMode: () => IS_MOCK_MODE,
+
+  // --- EXPEDIENTES ---
+  getExpedientes: async (): Promise<Expediente[]> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      return list.filter((e) => e.deleted_at === null);
+    }
+
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('expedientes')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  getExpedienteById: async (id: string): Promise<Expediente | null> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const item = list.find((e) => e.id === id && e.deleted_at === null);
+      return item || null;
+    }
+
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('expedientes')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+    return data;
+  },
+
+  createExpediente: async (payload: Omit<Expediente, 'id' | 'numero_expediente' | 'created_at' | 'updated_at' | 'created_by' | 'deleted_at'>): Promise<Expediente> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const user = getMockUser();
+
+      const year = new Date(payload.fecha_incidente).getFullYear() || new Date().getFullYear();
+      const countOfYear = list.filter((e) => new Date(e.fecha_incidente).getFullYear() === year).length + 1;
+      const numero_expediente = `FAM-${year}-${String(countOfYear).padStart(3, '0')}`;
+
+      const newExpediente: Expediente = {
+        ...(payload as any),
+        id: Math.random().toString(36).substring(2, 9),
+        numero_expediente,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: user.id,
+        deleted_at: null,
+      };
+
+      list.unshift(newExpediente);
+      setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
+      logMockAudit(newExpediente.id, 'CREAR', null, null, `Expediente ${numero_expediente} creado.`);
+      return newExpediente;
+    }
+
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('expedientes')
+      .insert(payload as any)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Log audit in Supabase
+    await supabase.from('auditoria').insert({
+      expediente_id: (data as any).id,
+      accion: 'CREAR',
+      valor_nuevo: `Expediente ${(data as any).numero_expediente} creado.`,
+    } as any);
+
+    return data as any;
+  },
+
+  updateExpediente: async (id: string, payload: Partial<Expediente>): Promise<Expediente> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const idx = list.findIndex((e) => e.id === id);
+      if (idx === -1) throw new Error('Expediente no encontrado');
+
+      const old = list[idx];
+      const updated: Expediente = {
+        ...old,
+        ...payload,
+        updated_at: new Date().toISOString(),
+      } as Expediente;
+
+      list[idx] = updated;
+      setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
+
+      // Simple audit logging for changed values
+      Object.keys(payload).forEach((key) => {
+        const k = key as keyof Expediente;
+        if (old[k] !== payload[k] && key !== 'updated_at') {
+          logMockAudit(
+            id,
+            k === 'estado' ? 'ESTADO' : 'EDITAR',
+            key,
+            String(old[k] ?? 'vacío'),
+            String(payload[k] ?? 'vacío')
+          );
+        }
+      });
+
+      return updated;
+    }
+
+    const supabase = createBrowserClient();
+    const { data: oldData } = await supabase.from('expedientes').select('*').eq('id', id).single();
+
+    const { data, error } = await supabase
+      .from('expedientes')
+      .update(payload as any)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (oldData) {
+      // Audit log insertions
+      const auditLogs = Object.keys(payload)
+        .filter((key) => payload[key as keyof typeof payload] !== oldData[key as keyof typeof oldData] && key !== 'updated_at')
+        .map((key) => ({
+          expediente_id: id,
+          accion: key === 'estado' ? 'ESTADO' : 'EDITAR',
+          campo_modificado: key,
+          valor_anterior: String(oldData[key as keyof typeof oldData] ?? ''),
+          valor_nuevo: String(payload[key as keyof typeof payload] ?? ''),
+        }));
+
+      if (auditLogs.length > 0) {
+        await supabase.from('auditoria').insert(auditLogs as any);
+      }
+    }
+
+    return data;
+  },
+
+  deleteExpedienteLogical: async (id: string): Promise<void> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const idx = list.findIndex((e) => e.id === id);
+      if (idx !== -1) {
+        list[idx].deleted_at = new Date().toISOString();
+        setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
+        logMockAudit(id, 'ELIMINAR', 'deleted_at', null, list[idx].deleted_at);
+      }
+      return;
+    }
+
+    const supabase = createBrowserClient();
+    const { error } = await supabase
+      .from('expedientes')
+      .update({ deleted_at: new Date().toISOString() } as any)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    await supabase.from('auditoria').insert({
+      expediente_id: id,
+      accion: 'ELIMINAR',
+      valor_nuevo: 'Expediente eliminado lógicamente.',
+    } as any);
+  },
+
+  // --- DOCUMENTOS ---
+  getDocumentos: async (expedienteId: string): Promise<Documento[]> => {
+    if (IS_MOCK_MODE) {
+      const docs = getLocalData<Documento>(MOCK_STORAGE_KEYS.DOCUMENTOS, []);
+      return docs.filter((d) => d.expediente_id === expedienteId);
+    }
+
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('documentos')
+      .select('*')
+      .eq('expediente_id', expedienteId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  uploadDocumento: async (
+    expedienteId: string,
+    file: File,
+    tipoDocumento: string
+  ): Promise<Documento> => {
+    if (IS_MOCK_MODE) {
+      const docs = getLocalData<Documento>(MOCK_STORAGE_KEYS.DOCUMENTOS, []);
+      const user = getMockUser();
+
+      // Read file as mock data URL
+      const mockPath = `mock-storage/${expedienteId}/${Date.now()}_${file.name}`;
+      
+      const newDoc: Documento = {
+        id: Math.random().toString(36).substring(2, 9),
+        expediente_id: expedienteId,
+        nombre_archivo: file.name,
+        tipo_documento: tipoDocumento,
+        storage_path: mockPath,
+        tamanio_bytes: file.size,
+        created_at: new Date().toISOString(),
+        created_by: user.id,
+      };
+
+      docs.unshift(newDoc);
+      setLocalData(MOCK_STORAGE_KEYS.DOCUMENTOS, docs);
+      logMockAudit(expedienteId, 'DOCUMENTO', 'documento', null, `Documento subido: ${file.name} (${tipoDocumento})`);
+      return newDoc;
+    }
+
+    const supabase = createBrowserClient();
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const storagePath = `${expedienteId}/${fileName}`;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('expedientes-documentos')
+      .upload(storagePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // Insert to DB Table
+    const { data, error: dbError } = await supabase
+      .from('documentos')
+      .insert({
+        expediente_id: expedienteId,
+        nombre_archivo: file.name,
+        tipo_documento: tipoDocumento,
+        storage_path: storagePath,
+        tamanio_bytes: file.size,
+      } as any)
+      .select()
+      .single();
+
+    if (dbError) throw dbError;
+
+    await supabase.from('auditoria').insert({
+      expediente_id: expedienteId,
+      accion: 'DOCUMENTO',
+      valor_nuevo: `Documento subido: ${file.name} (${tipoDocumento})`,
+    } as any);
+
+    return data;
+  },
+
+  deleteDocumento: async (docId: string, storagePath: string, expedienteId: string): Promise<void> => {
+    if (IS_MOCK_MODE) {
+      const docs = getLocalData<Documento>(MOCK_STORAGE_KEYS.DOCUMENTOS, []);
+      const doc = docs.find((d) => d.id === docId);
+      const filtered = docs.filter((d) => d.id !== docId);
+      setLocalData(MOCK_STORAGE_KEYS.DOCUMENTOS, filtered);
+      logMockAudit(expedienteId, 'DOCUMENTO', 'documento', doc?.nombre_archivo || null, 'Documento eliminado');
+      return;
+    }
+
+    const supabase = createBrowserClient();
+
+    // Delete from Storage
+    const { error: storageError } = await supabase.storage
+      .from('expedientes-documentos')
+      .remove([storagePath]);
+
+    if (storageError) throw storageError;
+
+    // Delete from DB Table
+    const { error: dbError } = await supabase
+      .from('documentos')
+      .delete()
+      .eq('id', docId);
+
+    if (dbError) throw dbError;
+
+    await supabase.from('auditoria').insert({
+      expediente_id: expedienteId,
+      accion: 'DOCUMENTO',
+      valor_nuevo: `Documento eliminado. Path: ${storagePath}`,
+    } as any);
+  },
+
+  getDownloadUrl: async (storagePath: string): Promise<string> => {
+    if (IS_MOCK_MODE) {
+      // In mock mode, we just return a placeholder or create a simulated file download
+      return `https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600&auto=format&fit=crop`;
+    }
+
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase.storage
+      .from('expedientes-documentos')
+      .createSignedUrl(storagePath, 3600); // 1 hour valid
+
+    if (error) throw error;
+    return data.signedUrl;
+  },
+
+  // --- AUDITORIA ---
+  getAuditoria: async (expedienteId?: string): Promise<AuditoriaEntry[]> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<AuditoriaEntry>(MOCK_STORAGE_KEYS.AUDITORIA, INITIAL_AUDITORIA);
+      if (expedienteId) {
+        return list.filter((a) => a.expediente_id === expedienteId);
+      }
+      return list;
+    }
+
+    const supabase = createBrowserClient();
+    let query = supabase.from('auditoria').select('*').order('created_at', { ascending: false });
+    
+    if (expedienteId) {
+      query = query.eq('expediente_id', expedienteId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+};
