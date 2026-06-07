@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
@@ -20,6 +20,53 @@ import {
 } from '@/lib/constants';
 import { calcDeducible, calcValorAPagar, calcPorcentajeRecobro } from '@/lib/utils';
 import { dbService } from '@/lib/services/dbService';
+
+function formatCOPInput(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '';
+  const num = typeof value === 'number' ? value : parseInt(String(value).replace(/\D/g, ''), 10);
+  if (isNaN(num)) return '';
+  return '$ ' + num.toLocaleString('es-CO');
+}
+
+function parseCOPInput(value: string): number {
+  const clean = value.replace(/\D/g, '');
+  if (!clean) return 0;
+  return parseInt(clean, 10);
+}
+
+function CurrencyInputField({ 
+  control, 
+  name, 
+  placeholder = '$ 0', 
+  className,
+  disabled
+}: { 
+  control: any; 
+  name: string; 
+  placeholder?: string; 
+  className?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field: { onChange, value } }) => (
+        <Input
+          type="text"
+          placeholder={placeholder}
+          className={className}
+          disabled={disabled}
+          value={value !== undefined && value !== null ? formatCOPInput(value) : ''}
+          onChange={(e) => {
+            const rawValue = parseCOPInput(e.target.value);
+            onChange(e.target.value === '' ? null : rawValue);
+          }}
+        />
+      )}
+    />
+  );
+}
 
 
 const expedienteSchema = z.object({
@@ -105,7 +152,7 @@ export function ExpedienteForm({
     },
   });
 
-  const { register, watch, setValue, formState: { errors } } = form;
+  const { register, watch, setValue, formState: { errors }, control } = form;
 
   const valorNegociado = watch('valor_negociado') || 0;
   const porcentajeDeducible = watch('porcentaje_deducible') || 0;
@@ -252,18 +299,18 @@ export function ExpedienteForm({
               <>
                 <FieldGroup>
                   <FormField label="Valor Cotización (COP)">
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...register('valor_cotizacion', { valueAsNumber: true })}
+                    <CurrencyInputField
+                      control={control}
+                      name="valor_cotizacion"
+                      placeholder="$ 0"
                       className={`${inputClass} number-font`}
                     />
                   </FormField>
                   <FormField label="Valor Negociado (COP)">
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...register('valor_negociado', { valueAsNumber: true })}
+                    <CurrencyInputField
+                      control={control}
+                      name="valor_negociado"
+                      placeholder="$ 0"
                       className={`${inputClass} number-font`}
                     />
                   </FormField>
@@ -287,7 +334,7 @@ export function ExpedienteForm({
                   <FormField label="Valor Deducible (calculado)">
                     <Input
                       readOnly
-                      value={deducibleCalc.toLocaleString('es-CO')}
+                      value={formatCOPInput(deducibleCalc)}
                       className={`${inputClass} number-font bg-secondary/50 cursor-not-allowed`}
                     />
                   </FormField>
@@ -296,33 +343,33 @@ export function ExpedienteForm({
                 <div className="rounded-lg bg-secondary/50 border border-border p-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Valor Negociado:</span>
-                    <span className="number-font font-semibold">{valorNegociado.toLocaleString('es-CO')}</span>
+                    <span className="number-font font-semibold">{formatCOPInput(valorNegociado)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Deducible ({porcentajeDeducible}%):</span>
-                    <span className="number-font font-semibold text-yellow-400">- {deducibleCalc.toLocaleString('es-CO')}</span>
+                    <span className="number-font font-semibold text-yellow-400">- {formatCOPInput(deducibleCalc)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-sm font-bold">
                     <span>Valor a Pagar:</span>
-                    <span className="number-font text-green-400">{aPagarCalc.toLocaleString('es-CO')}</span>
+                    <span className="number-font text-green-400">{formatCOPInput(aPagarCalc)}</span>
                   </div>
                 </div>
 
                 <FieldGroup>
                   <FormField label="Valor Salvamento (COP)">
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...register('valor_salvamento', { valueAsNumber: true })}
+                    <CurrencyInputField
+                      control={control}
+                      name="valor_salvamento"
+                      placeholder="$ 0"
                       className={`${inputClass} number-font`}
                     />
                   </FormField>
                   <FormField label="Valor Final Aprobado (COP)">
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...register('valor_final_aprobado', { valueAsNumber: true })}
+                    <CurrencyInputField
+                      control={control}
+                      name="valor_final_aprobado"
+                      placeholder="$ 0"
                       className={`${inputClass} number-font`}
                     />
                   </FormField>
@@ -359,10 +406,10 @@ export function ExpedienteForm({
                 </FieldGroup>
                 <FieldGroup>
                   <FormField label="Descuento al Conductor (COP)">
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...register('valor_descuento_conductor', { valueAsNumber: true })}
+                    <CurrencyInputField
+                      control={control}
+                      name="valor_descuento_conductor"
+                      placeholder="$ 0"
                       className={`${inputClass} number-font`}
                     />
                   </FormField>
@@ -382,10 +429,10 @@ export function ExpedienteForm({
                   <div key={field} className="flex items-end gap-3">
                     <div className="flex-1">
                       <FormField label={label}>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...register(field, { valueAsNumber: true })}
+                        <CurrencyInputField
+                          control={control}
+                          name={field}
+                          placeholder="$ 0"
                           className={`${inputClass} number-font`}
                         />
                       </FormField>
