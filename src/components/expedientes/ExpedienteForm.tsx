@@ -1,11 +1,11 @@
 'use client';
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Save, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,6 +80,12 @@ const expedienteSchema = z.object({
   concepto: z.string().optional(),
   // Financiero
   valor_cotizacion: z.number().min(0).optional().nullable(),
+  cotizaciones: z.array(z.object({
+    id: z.string(),
+    proveedor: z.string().min(1, 'Requerido'),
+    valor: z.number().min(0),
+    seleccionada: z.boolean(),
+  })).optional().nullable(),
   valor_negociado: z.number().min(0).optional().nullable(),
   porcentaje_deducible: z.number().optional().nullable(),
   valor_salvamento: z.number().min(0).optional().nullable(),
@@ -148,11 +154,31 @@ export function ExpedienteForm({
     defaultValues: {
       tipo_reclamacion: 'Siniestro',
       culpabilidad: 'Sin definir',
+      cotizaciones: defaultValues?.cotizaciones || [{ id: '1', proveedor: '', valor: 0, seleccionada: true }],
       ...defaultValues,
     },
   });
 
   const { register, watch, setValue, formState: { errors }, control } = form;
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'cotizaciones',
+  });
+
+  const cotizaciones = watch('cotizaciones') || [];
+
+  // Actualiza automáticamente el valor_cotizacion principal basado en la cotización seleccionada
+  useEffect(() => {
+    const selected = cotizaciones.find((c) => c.seleccionada);
+    if (selected) {
+      setValue('valor_cotizacion', selected.valor || 0);
+    } else if (cotizaciones.length > 0) {
+      setValue('valor_cotizacion', cotizaciones[0].valor || 0);
+    } else {
+      setValue('valor_cotizacion', 0);
+    }
+  }, [cotizaciones, setValue]);
 
   const valorNegociado = watch('valor_negociado') || 0;
   const porcentajeDeducible = watch('porcentaje_deducible') || 0;
@@ -297,15 +323,96 @@ export function ExpedienteForm({
             {/* Step 2: Financial */}
             {step === 2 && (
               <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold text-foreground">Cotizaciones Presentadas (1 o más)</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ id: Math.random().toString(36).substring(2, 9), proveedor: '', valor: 0, seleccionada: false })}
+                    >
+                      + Añadir Cotización
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {fields.map((fieldItem, idx) => (
+                      <div key={fieldItem.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-secondary/10">
+                        {/* Radio button to select */}
+                        <div className="flex items-center justify-center" title="Marcar como cotización activa para deducible">
+                          <input
+                            type="radio"
+                            name="selected_cotizacion"
+                            checked={watch(`cotizaciones.${idx}.seleccionada`) || false}
+                            onChange={() => {
+                              // Set all others to false, this one to true
+                              fields.forEach((_, fIdx) => {
+                                setValue(`cotizaciones.${fIdx}.seleccionada`, fIdx === idx);
+                              });
+                            }}
+                            className="w-4 h-4 text-primary focus:ring-primary border-border bg-background"
+                          />
+                        </div>
+
+                        {/* Provider */}
+                        <div className="flex-[2] min-w-[150px]">
+                          <Input
+                            placeholder="Taller / Proveedor / Concepto"
+                            {...register(`cotizaciones.${idx}.proveedor` as const)}
+                            className={inputClass}
+                          />
+                          {errors.cotizaciones?.[idx]?.proveedor && (
+                            <p className="text-red-400 text-xs mt-1">Requerido</p>
+                          )}
+                        </div>
+
+                        {/* Value */}
+                        <div className="flex-[1.5] min-w-[120px]">
+                          <CurrencyInputField
+                            control={control}
+                            name={`cotizaciones.${idx}.valor`}
+                            placeholder="$ 0"
+                            className={`${inputClass} number-font`}
+                          />
+                        </div>
+
+                        {/* Delete button */}
+                        {fields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-400 hover:text-red-500 hover:bg-red-500/10 flex-shrink-0"
+                            onClick={() => {
+                              const wasSelected = watch(`cotizaciones.${idx}.seleccionada`);
+                              remove(idx);
+                              if (wasSelected && fields.length > 1) {
+                                // Select the first remaining
+                                const nextIndex = idx === 0 ? 0 : idx - 1;
+                                setTimeout(() => {
+                                  setValue(`cotizaciones.${nextIndex}.seleccionada`, true);
+                                }, 50);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Summary of active quote */}
+                  <div className="text-xs text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg p-3 flex justify-between items-center">
+                    <span>Valor Cotización Activo (para deducible):</span>
+                    <span className="font-bold text-sm text-foreground number-font">
+                      {formatCOPInput(watch('valor_cotizacion'))}
+                    </span>
+                  </div>
+                </div>
+
                 <FieldGroup>
-                  <FormField label="Valor Cotización (COP)">
-                    <CurrencyInputField
-                      control={control}
-                      name="valor_cotizacion"
-                      placeholder="$ 0"
-                      className={`${inputClass} number-font`}
-                    />
-                  </FormField>
                   <FormField label="Valor Negociado (COP)">
                     <CurrencyInputField
                       control={control}

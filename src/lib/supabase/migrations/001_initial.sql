@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   valor_a_pagar NUMERIC(15,2),
   valor_salvamento NUMERIC(15,2),
   valor_final_aprobado NUMERIC(15,2),
+  cotizaciones JSONB DEFAULT '[]'::jsonb,
 
   -- Conductor
   nombre_conductor TEXT,

@@ -25,6 +25,7 @@ export interface Expediente {
   valor_a_pagar: number | null;
   valor_salvamento: number | null;
   valor_final_aprobado: number | null;
+  cotizaciones?: { id: string; proveedor: string; valor: number; seleccionada: boolean; }[] | null;
   // Conductor
   nombre_conductor: string | null;
   id_conductor: string | null;

@@ -570,7 +570,7 @@ export default function ExpedienteDetailPage() {
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Valor de Cotización</span>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Valor de Cotización Activo</span>
                         <span className="text-lg font-semibold number-font text-foreground">
                           {formatCOP(expediente.valor_cotizacion)}
                         </span>
@@ -582,6 +582,30 @@ export default function ExpedienteDetailPage() {
                         </span>
                       </div>
                     </div>
+
+                    {expediente.cotizaciones && expediente.cotizaciones.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-foreground">Historial de Cotizaciones Presentadas</h4>
+                        <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-card">
+                          {expediente.cotizaciones.map((cot, i) => (
+                            <div key={cot.id || i} className="flex items-center justify-between p-3 text-sm hover:bg-secondary/10 transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <span className={`w-2 h-2 rounded-full ${cot.seleccionada ? 'bg-green-400' : 'bg-muted-foreground/30'}`} />
+                                <span className={`font-semibold ${cot.seleccionada ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+                                  {cot.proveedor || `Cotización ${i + 1}`}
+                                </span>
+                                {cot.seleccionada && (
+                                  <Badge variant="success" className="text-[10px] py-0 px-1.5">Activa</Badge>
+                                )}
+                              </div>
+                              <span className={`font-mono font-semibold ${cot.seleccionada ? 'text-green-400 font-bold' : 'text-muted-foreground'}`}>
+                                {formatCOP(cot.valor)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="rounded-xl border border-border p-5 bg-secondary/10 space-y-3">
                       <h4 className="text-sm font-bold text-foreground">Cálculo de Cobertura FAM</h4>
