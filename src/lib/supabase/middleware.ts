@@ -5,6 +5,15 @@ import type { Database } from '@/types/database';
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  const IS_MOCK_MODE =
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project') ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.includes('your-anon-key');
+
+  if (IS_MOCK_MODE) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

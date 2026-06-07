@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { setMockUser } from '@/lib/services/dbService';
+import { dbService, setMockUser } from '@/lib/services/dbService';
+import { createClient } from '@/lib/supabase/client';
 import type { RolUsuario } from '@/types/database';
 
 const loginSchema = z.object({
@@ -33,32 +34,75 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      // Determine simulated role based on email prefix
+      const isMock = dbService.isMockMode();
       let role: RolUsuario = 'consultor';
       let name = 'Consultor Invitado';
-      
-      if (data.email.toLowerCase().includes('admin')) {
-        role = 'admin';
-        name = 'Administrador FAM';
-      } else if (data.email.toLowerCase().includes('analista')) {
-        role = 'analista';
-        name = 'Analista de Casos';
-      }
 
-      // Simulate network response
-      await new Promise((r) => setTimeout(r, 1000));
-      
-      // Persist simulator role
-      setMockUser(role, name);
+      if (isMock) {
+        if (data.email.toLowerCase().includes('admin')) {
+          role = 'admin';
+          name = 'Administrador FAM';
+        } else if (data.email.toLowerCase().includes('analista')) {
+          role = 'analista';
+          name = 'Analista de Casos';
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+        setMockUser(role, name);
+      } else {
+        // Autenticación real de Supabase
+        const supabase = createClient();
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (authError) {
+          throw new Error(authError.message);
+        }
+
+        if (!authData.user) {
+          throw new Error('No se pudo obtener la información del usuario.');
+        }
+
+        // Obtener el perfil real desde la base de datos
+        const { data: profile, error: profileError } = await supabase
+          .from('perfiles')
+          .select('rol, nombre')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          // Fallback a los metadatos del usuario o rol según el prefijo del correo
+          if (authData.user.user_metadata?.nombre) {
+            name = authData.user.user_metadata.nombre;
+          }
+          if (authData.user.user_metadata?.rol) {
+            role = authData.user.user_metadata.rol as RolUsuario;
+          } else {
+            if (data.email.toLowerCase().includes('admin')) {
+              role = 'admin';
+            } else if (data.email.toLowerCase().includes('analista')) {
+              role = 'analista';
+            }
+          }
+        } else if (profile) {
+          role = profile.rol as RolUsuario;
+          name = profile.nombre || name;
+        }
+
+        // Sincronizar el estado de sesión local
+        setMockUser(role, name);
+      }
 
       toast.success('Bienvenido a FAM Control', {
         description: `Ingresaste como ${name} (${role})`,
       });
 
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Credenciales incorrectas');
+      toast.error(error.message || 'Credenciales incorrectas');
     } finally {
       setIsLoading(false);
     }
