@@ -68,6 +68,9 @@ export interface Expediente {
   autorizado_por: string | null;
   cargo_autorizador: string | null;
   fecha_autorizacion: string | null;
+  memorando_pago_nombre?: string | null;
+  memorando_pago_storage_path?: string | null;
+  memorando_pago_archivo_nombre?: string | null;
   estado: EstadoExpediente;
   // Metadata
   created_at: string;

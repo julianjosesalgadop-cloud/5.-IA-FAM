@@ -102,6 +102,9 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   autorizado_por TEXT,
   cargo_autorizador TEXT,
   fecha_autorizacion DATE,
+  memorando_pago_nombre TEXT,
+  memorando_pago_storage_path TEXT,
+  memorando_pago_archivo_nombre TEXT,
   estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Revisado', 'Aprobado', 'Rechazado')),
 
   -- Metadata

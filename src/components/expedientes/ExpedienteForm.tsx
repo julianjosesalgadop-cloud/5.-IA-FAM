@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, ChevronRight, Trash2, FileText } from 'lucide-react';
+import { Save, ChevronLeft, ChevronRight, Trash2, FileText, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,6 +132,9 @@ const expedienteSchema = z.object({
   autorizado_por: z.string().optional(),
   cargo_autorizador: z.string().optional(),
   fecha_autorizacion: z.string().optional(),
+  memorando_pago_nombre: z.string().optional().nullable(),
+  memorando_pago_storage_path: z.string().optional().nullable(),
+  memorando_pago_archivo_nombre: z.string().optional().nullable(),
 });
 
 type ExpedienteFormData = z.infer<typeof expedienteSchema>;
@@ -175,6 +178,55 @@ export function ExpedienteForm({
   // Estados para archivos adjuntos durante la creación/edición
   const [archivosPaso1, setArchivosPaso1] = useState<{ id: string; file: File; tipo: string }[]>([]);
   const [cotizacionFiles, setCotizacionFiles] = useState<Record<string, File>>({});
+  const [memorandoPagoFile, setMemorandoPagoFile] = useState<File | null>(null);
+
+  const [selAutorizadoPor, setSelAutorizadoPor] = useState(() => {
+    const val = defaultValues?.autorizado_por;
+    if (!val) return '';
+    if (val === 'MARTHA BIBIANA RINCON REYES') return 'MARTHA BIBIANA RINCON REYES';
+    return 'Otro';
+  });
+
+  const [selCargo, setSelCargo] = useState(() => {
+    const val = defaultValues?.cargo_autorizador;
+    if (!val) return '';
+    if (val === 'GERENTE ADMINISTRATIVA Y FINANCIERA') return 'GERENTE ADMINISTRATIVA Y FINANCIERA';
+    return 'Otro';
+  });
+
+  useEffect(() => {
+    if (defaultValues) {
+      if (defaultValues.autorizado_por === 'MARTHA BIBIANA RINCON REYES') {
+        setSelAutorizadoPor('MARTHA BIBIANA RINCON REYES');
+      } else if (defaultValues.autorizado_por) {
+        setSelAutorizadoPor('Otro');
+      } else {
+        setSelAutorizadoPor('');
+      }
+
+      if (defaultValues.cargo_autorizador === 'GERENTE ADMINISTRATIVA Y FINANCIERA') {
+        setSelCargo('GERENTE ADMINISTRATIVA Y FINANCIERA');
+      } else if (defaultValues.cargo_autorizador) {
+        setSelCargo('Otro');
+      } else {
+        setSelCargo('');
+      }
+    }
+  }, [defaultValues]);
+
+  const handleMemorandoPagoFileChange = (file: File) => {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Solo se permiten documentos en formato PDF.');
+      return;
+    }
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('El tamaño máximo permitido es de 5MB por documento.');
+      return;
+    }
+    setMemorandoPagoFile(file);
+    setValue('memorando_pago_archivo_nombre', file.name);
+  };
 
   const handleAddArchivoPaso1 = (file: File, tipo: string) => {
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
@@ -357,6 +409,20 @@ export function ExpedienteForm({
           await dbService.updateExpediente(createdId, {
             cotizaciones: updatedCotizacionesFinal
           } as any);
+        }
+
+        // 3. Subir archivo de memorando de pago de paso 4 (si se seleccionó uno nuevo)
+        if (memorandoPagoFile) {
+          try {
+            const uploadedDoc = await dbService.uploadDocumento(createdId, memorandoPagoFile, 'Memorando');
+            await dbService.updateExpediente(createdId, {
+              memorando_pago_archivo_nombre: memorandoPagoFile.name,
+              memorando_pago_storage_path: uploadedDoc.storage_path,
+            } as any);
+          } catch (uploadError) {
+            console.error('Error al subir documento de memorando de pago:', uploadError);
+            toast.error(`No se pudo cargar el archivo del memorando de pago`);
+          }
         }
       }
 
@@ -1003,15 +1069,113 @@ export function ExpedienteForm({
 
                 <FieldGroup>
                   <FormField label="Autorizado Por">
-                    <Input placeholder="Nombre del autorizador" {...register('autorizado_por')} className={inputClass} />
+                    <select
+                      value={selAutorizadoPor}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelAutorizadoPor(val);
+                        if (val === 'MARTHA BIBIANA RINCON REYES') {
+                          setValue('autorizado_por', 'MARTHA BIBIANA RINCON REYES');
+                        } else if (val === '') {
+                          setValue('autorizado_por', '');
+                        } else {
+                          setValue('autorizado_por', '');
+                        }
+                      }}
+                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring mb-2"
+                    >
+                      <option value="">Seleccionar autorizador...</option>
+                      <option value="MARTHA BIBIANA RINCON REYES">MARTHA BIBIANA RINCON REYES</option>
+                      <option value="Otro">Otro (Especificar)</option>
+                    </select>
+                    <Input
+                      placeholder="Escriba el nombre del autorizador"
+                      {...register('autorizado_por')}
+                      className={`${inputClass} ${selAutorizadoPor === 'Otro' ? '' : 'hidden'}`}
+                    />
                   </FormField>
+
                   <FormField label="Cargo">
-                    <Input placeholder="Cargo del autorizador" {...register('cargo_autorizador')} className={inputClass} />
+                    <select
+                      value={selCargo}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelCargo(val);
+                        if (val === 'GERENTE ADMINISTRATIVA Y FINANCIERA') {
+                          setValue('cargo_autorizador', 'GERENTE ADMINISTRATIVA Y FINANCIERA');
+                        } else if (val === '') {
+                          setValue('cargo_autorizador', '');
+                        } else {
+                          setValue('cargo_autorizador', '');
+                        }
+                      }}
+                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring mb-2"
+                    >
+                      <option value="">Seleccionar cargo...</option>
+                      <option value="GERENTE ADMINISTRATIVA Y FINANCIERA">GERENTE ADMINISTRATIVA Y FINANCIERA</option>
+                      <option value="Otro">Otro (Especificar)</option>
+                    </select>
+                    <Input
+                      placeholder="Escriba el cargo del autorizador"
+                      {...register('cargo_autorizador')}
+                      className={`${inputClass} ${selCargo === 'Otro' ? '' : 'hidden'}`}
+                    />
                   </FormField>
                 </FieldGroup>
+
                 <FormField label="Fecha de Autorización">
                   <Input type="date" {...register('fecha_autorizacion')} className={`${inputClass} max-w-xs`} />
                 </FormField>
+
+                <Separator />
+                <p className="text-sm font-semibold text-foreground">Soporte del Memorando de Pago</p>
+                <FieldGroup>
+                  <FormField label="Nombre / N° de Memorando con el cual se pagó">
+                    <Input
+                      placeholder="Ej: MEMO-PAGO-2025-001"
+                      {...register('memorando_pago_nombre')}
+                      className={inputClass}
+                    />
+                  </FormField>
+                  <FormField label="Adjuntar PDF del Memorando correspondiete">
+                    <div className="relative flex items-center justify-between border border-border bg-background rounded-lg px-3 h-10 overflow-hidden text-sm">
+                      <span className="truncate pr-4 text-muted-foreground">
+                        {memorandoPagoFile
+                          ? memorandoPagoFile.name
+                          : (watch('memorando_pago_archivo_nombre') || 'Ningún archivo seleccionado')}
+                      </span>
+                      {(memorandoPagoFile || watch('memorando_pago_archivo_nombre')) ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMemorandoPagoFile(null);
+                            setValue('memorando_pago_archivo_nombre', null);
+                            setValue('memorando_pago_storage_path', null);
+                          }}
+                          className="text-red-400 hover:text-red-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <label className="cursor-pointer font-semibold text-primary hover:underline">
+                          Examinar...
+                          <input
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleMemorandoPagoFileChange(file);
+                                e.target.value = ''; // Limpiar el input
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </FormField>
+                </FieldGroup>
               </>
             )}
           </CardContent>

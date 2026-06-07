@@ -382,7 +382,7 @@ export default function ExpedienteDetailPage() {
         ['Fecha de Comité:', formatDate(expediente.fecha_comite), 'Causa Raíz:', expediente.causa_raiz || '—'],
         ['Observaciones Comité:', expediente.observaciones_comite || '—', '', ''],
         ['Autorizado Por:', expediente.autorizado_por || '—', 'Cargo Autorizador:', expediente.cargo_autorizador || '—'],
-        ['Fecha Autorización:', formatDate(expediente.fecha_autorizacion), '', ''],
+        ['Fecha Autorización:', formatDate(expediente.fecha_autorizacion), 'Memorando de Pago:', expediente.memorando_pago_nombre || '—'],
       ];
 
       autoTable(doc, {
@@ -877,6 +877,41 @@ export default function ExpedienteDetailPage() {
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">Fecha de Autorización</span>
                           <span className="text-sm font-semibold text-foreground">{formatDate(expediente.fecha_autorizacion)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-foreground">Soporte del Memorando de Pago</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1">
+                          <span className="text-xs text-muted-foreground block">Nombre / N° de Memorando con el cual se pagó</span>
+                          <span className="text-sm font-semibold text-foreground font-mono">
+                            {expediente.memorando_pago_nombre || '—'}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-xs text-muted-foreground block">Documento Adjunto</span>
+                          {expediente.memorando_pago_storage_path ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-sm font-medium text-foreground truncate max-w-[200px]" title={expediente.memorando_pago_archivo_nombre || 'memorando.pdf'}>
+                                {expediente.memorando_pago_archivo_nombre || 'memorando.pdf'}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 py-1 px-3"
+                                onClick={() => handleDownloadDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                Ver PDF
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
                         </div>
                       </div>
                     </div>
