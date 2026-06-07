@@ -65,11 +65,11 @@ export default function LoginPage() {
         }
 
         // Obtener el perfil real desde la base de datos
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = (await supabase
           .from('perfiles')
           .select('rol, nombre')
           .eq('id', authData.user.id)
-          .single();
+          .single()) as any;
 
         if (profileError) {
           console.error('Error fetching profile:', profileError);

@@ -90,6 +90,14 @@ const expedienteSchema = z.object({
     porcentaje_deducible: z.number().min(0),
     valor_deducible: z.number().min(0).optional().nullable(),
     valor_a_pagar: z.number().min(0).optional().nullable(),
+  }).refine(val => {
+    if (val.concepto === 'OTROS') {
+      return !!val.concepto_otro && val.concepto_otro.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: 'Debe especificar el concepto cuando se selecciona "OTROS"',
+    path: ['concepto_otro']
   })).optional().nullable(),
   valor_negociado: z.number().min(0).optional().nullable(),
   porcentaje_deducible: z.number().optional().nullable(),
@@ -442,6 +450,11 @@ export function ExpedienteForm({
                                     {...register(`cotizaciones.${idx}.concepto_otro` as const)}
                                     className={inputClass}
                                   />
+                                  {errors.cotizaciones?.[idx]?.concepto_otro && (
+                                    <p className="text-red-400 text-xs mt-1">
+                                      {errors.cotizaciones[idx]?.concepto_otro?.message || 'Requerido'}
+                                    </p>
+                                  )}
                                 </FormField>
                               </div>
                             )}
