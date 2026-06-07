@@ -35,9 +35,17 @@ export interface Expediente {
     porcentaje_deducible: number;
     valor_deducible: number;
     valor_a_pagar: number;
+    nombre_archivo?: string | null;
+    storage_path?: string | null;
+  }[] | null;
+  propietarios?: {
+    nombre: string;
+    tipo_documento: 'CC' | 'CE' | 'TI' | 'NIT' | 'PP';
+    numero_documento: string;
   }[] | null;
   // Conductor
   nombre_conductor: string | null;
+  tipo_documento_conductor?: 'CC' | 'CE' | 'TI' | 'NIT' | 'PP' | null;
   id_conductor: string | null;
   celular_conductor: string | null;
   culpabilidad: Culpabilidad | null;

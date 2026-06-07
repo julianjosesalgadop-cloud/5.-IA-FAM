@@ -73,7 +73,12 @@ const expedienteSchema = z.object({
   fecha_incidente: z.string().min(1, 'Requerido'),
   placa: z.string().min(1, 'Requerido').toUpperCase(),
   numero_interno: z.string().optional(),
-  propietario: z.string().min(1, 'Requerido'),
+  propietario: z.string().optional(),
+  propietarios: z.array(z.object({
+    nombre: z.string().min(1, 'Requerido'),
+    tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']),
+    numero_documento: z.string().min(1, 'Requerido'),
+  })).min(1, 'Debe registrar al menos un propietario'),
   tipo_reclamacion: z.enum(['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro']),
   ciudad_origen: z.string().optional(),
   ciudad_destino: z.string().optional(),
@@ -90,6 +95,8 @@ const expedienteSchema = z.object({
     porcentaje_deducible: z.number().min(0),
     valor_deducible: z.number().min(0).optional().nullable(),
     valor_a_pagar: z.number().min(0).optional().nullable(),
+    nombre_archivo: z.string().optional().nullable(),
+    storage_path: z.string().optional().nullable(),
   }).refine(val => {
     if (val.concepto === 'OTROS') {
       return !!val.concepto_otro && val.concepto_otro.trim().length > 0;
@@ -105,6 +112,7 @@ const expedienteSchema = z.object({
   valor_final_aprobado: z.number().min(0).optional().nullable(),
   // Conductor
   nombre_conductor: z.string().optional(),
+  tipo_documento_conductor: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
   id_conductor: z.string().optional(),
   celular_conductor: z.string().optional(),
   culpabilidad: z.enum(['Conductor', 'Tercero', 'Compartida', 'Sin definir']).optional().nullable(),
@@ -165,6 +173,7 @@ export function ExpedienteForm({
   // Estados para archivos adjuntos durante la creación/edición
   const [archivosPaso1, setArchivosPaso1] = useState<{ id: string; file: File; tipo: string }[]>([]);
   const [archivosPaso2, setArchivosPaso2] = useState<{ id: string; file: File; tipo: string }[]>([]);
+  const [cotizacionFiles, setCotizacionFiles] = useState<Record<string, File>>({});
 
   const handleAddArchivoPaso1 = (file: File, tipo: string) => {
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
@@ -192,11 +201,29 @@ export function ExpedienteForm({
     setArchivosPaso2(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), file, tipo }]);
   };
 
+  const handleCotizacionFileChange = (cotId: string, idx: number, file: File) => {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Solo se permiten documentos en formato PDF.');
+      return;
+    }
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('El tamaño máximo permitido es de 5MB por documento.');
+      return;
+    }
+    setCotizacionFiles((prev) => ({ ...prev, [cotId]: file }));
+    setValue(`cotizaciones.${idx}.nombre_archivo`, file.name);
+  };
+
   const form = useForm<ExpedienteFormData>({
     resolver: zodResolver(expedienteSchema),
     defaultValues: {
       tipo_reclamacion: 'Siniestro',
       culpabilidad: 'Sin definir',
+      propietarios: defaultValues?.propietarios && defaultValues.propietarios.length > 0
+        ? defaultValues.propietarios
+        : [{ nombre: defaultValues?.propietario || '', tipo_documento: 'CC', numero_documento: '' }],
+      tipo_documento_conductor: defaultValues?.tipo_documento_conductor || 'CC',
       cotizaciones: defaultValues?.cotizaciones || [{ 
         id: '1', 
         proveedor: '', 
@@ -206,7 +233,9 @@ export function ExpedienteForm({
         valor_negociado: 0, 
         porcentaje_deducible: 0, 
         valor_deducible: 0, 
-        valor_a_pagar: 0 
+        valor_a_pagar: 0,
+        nombre_archivo: null,
+        storage_path: null
       }],
       ...defaultValues,
     },
@@ -217,6 +246,11 @@ export function ExpedienteForm({
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'cotizaciones',
+  });
+
+  const { fields: propietariosFields, append: appendPropietario, remove: removePropietario } = useFieldArray({
+    control,
+    name: 'propietarios',
   });
 
   const cotizaciones = watch('cotizaciones') || [];
@@ -266,6 +300,9 @@ export function ExpedienteForm({
 
       const finalData = {
         ...data,
+        propietario: data.propietarios && data.propietarios.length > 0
+          ? data.propietarios.map((p) => p.nombre).join(', ')
+          : '',
         cotizaciones: updatedCotizaciones,
         valor_cotizacion: totalCotizacion,
         valor_negociado: totalNegociado,
@@ -290,14 +327,46 @@ export function ExpedienteForm({
 
       // Subir los archivos adjuntos vinculados al expediente
       if (createdId) {
-        const allFiles = [...archivosPaso1, ...archivosPaso2];
-        for (const item of allFiles) {
+        // 1. Subir archivos generales de paso 1
+        for (const item of archivosPaso1) {
           try {
             await dbService.uploadDocumento(createdId, item.file, item.tipo);
           } catch (uploadError) {
-            console.error('Error al subir documento adjunto:', uploadError);
+            console.error('Error al subir documento adjunto paso 1:', uploadError);
             toast.error(`No se pudo cargar el archivo ${item.file.name}`);
           }
+        }
+
+        // 2. Subir archivos de cotización individual del paso 2 y actualizar sus paths
+        const updatedCotizacionesFinal = [];
+        let modifiedQuotes = false;
+        for (let i = 0; i < updatedCotizaciones.length; i++) {
+          const cot = updatedCotizaciones[i];
+          const file = cotizacionFiles[cot.id];
+          if (file) {
+            try {
+              const uploadedDoc = await dbService.uploadDocumento(createdId, file, 'Cotización');
+              updatedCotizacionesFinal.push({
+                ...cot,
+                nombre_archivo: file.name,
+                storage_path: uploadedDoc.storage_path,
+              });
+              modifiedQuotes = true;
+            } catch (uploadError) {
+              console.error('Error al subir documento de cotización:', uploadError);
+              toast.error(`No se pudo cargar la cotización de ${cot.proveedor}`);
+              updatedCotizacionesFinal.push(cot);
+            }
+          } else {
+            updatedCotizacionesFinal.push(cot);
+          }
+        }
+
+        // Si se subieron archivos de cotización, actualizamos la lista en el expediente
+        if (modifiedQuotes) {
+          await dbService.updateExpediente(createdId, {
+            cotizaciones: updatedCotizacionesFinal
+          } as any);
         }
       }
 
@@ -386,10 +455,80 @@ export function ExpedienteForm({
                     <Input placeholder="Ej: 0042" {...register('numero_interno')} className={inputClass} />
                   </FormField>
                 </FieldGroup>
-                <FormField label="Propietario" required>
-                  <Input placeholder="Nombre del propietario o empresa" {...register('propietario')} className={inputClass} />
-                  {errors.propietario && <p className="text-red-400 text-xs">{errors.propietario.message}</p>}
-                </FormField>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold text-foreground">Propietarios del Vehículo (1 o más) *</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => appendPropietario({ nombre: '', tipo_documento: 'CC', numero_documento: '' })}
+                    >
+                      + Añadir Propietario
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {propietariosFields.map((fieldItem, idx) => (
+                      <div key={fieldItem.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end p-4 rounded-xl border border-border bg-card shadow-sm relative">
+                        <div className="sm:col-span-5 space-y-1.5">
+                          <Label className="text-xs text-muted-foreground font-semibold">Nombre Completo / Razón Social *</Label>
+                          <Input
+                            placeholder="Nombre del propietario"
+                            {...register(`propietarios.${idx}.nombre` as const)}
+                            className={inputClass}
+                          />
+                          {errors.propietarios?.[idx]?.nombre && (
+                            <p className="text-red-400 text-xs mt-1">Requerido</p>
+                          )}
+                        </div>
+
+                        <div className="sm:col-span-3 space-y-1.5">
+                          <Label className="text-xs text-muted-foreground font-semibold">Tipo de Documento *</Label>
+                          <select
+                            {...register(`propietarios.${idx}.tipo_documento` as const)}
+                            className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            <option value="CC">CC - Cédula de Ciudadanía</option>
+                            <option value="CE">CE - Cédula de Extranjería</option>
+                            <option value="TI">TI - Tarjeta de Identidad</option>
+                            <option value="NIT">NIT - NIT</option>
+                            <option value="PP">PP - Pasaporte</option>
+                          </select>
+                        </div>
+
+                        <div className="sm:col-span-3 space-y-1.5">
+                          <Label className="text-xs text-muted-foreground font-semibold">Número de Documento *</Label>
+                          <Input
+                            placeholder="Número de doc"
+                            {...register(`propietarios.${idx}.numero_documento` as const)}
+                            className={inputClass}
+                          />
+                          {errors.propietarios?.[idx]?.numero_documento && (
+                            <p className="text-red-400 text-xs mt-1">Requerido</p>
+                          )}
+                        </div>
+
+                        <div className="sm:col-span-1 flex justify-center pb-0.5">
+                          {propietariosFields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-400 hover:text-red-500 hover:bg-red-500/10 h-9 w-9 rounded-lg"
+                              onClick={() => removePropietario(idx)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {errors.propietarios?.root && (
+                      <p className="text-red-400 text-xs">{errors.propietarios.root.message}</p>
+                    )}
+                  </div>
+                </div>
                 <FieldGroup>
                   <FormField label="Ciudad Origen">
                     <Input placeholder="Ej: Sogamoso" {...register('ciudad_origen')} className={inputClass} />
@@ -620,6 +759,55 @@ export function ExpedienteForm({
                               />
                             </div>
                           </div>
+
+                          {/* Row 3: Attached PDF Document for this Quote */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border/40">
+                            <FormField label="Documento PDF de la Cotización">
+                              <div className="relative flex items-center justify-between border border-border bg-background rounded-lg px-3 h-10 overflow-hidden text-sm">
+                                <span className="truncate pr-4 text-muted-foreground">
+                                  {cotizacionFiles[fieldItem.id]
+                                    ? cotizacionFiles[fieldItem.id].name
+                                    : (watch(`cotizaciones.${idx}.nombre_archivo`) || 'Ningún archivo seleccionado')}
+                                </span>
+                                {(cotizacionFiles[fieldItem.id] || watch(`cotizaciones.${idx}.nombre_archivo`)) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCotizacionFiles((prev) => {
+                                        const copy = { ...prev };
+                                        delete copy[fieldItem.id];
+                                        return copy;
+                                      });
+                                      setValue(`cotizaciones.${idx}.nombre_archivo`, null);
+                                      setValue(`cotizaciones.${idx}.storage_path`, null);
+                                    }}
+                                    className="text-red-400 hover:text-red-500"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <label className="cursor-pointer font-semibold text-primary hover:underline">
+                                    Examinar...
+                                    <input
+                                      type="file"
+                                      accept=".pdf,application/pdf"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleCotizacionFileChange(fieldItem.id, idx, file);
+                                          e.target.value = ''; // Limpiar input
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            </FormField>
+                            <div className="text-xs text-muted-foreground flex items-center">
+                              Suba la cotización correspondiente en formato PDF (máx. 5MB).
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
@@ -729,14 +917,32 @@ export function ExpedienteForm({
             {step === 3 && (
               <>
                 <p className="text-sm font-semibold text-foreground">Información del Conductor</p>
-                <FieldGroup>
-                  <FormField label="Nombre del Conductor">
-                    <Input placeholder="Nombre completo" {...register('nombre_conductor')} className={inputClass} />
-                  </FormField>
-                  <FormField label="Identificación">
-                    <Input placeholder="CC o CE" {...register('id_conductor')} className={`${inputClass} number-font`} />
-                  </FormField>
-                </FieldGroup>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  <div className="md:col-span-5">
+                    <FormField label="Nombre del Conductor">
+                      <Input placeholder="Nombre completo" {...register('nombre_conductor')} className={inputClass} />
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-3">
+                    <FormField label="Tipo de Documento">
+                      <select
+                        {...register('tipo_documento_conductor')}
+                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="CC">CC - Cédula de Ciudadanía</option>
+                        <option value="CE">CE - Cédula de Extranjería</option>
+                        <option value="TI">TI - Tarjeta de Identidad</option>
+                        <option value="NIT">NIT - NIT</option>
+                        <option value="PP">PP - Pasaporte</option>
+                      </select>
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-4">
+                    <FormField label="Número de Documento">
+                      <Input placeholder="Número de doc" {...register('id_conductor')} className={`${inputClass} number-font`} />
+                    </FormField>
+                  </div>
+                </div>
                 <FieldGroup>
                   <FormField label="Celular">
                     <Input placeholder="3XX XXX XXXX" {...register('celular_conductor')} className={`${inputClass} number-font`} />

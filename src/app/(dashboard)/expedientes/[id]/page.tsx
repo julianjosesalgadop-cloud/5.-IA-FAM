@@ -262,7 +262,9 @@ export default function ExpedienteDetailPage() {
         ['No. Expediente:', expediente.numero_expediente, 'Estado:', expediente.estado],
         ['Fecha Incidente:', formatDate(expediente.fecha_incidente), 'Tipo Reclamación:', expediente.tipo_reclamacion],
         ['Vehículo Placa:', expediente.placa, 'Número Interno:', expediente.numero_interno || '—'],
-        ['Propietario:', expediente.propietario, 'Ruta:', `${expediente.ciudad_origen || '—'} a ${expediente.ciudad_destino || '—'}`],
+        ['Propietario(s):', expediente.propietarios && expediente.propietarios.length > 0
+          ? expediente.propietarios.map(p => `${p.nombre} (${p.tipo_documento}: ${p.numero_documento})`).join(', ')
+          : expediente.propietario, 'Ruta:', `${expediente.ciudad_origen || '—'} a ${expediente.ciudad_destino || '—'}`],
         ['Concepto:', expediente.concepto || '—', '', ''],
       ];
 
@@ -313,7 +315,7 @@ export default function ExpedienteDetailPage() {
       doc.text('RESPONSABILIDAD Y RECUPERACIÓN (RECOBROS)', 12, (doc as any).lastAutoTable.finalY + 10);
 
       const condData = [
-        ['Conductor:', expediente.nombre_conductor || '—', 'Cédula / ID:', expediente.id_conductor || '—'],
+        ['Conductor:', expediente.nombre_conductor || '—', 'Identificación:', (expediente.tipo_documento_conductor ? `${expediente.tipo_documento_conductor} ` : '') + (expediente.id_conductor || '—')],
         ['Celular:', expediente.celular_conductor || '—', 'Culpabilidad:', expediente.culpabilidad || 'Sin definir'],
         ['Descuento Conductor:', formatCOP(expediente.valor_descuento_conductor), 'Memo Descuento:', expediente.memorando_descuento || '—'],
         ['Recobro Vehículo:', `${formatCOP(expediente.valor_recobro_vehiculo)} (${expediente.porcentaje_recobro_vehiculo || 0}%)`, 'Recobro Empresa:', `${formatCOP(expediente.valor_recobro_empresa)} (${expediente.porcentaje_recobro_empresa || 0}%)`],
@@ -561,11 +563,21 @@ export default function ExpedienteDetailPage() {
                           {expediente.numero_interno || '—'}
                         </span>
                       </div>
-                      <div className="space-y-1 md:col-span-2">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Propietario Asociado</span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {expediente.propietario}
-                        </span>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Propietarios Asociados</span>
+                        {expediente.propietarios && expediente.propietarios.length > 0 ? (
+                          <div className="space-y-1">
+                            {expediente.propietarios.map((p, idx) => (
+                              <div key={idx} className="text-sm font-semibold text-foreground">
+                                {p.nombre} <span className="text-xs text-muted-foreground font-normal">({p.tipo_documento}: {p.numero_documento})</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm font-semibold text-foreground">
+                            {expediente.propietario}
+                          </span>
+                        )}
                       </div>
                       <div className="space-y-1 md:col-span-2">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider block">Ruta Asociada</span>
@@ -626,6 +638,7 @@ export default function ExpedienteDetailPage() {
                                   <th className="px-4 py-3 font-semibold text-center">Deducible (%)</th>
                                   <th className="px-4 py-3 font-semibold text-right">Valor Deducible</th>
                                   <th className="px-4 py-3 font-semibold text-right">Valor a Pagar</th>
+                                  <th className="px-4 py-3 font-semibold text-center">Documento</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-border/60">
@@ -640,6 +653,21 @@ export default function ExpedienteDetailPage() {
                                     <td className="px-4 py-3 text-center text-yellow-400 font-semibold">{cot.porcentaje_deducible}%</td>
                                     <td className="px-4 py-3 text-right font-mono text-yellow-500/95">{formatCOP(cot.valor_deducible)}</td>
                                     <td className="px-4 py-3 text-right font-mono text-green-400 font-bold">{formatCOP(cot.valor_a_pagar)}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      {cot.storage_path ? (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="text-primary hover:text-primary/85 h-8 w-8 rounded-lg"
+                                          onClick={() => handleDownloadDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
+                                          title="Descargar PDF Cotización"
+                                        >
+                                          <FileText className="w-4 h-4" />
+                                        </Button>
+                                      ) : (
+                                        <span className="text-muted-foreground text-xs">—</span>
+                                      )}
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -701,7 +729,10 @@ export default function ExpedienteDetailPage() {
                         </div>
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">Identificación</span>
-                          <span className="text-sm font-mono text-foreground">{expediente.id_conductor || '—'}</span>
+                          <span className="text-sm font-mono text-foreground">
+                            {expediente.tipo_documento_conductor ? `${expediente.tipo_documento_conductor} — ` : ''}
+                            {expediente.id_conductor || '—'}
+                          </span>
                         </div>
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">Celular</span>

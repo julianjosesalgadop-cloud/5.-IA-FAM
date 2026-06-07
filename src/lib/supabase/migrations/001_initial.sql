@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   placa TEXT NOT NULL,
   numero_interno TEXT,
   propietario TEXT NOT NULL,
+  propietarios JSONB DEFAULT '[]'::jsonb,
   tipo_reclamacion TEXT NOT NULL CHECK (tipo_reclamacion IN ('Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro')),
   ciudad_origen TEXT,
   ciudad_destino TEXT,
@@ -77,6 +78,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
 
   -- Conductor
   nombre_conductor TEXT,
+  tipo_documento_conductor TEXT CHECK (tipo_documento_conductor IN ('CC', 'CE', 'TI', 'NIT', 'PP')),
   id_conductor TEXT,
   celular_conductor TEXT,
   culpabilidad TEXT CHECK (culpabilidad IN ('Conductor', 'Tercero', 'Compartida', 'Sin definir')),
