@@ -305,9 +305,16 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const payloadWithUser = {
+      ...payload,
+      created_by: user?.id || null
+    };
+
     const { data, error } = await supabase
       .from('expedientes')
-      .insert(payload as any)
+      .insert(payloadWithUser as any)
       .select()
       .single();
 
@@ -316,6 +323,8 @@ export const dbService = {
     // Log audit in Supabase
     await supabase.from('auditoria').insert({
       expediente_id: (data as any).id,
+      usuario_id: user?.id || null,
+      usuario_email: user?.email || null,
       accion: 'CREAR',
       valor_nuevo: `Expediente ${(data as any).numero_expediente} creado.`,
     } as any);
@@ -357,6 +366,7 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { data: oldData } = await supabase.from('expedientes').select('*').eq('id', id).single();
 
     const { data, error } = await supabase
@@ -374,6 +384,8 @@ export const dbService = {
         .filter((key) => payload[key as keyof typeof payload] !== oldData[key as keyof typeof oldData] && key !== 'updated_at')
         .map((key) => ({
           expediente_id: id,
+          usuario_id: user?.id || null,
+          usuario_email: user?.email || null,
           accion: key === 'estado' ? 'ESTADO' : 'EDITAR',
           campo_modificado: key,
           valor_anterior: String(oldData[key as keyof typeof oldData] ?? ''),
@@ -401,6 +413,8 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     const { error } = await supabase
       .from('expedientes')
       .update({ deleted_at: new Date().toISOString() } as any)
@@ -410,6 +424,8 @@ export const dbService = {
 
     await supabase.from('auditoria').insert({
       expediente_id: id,
+      usuario_id: user?.id || null,
+      usuario_email: user?.email || null,
       accion: 'ELIMINAR',
       valor_nuevo: 'Expediente eliminado lógicamente.',
     } as any);
@@ -463,6 +479,7 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
     const storagePath = `${expedienteId}/${fileName}`;
@@ -483,6 +500,7 @@ export const dbService = {
         tipo_documento: tipoDocumento,
         storage_path: storagePath,
         tamanio_bytes: file.size,
+        created_by: user?.id || null,
       } as any)
       .select()
       .single();
@@ -491,6 +509,8 @@ export const dbService = {
 
     await supabase.from('auditoria').insert({
       expediente_id: expedienteId,
+      usuario_id: user?.id || null,
+      usuario_email: user?.email || null,
       accion: 'DOCUMENTO',
       valor_nuevo: `Documento subido: ${file.name} (${tipoDocumento})`,
     } as any);
@@ -509,6 +529,7 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Delete from Storage
     const { error: storageError } = await supabase.storage
@@ -527,6 +548,8 @@ export const dbService = {
 
     await supabase.from('auditoria').insert({
       expediente_id: expedienteId,
+      usuario_id: user?.id || null,
+      usuario_email: user?.email || null,
       accion: 'DOCUMENTO',
       valor_nuevo: `Documento eliminado. Path: ${storagePath}`,
     } as any);
