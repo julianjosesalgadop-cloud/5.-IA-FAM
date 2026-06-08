@@ -46,7 +46,7 @@ BEGIN
   EXECUTE 'SELECT nextval($1)' INTO seq_num USING seq_name;
   RETURN 'FAM-' || year_num || '-' || LPAD(seq_num::TEXT, 3, '0');
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =====================
 -- TABLA: expedientes
