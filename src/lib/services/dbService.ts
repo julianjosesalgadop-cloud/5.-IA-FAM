@@ -337,14 +337,25 @@ export const dbService = {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
       if (idx === -1) throw new Error('Expediente no encontrado');
-
+ 
       const old = list[idx];
+
+      if (old.estado === 'Aprobado' || old.estado === 'Rechazado') {
+        throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
+      }
+      if (old.estado === 'Revisado') {
+        const updatedKeys = Object.keys(payload).filter(k => k !== 'updated_at');
+        if (updatedKeys.length > 1 || (updatedKeys.length === 1 && updatedKeys[0] !== 'estado')) {
+          throw new Error('En estado Revisado solo se permite cambiar el estado.');
+        }
+      }
+
       const updated: Expediente = {
         ...old,
         ...payload,
         updated_at: new Date().toISOString(),
       } as Expediente;
-
+ 
       list[idx] = updated;
       setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
 
@@ -368,6 +379,18 @@ export const dbService = {
     const supabase = createBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
     const { data: oldData } = await supabase.from('expedientes').select('*').eq('id', id).single();
+ 
+    if (oldData) {
+      if (oldData.estado === 'Aprobado' || oldData.estado === 'Rechazado') {
+        throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
+      }
+      if (oldData.estado === 'Revisado') {
+        const updatedKeys = Object.keys(payload).filter(k => k !== 'updated_at');
+        if (updatedKeys.length > 1 || (updatedKeys.length === 1 && updatedKeys[0] !== 'estado')) {
+          throw new Error('En estado Revisado solo se permite cambiar el estado.');
+        }
+      }
+    }
 
     const { data, error } = await supabase
       .from('expedientes')
@@ -405,6 +428,10 @@ export const dbService = {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
       if (idx !== -1) {
+        const old = list[idx];
+        if (old.estado !== 'Pendiente') {
+          throw new Error('Solo se pueden eliminar expedientes en estado Pendiente.');
+        }
         list[idx].deleted_at = new Date().toISOString();
         setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
         logMockAudit(id, 'ELIMINAR', 'deleted_at', null, list[idx].deleted_at);
@@ -414,7 +441,12 @@ export const dbService = {
 
     const supabase = createBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const { data: oldData } = await supabase.from('expedientes').select('estado').eq('id', id).single();
 
+    if (oldData && oldData.estado !== 'Pendiente') {
+      throw new Error('Solo se pueden eliminar expedientes en estado Pendiente.');
+    }
+ 
     const { error } = await supabase
       .from('expedientes')
       .update({ deleted_at: new Date().toISOString() } as any)
@@ -455,6 +487,12 @@ export const dbService = {
     tipoDocumento: string
   ): Promise<Documento> => {
     if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const exp = list.find((e) => e.id === expedienteId);
+      if (exp && exp.estado !== 'Pendiente') {
+        throw new Error('Solo se pueden subir documentos a expedientes en estado Pendiente.');
+      }
+
       const docs = getLocalData<Documento>(MOCK_STORAGE_KEYS.DOCUMENTOS, []);
       const user = getMockUser();
 
@@ -479,6 +517,16 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: exp } = await supabase
+      .from('expedientes')
+      .select('estado')
+      .eq('id', expedienteId)
+      .single();
+
+    if (exp && exp.estado !== 'Pendiente') {
+      throw new Error('Solo se pueden subir documentos a expedientes en estado Pendiente.');
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
@@ -520,6 +568,12 @@ export const dbService = {
 
   deleteDocumento: async (docId: string, storagePath: string, expedienteId: string): Promise<void> => {
     if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const exp = list.find((e) => e.id === expedienteId);
+      if (exp && exp.estado !== 'Pendiente') {
+        throw new Error('Solo se pueden eliminar documentos de expedientes en estado Pendiente.');
+      }
+
       const docs = getLocalData<Documento>(MOCK_STORAGE_KEYS.DOCUMENTOS, []);
       const doc = docs.find((d) => d.id === docId);
       const filtered = docs.filter((d) => d.id !== docId);
@@ -529,6 +583,16 @@ export const dbService = {
     }
 
     const supabase = createBrowserClient();
+    const { data: exp } = await supabase
+      .from('expedientes')
+      .select('estado')
+      .eq('id', expedienteId)
+      .single();
+
+    if (exp && exp.estado !== 'Pendiente') {
+      throw new Error('Solo se pueden eliminar documentos de expedientes en estado Pendiente.');
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
 
     // Delete from Storage

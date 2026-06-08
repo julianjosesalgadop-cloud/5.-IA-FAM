@@ -169,12 +169,33 @@ export function ExpedienteForm({
   onSuccess 
 }: { 
   id?: string; 
-  defaultValues?: Partial<ExpedienteFormData>; 
+  defaultValues?: Partial<ExpedienteFormData> & { estado?: string }; 
   onSuccess?: () => void; 
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (id && defaultValues?.estado && defaultValues.estado !== 'Pendiente') {
+    return (
+      <Card className="max-w-4xl mx-auto border-destructive bg-destructive/5 p-6 text-center">
+        <CardHeader>
+          <CardTitle className="text-destructive font-bold text-xl">Acceso Denegado</CardTitle>
+          <CardDescription className="text-muted-foreground mt-2">
+            Este expediente se encuentra en estado <strong className="text-foreground">{defaultValues.estado}</strong> y no puede ser modificado.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="mt-4">
+          <Button onClick={() => {
+            if (onSuccess) onSuccess();
+            else router.push(`/expedientes/${id}`);
+          }} variant="outline">
+            Volver al Detalle
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Estados para archivos adjuntos durante la creación/edición
   const [archivosPaso1, setArchivosPaso1] = useState<{ id: string; file: File; tipo: string }[]>([]);

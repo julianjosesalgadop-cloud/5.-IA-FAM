@@ -456,7 +456,7 @@ export default function ExpedienteDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           {!isEditMode ? (
             <>
-              {currentUser.rol !== 'consultor' && (
+              {currentUser.rol !== 'consultor' && expediente.estado === 'Pendiente' && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Editar Caso
@@ -471,23 +471,30 @@ export default function ExpedienteDetailPage() {
               {currentUser.rol !== 'consultor' && (
                 <div className="flex items-center gap-1.5 ml-2 border border-border rounded-lg p-1 bg-secondary/20">
                   <span className="text-xs text-muted-foreground px-2">Estado:</span>
-                  {['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
-                        expediente.estado === status
-                          ? 'bg-primary text-white shadow-sm'
-                          : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
+                  {['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'].map((status) => {
+                    const isLocked = expediente.estado === 'Aprobado' || expediente.estado === 'Rechazado';
+                    const isActive = expediente.estado === status;
+                    return (
+                      <button
+                        key={status}
+                        disabled={isLocked}
+                        onClick={() => handleStatusChange(status)}
+                        className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                          isActive
+                            ? 'bg-primary text-white shadow-sm'
+                            : isLocked
+                            ? 'text-muted-foreground/30 cursor-not-allowed'
+                            : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
-              {currentUser.rol === 'admin' && (
+              {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
                 <Button variant="destructive" size="sm" onClick={handleDelete}>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Eliminar Lógico
@@ -928,7 +935,7 @@ export default function ExpedienteDetailPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Upload section */}
-                    {currentUser.rol !== 'consultor' && (
+                    {currentUser.rol !== 'consultor' && expediente.estado === 'Pendiente' && (
                       <form onSubmit={handleUpload} className="p-4 rounded-xl border border-dashed border-border bg-secondary/5 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex-1 min-w-[200px] space-y-1.5">
@@ -1015,7 +1022,7 @@ export default function ExpedienteDetailPage() {
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
-                                {currentUser.rol === 'admin' && (
+                                {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
                                   <Button
                                     variant="ghost"
                                     size="icon-sm"
