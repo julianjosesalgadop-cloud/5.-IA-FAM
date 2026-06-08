@@ -348,9 +348,10 @@ export function ExpedienteForm({
         };
       });
 
-      const finalCausaRaiz = data.causa_raiz === 'Otro' ? (data.causa_raiz_otra || 'Otro') : data.causa_raiz;
+      const { causa_raiz_otra, ...restData } = data;
+      const finalCausaRaiz = data.causa_raiz === 'Otro' ? (causa_raiz_otra || 'Otro') : data.causa_raiz;
       const finalData = {
-        ...data,
+        ...restData,
         causa_raiz: finalCausaRaiz,
         propietario: data.propietarios && data.propietarios.length > 0
           ? data.propietarios.map((p) => p.nombre).join(', ')
