@@ -455,7 +455,15 @@ export function ExpedienteForm({
   const inputClass = 'bg-background border-border focus:ring-primary';
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl mx-auto space-y-6">
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+          e.preventDefault();
+        }
+      }}
+      className="max-w-4xl mx-auto space-y-6"
+    >
       {/* Step indicator */}
       <div className="flex items-center gap-2">
         {STEPS.map((s, i) => (
