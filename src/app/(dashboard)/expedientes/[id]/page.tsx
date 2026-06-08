@@ -265,7 +265,7 @@ export default function ExpedienteDetailPage() {
         ['Propietario(s):', expediente.propietarios && expediente.propietarios.length > 0
           ? expediente.propietarios.map(p => `${p.nombre} (${p.tipo_documento}: ${p.numero_documento})`).join(', ')
           : expediente.propietario, 'Ruta:', `${expediente.ciudad_origen || '—'} a ${expediente.ciudad_destino || '—'}`],
-        ['Concepto:', expediente.concepto || '—', '', ''],
+        ['Concepto:', { content: expediente.concepto || '—', colSpan: 3 }, '', ''],
       ];
 
       autoTable(doc, {
@@ -275,9 +275,9 @@ export default function ExpedienteDetailPage() {
         styles: { fontSize: 9, cellPadding: 2 },
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 35 },
-          1: { cellWidth: 60 },
+          1: { cellWidth: 58 },
           2: { fontStyle: 'bold', cellWidth: 35 },
-          3: { cellWidth: 60 },
+          3: { cellWidth: 58 },
         },
       });
 
@@ -365,9 +365,9 @@ export default function ExpedienteDetailPage() {
         body: condData,
         styles: { fontSize: 9, cellPadding: 2 },
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 45 },
+          0: { fontStyle: 'bold', cellWidth: 43 },
           1: { cellWidth: 50 },
-          2: { fontStyle: 'bold', cellWidth: 45 },
+          2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
       });
@@ -380,7 +380,7 @@ export default function ExpedienteDetailPage() {
 
       const comData = [
         ['Fecha de Comité:', formatDate(expediente.fecha_comite), 'Causa Raíz:', expediente.causa_raiz || '—'],
-        ['Observaciones Comité:', expediente.observaciones_comite || '—', '', ''],
+        ['Observaciones Comité:', { content: expediente.observaciones_comite || '—', colSpan: 3 }, '', ''],
         ['Autorizado Por:', expediente.autorizado_por || '—', 'Cargo Autorizador:', expediente.cargo_autorizador || '—'],
         ['Fecha Autorización:', formatDate(expediente.fecha_autorizacion), 'Memorando de Pago:', expediente.memorando_pago_nombre || '—'],
       ];
@@ -391,8 +391,10 @@ export default function ExpedienteDetailPage() {
         body: comData,
         styles: { fontSize: 9, cellPadding: 2.5 },
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 45 },
-          1: { cellWidth: 140 },
+          0: { fontStyle: 'bold', cellWidth: 43 },
+          1: { cellWidth: 50 },
+          2: { fontStyle: 'bold', cellWidth: 43 },
+          3: { cellWidth: 50 },
         },
       });
 
@@ -456,7 +458,7 @@ export default function ExpedienteDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           {!isEditMode ? (
             <>
-              {currentUser.rol !== 'consultor' && expediente.estado === 'Pendiente' && (
+              {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Editar Caso
@@ -468,7 +470,7 @@ export default function ExpedienteDetailPage() {
                 Descargar PDF
               </Button>
 
-              {currentUser.rol !== 'consultor' && (
+              {currentUser.rol === 'admin' && (
                 <div className="flex items-center gap-1.5 ml-2 border border-border rounded-lg p-1 bg-secondary/20">
                   <span className="text-xs text-muted-foreground px-2">Estado:</span>
                   {['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'].map((status) => {
@@ -935,7 +937,7 @@ export default function ExpedienteDetailPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Upload section */}
-                    {currentUser.rol !== 'consultor' && expediente.estado === 'Pendiente' && (
+                    {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
                       <form onSubmit={handleUpload} className="p-4 rounded-xl border border-dashed border-border bg-secondary/5 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex-1 min-w-[200px] space-y-1.5">
