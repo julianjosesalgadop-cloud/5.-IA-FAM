@@ -353,6 +353,8 @@ export function ExpedienteForm({
       const finalData = {
         ...restData,
         causa_raiz: finalCausaRaiz,
+        fecha_comite: data.fecha_comite ? data.fecha_comite : null,
+        fecha_autorizacion: data.fecha_autorizacion ? data.fecha_autorizacion : null,
         propietario: data.propietarios && data.propietarios.length > 0
           ? data.propietarios.map((p) => p.nombre).join(', ')
           : '',
@@ -442,8 +444,8 @@ export function ExpedienteForm({
       } else {
         router.push('/expedientes');
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("Error al guardar el expediente:", error?.message || error?.details || error);
       toast.error('Error al guardar el expediente');
     } finally {
       setIsSubmitting(false);
