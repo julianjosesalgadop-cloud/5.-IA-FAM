@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDateTime } from '@/lib/utils';
 import type { AuditoriaEntry } from '@/types/database';
-import { dbService } from '@/lib/services/dbService';
+import { dbService, getMockUser } from '@/lib/services/dbService';
 import { toast } from 'sonner';
 
 const ACCION_COLORS: Record<string, string> = {
@@ -30,9 +30,23 @@ const ACCION_LABELS: Record<string, string> = {
 };
 
 export function AuditoriaView() {
+  const [currentUser] = useState(() => getMockUser());
   const [logs, setLogs] = useState<AuditoriaEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  if (currentUser.rol !== 'admin') {
+    return (
+      <Card className="border-destructive bg-destructive/5 p-6 text-center max-w-4xl">
+        <CardContent className="pt-6">
+          <h3 className="text-destructive font-bold text-lg font-semibold">Acceso Denegado</h3>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Solo los administradores tienen acceso a los registros de auditoría del sistema.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const fetchLogs = async () => {
     setLoading(true);

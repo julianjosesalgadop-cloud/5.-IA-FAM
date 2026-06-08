@@ -236,6 +236,34 @@ export function setMockUser(rol: RolUsuario, nombre: string = '') {
   return user;
 }
 
+async function verifyRole(allowedRoles: RolUsuario[]): Promise<void> {
+  if (IS_MOCK_MODE) {
+    const user = getMockUser();
+    if (!allowedRoles.includes(user.rol)) {
+      throw new Error(`Permisos insuficientes. Se requiere rol: ${allowedRoles.join(', ')}`);
+    }
+    return;
+  }
+
+  const supabase = createActualBrowserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Usuario no autenticado.');
+  }
+
+  const { data } = await supabase
+    .from('perfiles')
+    .select('rol')
+    .eq('id', user.id)
+    .single();
+  const perfil = data as any;
+
+  const role = (perfil?.rol || 'consultor') as RolUsuario;
+  if (!allowedRoles.includes(role)) {
+    throw new Error(`Permisos insuficientes. Se requiere rol: ${allowedRoles.join(', ')}`);
+  }
+}
+
 // --- CORE DB SERVICE EXPORT ---
 export const dbService = {
   isMockMode: () => IS_MOCK_MODE,
@@ -280,6 +308,7 @@ export const dbService = {
   },
 
   createExpediente: async (payload: Omit<Expediente, 'id' | 'numero_expediente' | 'created_at' | 'updated_at' | 'created_by' | 'deleted_at'>): Promise<Expediente> => {
+    await verifyRole(['admin', 'analista']);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const user = getMockUser();
@@ -333,6 +362,7 @@ export const dbService = {
   },
 
   updateExpediente: async (id: string, payload: Partial<Expediente>): Promise<Expediente> => {
+    await verifyRole(['admin', 'analista']);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
@@ -424,6 +454,7 @@ export const dbService = {
   },
 
   deleteExpedienteLogical: async (id: string): Promise<void> => {
+    await verifyRole(['admin']);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
@@ -486,6 +517,7 @@ export const dbService = {
     file: File,
     tipoDocumento: string
   ): Promise<Documento> => {
+    await verifyRole(['admin', 'analista']);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const exp = list.find((e) => e.id === expedienteId);
@@ -567,6 +599,7 @@ export const dbService = {
   },
 
   deleteDocumento: async (docId: string, storagePath: string, expedienteId: string): Promise<void> => {
+    await verifyRole(['admin']);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const exp = list.find((e) => e.id === expedienteId);

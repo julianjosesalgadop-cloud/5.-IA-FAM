@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Bell, Sun, Moon, Search, User } from 'lucide-react';
+import { Bell, Sun, Moon, Search, User, Menu } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -15,13 +15,25 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-6 border-b border-border glass dark:bg-dark-800/60">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-border glass dark:bg-dark-800/60">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* Hamburger menu for mobile */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => window.dispatchEvent(new Event('toggle-sidebar'))}
+          className="md:hidden text-muted-foreground hover:text-foreground h-9 w-9"
+          id="header-mobile-toggle"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
         <div>
-          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          <h1 className="text-base sm:text-lg font-semibold text-foreground truncate max-w-[160px] sm:max-w-none" title={title}>
+            {title}
+          </h1>
+          {subtitle && <p className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[140px] sm:max-w-none">{subtitle}</p>}
         </div>
-        {action && <div className="ml-2">{action}</div>}
+        {action && <div className="ml-1 sm:ml-2">{action}</div>}
       </div>
 
       <div className="flex items-center gap-2">

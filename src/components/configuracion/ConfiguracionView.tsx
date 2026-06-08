@@ -17,6 +17,24 @@ export function ConfiguracionView() {
   const [catalogos, setCatalogos] = useState<string[]>([]);
   const [newCatalogo, setNewCatalogo] = useState('');
 
+  if (currentUser.rol !== 'admin') {
+    return (
+      <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center">
+        <CardHeader>
+          <CardTitle className="text-destructive font-bold text-xl">Acceso Denegado</CardTitle>
+          <CardDescription className="text-muted-foreground mt-2">
+            No tiene permisos para acceder al módulo de configuración.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="mt-4">
+          <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
+            Volver al Dashboard
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Load custom catalog (causa raiz) from localStorage so it persists
   useEffect(() => {
     const stored = localStorage.getItem('fam_config_causas');

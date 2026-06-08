@@ -50,5 +50,25 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (user && isDashboard) {
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/configuracion') ||
+      request.nextUrl.pathname.startsWith('/auditoria');
+
+    if (isAdminRoute) {
+      const { data } = await supabase
+        .from('perfiles')
+        .select('rol')
+        .eq('id', user.id)
+        .single();
+      const perfil = data as any;
+
+      if (!perfil || perfil.rol !== 'admin') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/dashboard';
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return supabaseResponse;
 }
