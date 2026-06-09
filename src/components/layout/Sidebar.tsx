@@ -8,6 +8,7 @@ import { NAV_ITEMS } from '@/lib/constants';
 import {
   LayoutDashboard,
   FolderOpen,
+  PlusCircle,
   BarChart3,
   Settings,
   Shield,
@@ -31,6 +32,7 @@ const NAV_GROUPS = [
     title: 'Operaciones',
     items: [
       { href: '/expedientes', label: 'Expedientes', icon: 'FolderOpen', roles: ['admin', 'analista', 'consultor'] },
+      { href: '/expedientes/nuevo', label: 'Nuevo Expediente', icon: 'PlusCircle', roles: ['admin', 'analista'] },
       { href: '/reportes', label: 'Reportes', icon: 'BarChart3', roles: ['admin', 'analista', 'consultor'] },
     ],
   },
@@ -46,6 +48,7 @@ const NAV_GROUPS = [
 const ICONS: Record<string, React.ElementType> = {
   LayoutDashboard,
   FolderOpen,
+  PlusCircle,
   BarChart3,
   Settings,
   Shield,
