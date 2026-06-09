@@ -8,9 +8,18 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
-  title: { default: 'FAM Control — Flota Sugamuxi S.A.', template: '%s | FAM Control' },
-  description: 'Sistema de Gestión de Expedientes del Fondo de Auxilio Mutuo — Flota Sugamuxi S.A.',
+  title: {
+    default: 'FAM Control – Flota Sugamuxi S.A.',
+    template: '%s | FAM Control'
+  },
+  description: 'Sistema de Gestión de Expedientes del Fondo de Auxilio Mutuo – Flota Sugamuxi S.A.',
   keywords: ['FAM', 'Flota Sugamuxi', 'expedientes', 'siniestros', 'seguridad vial'],
+
+  icons: {
+    icon: '/favicon.ico.png',
+    shortcut: '/favicon.ico.png',
+    apple: '/favicon.ico.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
