@@ -17,22 +17,40 @@ export function formatCOP(value: number | null | undefined): string {
 
 export function formatDate(date: string | null | undefined): string {
   if (!date) return '—';
+  
+  // If the date string has a time part, don't append T00:00:00
+  const cleanDate = date.includes('T') || date.includes(' ') || date.length > 10
+    ? new Date(date)
+    : new Date(date + 'T00:00:00');
+  
+  if (isNaN(cleanDate.getTime())) {
+    const fallbackDate = new Date(date);
+    if (isNaN(fallbackDate.getTime())) return '—';
+    return new Intl.DateTimeFormat('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(fallbackDate);
+  }
+
   return new Intl.DateTimeFormat('es-CO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(new Date(date + 'T00:00:00'));
+  }).format(cleanDate);
 }
 
 export function formatDateTime(date: string | null | undefined): string {
   if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('es-CO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(d);
 }
 
 export function calcDeducible(valorNegociado: number, porcentaje: number): number {
