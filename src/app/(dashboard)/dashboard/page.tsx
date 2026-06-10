@@ -84,7 +84,7 @@ export default function DashboardPage() {
     <>
       <Header 
         title="Dashboard Ejecutivo" 
-        subtitle="FAM — Fondo de Auxilio Mutuo" 
+        subtitle="SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo" 
         action={
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />

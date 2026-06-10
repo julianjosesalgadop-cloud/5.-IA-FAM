@@ -41,7 +41,7 @@ export default function LoginPage() {
       if (isMock) {
         if (data.email.toLowerCase().includes('admin')) {
           role = 'admin';
-          name = 'Administrador FAM';
+          name = 'Administrador SIGFAM';
         } else if (data.email.toLowerCase().includes('analista')) {
           role = 'analista';
           name = 'Analista de Casos';
@@ -95,7 +95,7 @@ export default function LoginPage() {
         setMockUser(role, name);
       }
 
-      toast.success('Bienvenido a FAM Control', {
+      toast.success('Bienvenido a SIGFAM', {
         description: `Ingresaste como ${name} (${role})`,
       });
 
@@ -122,9 +122,9 @@ export default function LoginPage() {
               <Bus className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">FAM Control</h1>
+           <h1 className="text-2xl font-bold text-foreground">SIGFAM</h1>
           <p className="text-sm text-muted-foreground mt-1">Flota Sugamuxi S.A.</p>
-          <p className="text-xs text-muted-foreground">Fondo de Auxilio Mutuo</p>
+          <p className="text-xs text-muted-foreground">Sistema Integrado de Gestión del Fondo de Auxilio Mutuo</p>
         </CardHeader>
 
         <CardContent className="px-8 pb-8 pt-6">

@@ -269,7 +269,7 @@ export default function ExpedienteDetailPage() {
       doc.setFontSize(10);
       doc.setFont('Helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.text('Fondo de Auxilio Mutuo (FAM) — Nit. 891.800.201-1', 36, 21);
+      doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
       doc.text('Reporte Oficial de Expediente de Reclamación', 36, 26);
 
       // Line separator
@@ -426,10 +426,10 @@ export default function ExpedienteDetailPage() {
       // Footer signature
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
-      doc.text('Generado automáticamente por el Sistema FAM Control de Flota Sugamuxi S.A.', 12, 280);
+      doc.text('Generado automáticamente por el Sistema SIGFAM de Flota Sugamuxi S.A.', 12, 280);
       doc.text(`Fecha y hora de generación: ${new Date().toLocaleString()}`, 12, 284);
 
-      doc.save(`${expediente.numero_expediente}_FAM_Reporte.pdf`);
+      doc.save(`${expediente.numero_expediente}_SIGFAM_Reporte.pdf`);
       toast.success('Reporte PDF descargado');
     } catch (err) {
       console.error(err);
@@ -767,7 +767,7 @@ export default function ExpedienteDetailPage() {
                     )}
 
                     <div className="rounded-xl border border-border p-5 bg-secondary/10 space-y-3">
-                      <h4 className="text-sm font-bold text-foreground">Cálculo de Cobertura FAM</h4>
+                      <h4 className="text-sm font-bold text-foreground">Cálculo de Cobertura SIGFAM</h4>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Valor Acordado Negociación:</span>
                         <span className="number-font text-foreground font-semibold">{formatCOP(expediente.valor_negociado)}</span>

@@ -131,7 +131,7 @@ export function AuditoriaView() {
                             {ACCION_LABELS[entry.accion || ''] || entry.accion}
                           </Badge>
                           {entry.expediente_id && (
-                            <span className="text-xs font-mono text-primary font-bold">FAM Case Ref: {entry.expediente_id}</span>
+                            <span className="text-xs font-mono text-primary font-bold">SIGFAM Case Ref: {entry.expediente_id}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

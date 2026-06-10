@@ -91,7 +91,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <p className="text-sm font-bold text-foreground leading-tight">FAM Control</p>
+                <p className="text-sm font-bold text-foreground leading-tight">SIGFAM</p>
                 <p className="text-xs text-muted-foreground leading-tight">Flota Sugamuxi S.A.</p>
               </motion.div>
             )}

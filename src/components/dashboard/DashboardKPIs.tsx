@@ -69,7 +69,7 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
     {
       label: 'Valor Total Aprobado',
       value: formatCOP(totalApprovedVal),
-      change: 'Desembolsado FAM',
+      change: 'Desembolsado SIGFAM',
       changeType: 'positive' as const,
       icon: DollarSign,
       color: 'text-gold-500',

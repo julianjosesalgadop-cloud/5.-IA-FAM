@@ -79,8 +79,8 @@ export function ExpedientesList() {
 
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Expedientes FAM');
-      XLSX.writeFile(wb, `FAM_Control_Expedientes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, 'Expedientes SIGFAM');
+      XLSX.writeFile(wb, `SIGFAM_Expedientes_${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success('Reporte Excel generado correctamente');
     } catch (err) {
       console.error(err);

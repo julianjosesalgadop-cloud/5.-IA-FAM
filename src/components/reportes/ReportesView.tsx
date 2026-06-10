@@ -120,7 +120,7 @@ export function ReportesView() {
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Reporte Filtrado');
-      XLSX.writeFile(wb, `FAM_Reporte_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `SIGFAM_Reporte_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success('Reporte Excel exportado');
     } catch (err) {
       console.error(err);
@@ -171,7 +171,7 @@ export function ReportesView() {
       doc.setFontSize(10);
       doc.setFont('Helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.text('Fondo de Auxilio Mutuo (FAM) — Nit. 891.800.201-1', 36, 21);
+      doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
       doc.text(`Reporte Consolidado — Generado el ${new Date().toLocaleDateString()}`, 36, 26);
 
       // Line
@@ -223,9 +223,9 @@ export function ReportesView() {
 
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
-      doc.text('Página 1 de 1 — Reportes FAM Control Flota Sugamuxi S.A.', 12, 285);
+      doc.text('Página 1 de 1 — Reportes SIGFAM — Flota Sugamuxi S.A.', 12, 285);
 
-      doc.save(`FAM_Consolidado_Reporte.pdf`);
+      doc.save(`SIGFAM_Consolidado_Reporte.pdf`);
       toast.success('Reporte consolidado PDF descargado');
     } catch (err) {
       console.error(err);

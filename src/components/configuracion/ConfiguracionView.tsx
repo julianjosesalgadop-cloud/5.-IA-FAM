@@ -140,7 +140,7 @@ export function ConfiguracionView() {
           <CardContent>
             <div className="space-y-3">
               {[
-                { name: 'Administrador FAM', email: 'admin@flotasugamuxi.co', rol: 'admin' as RolUsuario },
+                { name: 'Administrador SIGFAM', email: 'admin@flotasugamuxi.co', rol: 'admin' as RolUsuario },
                 { name: 'Analista de Casos', email: 'analista@flotasugamuxi.co', rol: 'analista' as RolUsuario },
                 { name: 'Consultor Invitado', email: 'consultor@flotasugamuxi.co', rol: 'consultor' as RolUsuario },
               ].map((user) => (
@@ -217,7 +217,7 @@ export function ConfiguracionView() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              ['Aplicación', 'FAM Control v0.1.0'],
+              ['Aplicación', 'SIGFAM v0.1.0'],
               ['Empresa', 'Flota Sugamuxi S.A.'],
               ['Base de datos', 'Supabase (PostgreSQL)'],
               ['Autenticación', 'Supabase Auth'],

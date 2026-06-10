@@ -215,19 +215,19 @@ function logMockAudit(
 // Mock active user profile
 export function getMockUser() {
   if (typeof window === 'undefined') {
-    return { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador FAM', rol: 'admin' as RolUsuario };
+    return { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador SIGFAM', rol: 'admin' as RolUsuario };
   }
   const userStr = localStorage.getItem(MOCK_STORAGE_KEYS.USER);
   if (userStr) return JSON.parse(userStr);
   
-  const defaultUser = { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador FAM', rol: 'admin' as RolUsuario };
+  const defaultUser = { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador SIGFAM', rol: 'admin' as RolUsuario };
   localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(defaultUser));
   return defaultUser;
 }
 
 export function setMockUser(rol: RolUsuario, nombre: string = '') {
   const email = `${rol}@flotasugamuxi.co`;
-  const name = nombre || (rol === 'admin' ? 'Administrador FAM' : rol === 'analista' ? 'Analista de Casos' : 'Consultor Invitado');
+  const name = nombre || (rol === 'admin' ? 'Administrador SIGFAM' : rol === 'analista' ? 'Analista de Casos' : 'Consultor Invitado');
   const user = { id: 'mock-user-id', email, nombre: name, rol };
   localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(user));
   if (typeof window !== 'undefined') {
