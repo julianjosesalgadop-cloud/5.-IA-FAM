@@ -26,21 +26,24 @@ interface DashboardChartsProps {
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
-  backgroundColor: 'hsl(222, 39%, 12%)',
-  border: '1px solid hsl(222, 26%, 22%)',
+  backgroundColor: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
   borderRadius: '8px',
-  color: 'hsl(210, 40%, 95%)',
+  color: 'hsl(var(--foreground))',
 };
 
 function CustomTooltipBar({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     return (
-      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs">
+      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((p: any) => (
-          <p key={p.dataKey} style={{ color: p.color }}>
-            {p.name === 'valor' ? `Valor Aprobado: ${formatCOP(p.value)}` : `${p.value} expedientes`}
-          </p>
+          <div key={p.name} className="flex items-center gap-2 text-foreground">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+            <span className="font-medium">
+              {p.name === 'valor' ? 'Valor Aprobado:' : ''} {p.name === 'valor' ? formatCOP(p.value) : `${p.value} expedientes`}
+            </span>
+          </div>
         ))}
       </div>
     );
@@ -51,13 +54,16 @@ function CustomTooltipBar({ active, payload, label }: any) {
 function CustomTooltipFinanzas({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     return (
-      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1">
+      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((p: any) => (
-          <p key={p.dataKey} className="flex justify-between gap-4" style={{ color: p.color }}>
-            <span className="capitalize">{p.name}:</span>
-            <span className="font-semibold">{formatCOP(p.value)}</span>
-          </p>
+          <div key={p.dataKey} className="flex justify-between gap-4 text-foreground">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+              <span className="capitalize font-medium">{p.name}:</span>
+            </div>
+            <span className="font-semibold number-font">{formatCOP(p.value)}</span>
+          </div>
         ))}
       </div>
     );
@@ -173,9 +179,9 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       <stop offset="95%" stopColor="hsl(217,91%,55%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="mes" tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<CustomTooltipBar />} />
                   <Area
                     type="monotone"
@@ -190,7 +196,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       dataKey="expedientes"
                       position="top"
                       formatter={(v: number) => v > 0 ? v : ''}
-                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 10, fontWeight: 600 }}
+                      style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                     />
                   </Area>
                 </AreaChart>
@@ -227,16 +233,13 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       paddingAngle={3}
                       dataKey="value"
                       label={({ value }) => value}
-                      labelLine={{ stroke: 'rgba(255, 255, 255, 0.3)', strokeWidth: 1 }}
+                      labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
                     >
                       {tipoData.map((entry, index) => (
                         <Cell key={index} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      contentStyle={CUSTOM_TOOLTIP_STYLE}
-                      formatter={(val: number) => [`${val} expedientes`, '']}
-                    />
+                    <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} />
                     <Legend
                       iconSize={8}
                       formatter={(value) => (
@@ -267,10 +270,10 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
             <div className="h-[220px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData} barSize={20} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="mes" tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis
-                    tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
@@ -281,7 +284,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       dataKey="valor"
                       position="top"
                       formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
-                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 10, fontWeight: 600 }}
+                      style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                     />
                     {monthlyData.map((entry, i) => (
                       <Cell
@@ -352,10 +355,10 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
             <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData} barGap={4} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="mes" tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis
-                    tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
@@ -372,7 +375,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       dataKey="cotizado"
                       position="top"
                       formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
-                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 8, fontWeight: 500 }}
+                      style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
                     />
                   </Bar>
                   <Bar dataKey="negociado" name="negociado" fill="hsl(43, 96%, 52%)" radius={[2, 2, 0, 0]}>
@@ -380,7 +383,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       dataKey="negociado"
                       position="top"
                       formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
-                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 8, fontWeight: 500 }}
+                      style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
                     />
                   </Bar>
                   <Bar dataKey="aprobado" name="aprobado" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]}>
@@ -388,7 +391,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       dataKey="aprobado"
                       position="top"
                       formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
-                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 8, fontWeight: 500 }}
+                      style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
                     />
                   </Bar>
                 </BarChart>
@@ -425,16 +428,13 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       paddingAngle={3}
                       dataKey="value"
                       label={({ value }) => value}
-                      labelLine={{ stroke: 'rgba(255, 255, 255, 0.3)', strokeWidth: 1 }}
+                      labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
                     >
                       {culpabilidadData.map((entry, index) => (
                         <Cell key={index} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      contentStyle={CUSTOM_TOOLTIP_STYLE}
-                      formatter={(val: number) => [`${val} incidentes`, '']}
-                    />
+                    <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} />
                     <Legend
                       iconSize={8}
                       formatter={(value) => (
@@ -472,18 +472,15 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                     data={causaData}
                     margin={{ left: 50, right: 20, top: 10, bottom: 10 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                    <XAxis type="number" tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(210,40%,95%)', fontSize: 11 }} axisLine={false} tickLine={false} width={160} />
-                    <Tooltip
-                      contentStyle={CUSTOM_TOOLTIP_STYLE}
-                      formatter={(val: number) => [`${val} incidentes`, 'Cantidad']}
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} axisLine={false} tickLine={false} width={160} />
+                    <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} />
                     <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
                       <LabelList
                         dataKey="value"
                         position="right"
-                        style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 10, fontWeight: 600 }}
+                        style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                       />
                     </Bar>
                   </BarChart>
