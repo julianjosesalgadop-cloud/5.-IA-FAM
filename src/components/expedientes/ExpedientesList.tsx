@@ -200,7 +200,9 @@ export function ExpedientesList() {
                       {formatDate(exp.fecha_incidente)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-mono font-semibold text-foreground">{exp.placa}</span>
+                      <span className="font-mono font-semibold text-foreground">
+                        ({exp.numero_interno || '—'}-{exp.placa})
+                      </span>
                     </td>
                     <td className="px-4 py-3 max-w-[180px] truncate text-foreground">
                       {exp.propietario}
