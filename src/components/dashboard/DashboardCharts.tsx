@@ -14,6 +14,7 @@ import {
   Legend,
   Area,
   AreaChart,
+  LabelList,
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -184,7 +185,14 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                     fill="url(#colorExpedientes)"
                     dot={{ fill: 'hsl(217,91%,55%)', strokeWidth: 0, r: 3 }}
                     activeDot={{ r: 5, fill: 'hsl(43,96%,52%)' }}
-                  />
+                  >
+                    <LabelList
+                      dataKey="expedientes"
+                      position="top"
+                      formatter={(v: number) => v > 0 ? v : ''}
+                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 10, fontWeight: 600 }}
+                    />
+                  </Area>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -218,6 +226,8 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       outerRadius={80}
                       paddingAngle={3}
                       dataKey="value"
+                      label={({ value }) => value}
+                      labelLine={{ stroke: 'rgba(255, 255, 255, 0.3)', strokeWidth: 1 }}
                     >
                       {tipoData.map((entry, index) => (
                         <Cell key={index} fill={entry.fill} />
@@ -267,6 +277,12 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                   />
                   <Tooltip content={<CustomTooltipBar />} />
                   <Bar dataKey="valor" name="valor" fill="hsl(217,91%,55%)" radius={[3, 3, 0, 0]}>
+                    <LabelList
+                      dataKey="valor"
+                      position="top"
+                      formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 10, fontWeight: 600 }}
+                    />
                     {monthlyData.map((entry, i) => (
                       <Cell
                         key={i}
@@ -351,9 +367,30 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       <span className="text-xs text-muted-foreground font-medium capitalize">{value}</span>
                     )}
                   />
-                  <Bar dataKey="cotizado" name="cotizado" fill="hsl(0, 72%, 55%)" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="negociado" name="negociado" fill="hsl(43, 96%, 52%)" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="aprobado" name="aprobado" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="cotizado" name="cotizado" fill="hsl(0, 72%, 55%)" radius={[2, 2, 0, 0]}>
+                    <LabelList
+                      dataKey="cotizado"
+                      position="top"
+                      formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
+                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 8, fontWeight: 500 }}
+                    />
+                  </Bar>
+                  <Bar dataKey="negociado" name="negociado" fill="hsl(43, 96%, 52%)" radius={[2, 2, 0, 0]}>
+                    <LabelList
+                      dataKey="negociado"
+                      position="top"
+                      formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
+                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 8, fontWeight: 500 }}
+                    />
+                  </Bar>
+                  <Bar dataKey="aprobado" name="aprobado" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]}>
+                    <LabelList
+                      dataKey="aprobado"
+                      position="top"
+                      formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
+                      style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 8, fontWeight: 500 }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -387,6 +424,8 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       outerRadius={80}
                       paddingAngle={3}
                       dataKey="value"
+                      label={({ value }) => value}
+                      labelLine={{ stroke: 'rgba(255, 255, 255, 0.3)', strokeWidth: 1 }}
                     >
                       {culpabilidadData.map((entry, index) => (
                         <Cell key={index} fill={entry.fill} />
@@ -440,7 +479,13 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                       contentStyle={CUSTOM_TOOLTIP_STYLE}
                       formatter={(val: number) => [`${val} incidentes`, 'Cantidad']}
                     />
-                    <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15} />
+                    <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
+                      <LabelList
+                        dataKey="value"
+                        position="right"
+                        style={{ fill: 'hsl(210, 40%, 95%)', fontSize: 10, fontWeight: 600 }}
+                      />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
