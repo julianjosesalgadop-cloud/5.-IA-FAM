@@ -699,7 +699,7 @@ export default function ExpedienteDetailPage() {
                         <h4 className="text-sm font-bold text-foreground">Detalle de Cotizaciones Asociadas</h4>
                         <div className="border border-border rounded-xl overflow-hidden bg-card">
                           <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
+                            <table className="w-full min-w-[800px] text-sm text-left">
                               <thead className="text-xs uppercase bg-secondary/40 text-muted-foreground border-b border-border">
                                 <tr>
                                   <th className="px-4 py-3 font-semibold">Taller / Proveedor</th>

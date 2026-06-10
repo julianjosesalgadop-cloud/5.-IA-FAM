@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { LogIn, Bus, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { LogIn, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,7 +119,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center shadow-glow-brand">
-              <Bus className="w-8 h-8 text-white" />
+              <ShieldCheck className="w-8 h-8 text-white" />
             </div>
           </div>
            <h1 className="text-2xl font-bold text-foreground">SIGFAM</h1>

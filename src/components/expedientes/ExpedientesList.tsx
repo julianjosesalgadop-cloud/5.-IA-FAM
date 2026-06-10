@@ -164,7 +164,7 @@ export function ExpedientesList() {
       {/* Table */}
       <Card className="border-border bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[1100px] text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/20">
                 {['Expediente', 'Fecha', 'Interno/Placa', 'Propietario', 'Tipo', 'Conductor', 'Culpabilidad', 'Valor Aprobado', 'Estado'].map((col) => (

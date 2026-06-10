@@ -15,10 +15,12 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Bus,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 import { getMockUser } from '@/lib/services/dbService';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 
 const NAV_GROUPS = [
@@ -58,10 +60,22 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState<string>('admin');
+  const router = useRouter();
 
   useEffect(() => {
     setRole(getMockUser().rol);
   }, []);
+
+  const handleLogout = async () => {
+    localStorage.removeItem('fam_mock_user');
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Error signing out:', err);
+    }
+    router.push('/auth/login');
+  };
 
   const allowedGroups = NAV_GROUPS.map((group) => {
     return {
@@ -81,7 +95,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       <div className="flex items-center justify-between px-4 py-5 border-b border-border w-full">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-9 h-9 rounded-xl gradient-brand flex items-center justify-center shadow-glow-brand">
-            <Bus className="w-5 h-5 text-white" />
+            <ShieldCheck className="w-5 h-5 text-white" />
           </div>
           <AnimatePresence mode="wait">
             {!collapsed && (
@@ -184,7 +198,10 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
             )}
           </AnimatePresence>
         </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all duration-200">
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+        >
           <LogOut className="w-5 h-5" />
           <AnimatePresence mode="wait">
             {!collapsed && (
