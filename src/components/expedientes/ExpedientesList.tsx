@@ -93,6 +93,7 @@ export function ExpedientesList() {
       !search ||
       exp.numero_expediente?.toLowerCase().includes(search.toLowerCase()) ||
       exp.placa?.toLowerCase().includes(search.toLowerCase()) ||
+      exp.numero_interno?.toLowerCase().includes(search.toLowerCase()) ||
       exp.propietario?.toLowerCase().includes(search.toLowerCase()) ||
       exp.nombre_conductor?.toLowerCase().includes(search.toLowerCase());
     const matchEstado = !estadoFilter || exp.estado === estadoFilter;
@@ -107,7 +108,7 @@ export function ExpedientesList() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por placa, expediente, propietario..."
+            placeholder="Buscar por placa, número interno, expediente, propietario..."
             className="pl-9 bg-background border-border"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -165,7 +166,7 @@ export function ExpedientesList() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/20">
-                {['Expediente', 'Fecha', 'Placa', 'Propietario', 'Tipo', 'Conductor', 'Culpabilidad', 'Valor Aprobado', 'Estado'].map((col) => (
+                {['Expediente', 'Fecha', 'Placa / Interno', 'Propietario', 'Tipo', 'Conductor', 'Culpabilidad', 'Valor Aprobado', 'Estado'].map((col) => (
                   <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                     {col}
                   </th>
@@ -201,7 +202,16 @@ export function ExpedientesList() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="font-mono font-semibold text-foreground">
-                        ({exp.numero_interno || '—'}-{exp.placa})
+                        {exp.numero_interno ? (
+                          <>
+                            {exp.numero_interno}
+                            <span className="text-[11px] font-normal text-muted-foreground ml-1.5">
+                              ({exp.placa})
+                            </span>
+                          </>
+                        ) : (
+                          exp.placa
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-3 max-w-[180px] truncate text-foreground">

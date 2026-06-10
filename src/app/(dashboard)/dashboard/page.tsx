@@ -71,9 +71,11 @@ export default function DashboardPage() {
     if (tipoReclamacion !== 'todos') {
       if (e.tipo_reclamacion !== tipoReclamacion) return false;
     }
-    // 3. Plate Filter
+    // 3. Plate / Internal Number Filter
     if (placaSearch) {
-      if (!e.placa?.toLowerCase().includes(placaSearch.toLowerCase())) return false;
+      const matchPlaca = e.placa?.toLowerCase().includes(placaSearch.toLowerCase());
+      const matchInterno = e.numero_interno?.toLowerCase().includes(placaSearch.toLowerCase());
+      if (!matchPlaca && !matchInterno) return false;
     }
     return true;
   });
@@ -152,10 +154,10 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex-1 min-w-[140px] space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Buscar por Placa</span>
+            <span className="text-xs font-semibold text-muted-foreground">Buscar por Placa / Interno</span>
             <input
               type="text"
-              placeholder="Ej: ABC-123"
+              placeholder="Ej: ABC-123 o 0042"
               value={placaSearch}
               onChange={(e) => setPlacaSearch(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground font-mono uppercase"
