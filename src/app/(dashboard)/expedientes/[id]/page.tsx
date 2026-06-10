@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   Calendar,
@@ -20,6 +20,7 @@ import {
   TrendingUp,
   MapPin,
   FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -52,6 +53,9 @@ export default function ExpedienteDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [tipoDocumento, setTipoDocumento] = useState<string>('Solicitud');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Document Preview State
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: 'pdf' | 'image' | 'other'; name: string } | null>(null);
 
   const currentUser = getMockUser();
 
@@ -190,6 +194,27 @@ export default function ExpedienteDetailPage() {
     } catch (err) {
       console.error(err);
       toast.error('Error al descargar documento');
+    }
+  };
+
+  const getFileType = (fileName: string): 'pdf' | 'image' | 'other' => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return 'pdf';
+    if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext || '')) return 'image';
+    return 'other';
+  };
+
+  const handlePreviewDoc = async (storagePath: string, fileName: string) => {
+    try {
+      const url = await dbService.getDownloadUrl(storagePath);
+      setPreviewFile({
+        url,
+        name: fileName,
+        type: getFileType(fileName),
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al abrir la vista previa');
     }
   };
 
@@ -708,15 +733,26 @@ export default function ExpedienteDetailPage() {
                                     <td className="px-4 py-3 text-right font-mono text-green-400 font-bold">{formatCOP(cot.valor_a_pagar)}</td>
                                     <td className="px-4 py-3 text-center">
                                       {cot.storage_path ? (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="text-primary hover:text-primary/85 h-8 w-8 rounded-lg"
-                                          onClick={() => handleDownloadDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
-                                          title="Descargar PDF Cotización"
-                                        >
-                                          <FileText className="w-4 h-4" />
-                                        </Button>
+                                        <div className="flex items-center justify-center gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            className="text-primary hover:text-primary/85 h-8 w-8 rounded-lg"
+                                            onClick={() => handlePreviewDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
+                                            title="Ver PDF Cotización"
+                                          >
+                                            <Eye className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-lg"
+                                            onClick={() => handleDownloadDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
+                                            title="Descargar PDF Cotización"
+                                          >
+                                            <Download className="w-4 h-4" />
+                                          </Button>
+                                        </div>
                                       ) : (
                                         <span className="text-muted-foreground text-xs">—</span>
                                       )}
@@ -908,15 +944,26 @@ export default function ExpedienteDetailPage() {
                               <span className="text-sm font-medium text-foreground truncate max-w-[200px]" title={expediente.memorando_pago_archivo_nombre || 'memorando.pdf'}>
                                 {expediente.memorando_pago_archivo_nombre || 'memorando.pdf'}
                               </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 py-1 px-3"
-                                onClick={() => handleDownloadDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
-                              >
-                                <Eye className="w-3.5 h-3.5 mr-1" />
-                                Ver PDF
-                              </Button>
+                              <div className="flex items-center gap-1.5">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 py-1 px-3 flex items-center gap-1 text-foreground"
+                                  onClick={() => handlePreviewDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  Ver PDF
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 py-1 px-3 flex items-center gap-1 text-foreground"
+                                  onClick={() => handleDownloadDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  Descargar
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <span className="text-sm text-muted-foreground">—</span>
@@ -1019,10 +1066,18 @@ export default function ExpedienteDetailPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
-                                  onClick={() => handleDownloadDoc(doc.storage_path, doc.nombre_archivo)}
-                                  title="Ver / Descargar"
+                                  onClick={() => handlePreviewDoc(doc.storage_path, doc.nombre_archivo)}
+                                  title="Ver en plataforma"
                                 >
                                   <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handleDownloadDoc(doc.storage_path, doc.nombre_archivo)}
+                                  title="Descargar archivo"
+                                >
+                                  <Download className="w-4 h-4" />
                                 </Button>
                                 {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
                                   <Button
@@ -1098,6 +1153,97 @@ export default function ExpedienteDetailPage() {
           </div>
         </div>
       )}
+
+      {/* File Preview Modal */}
+      <AnimatePresence>
+        {previewFile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full max-w-4xl h-[85vh] bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/10">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-foreground truncate pr-4" title={previewFile.name}>
+                    {previewFile.name}
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5 font-medium">
+                    Vista Previa del Documento
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 py-1 px-3 flex items-center gap-1.5 text-foreground hover:bg-secondary/80"
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = previewFile.url;
+                      a.download = previewFile.name;
+                      a.target = '_blank';
+                      a.click();
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Descargar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full hover:bg-secondary/80 text-foreground"
+                    onClick={() => setPreviewFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 bg-secondary/5 p-4 flex items-center justify-center overflow-auto min-h-0">
+                {previewFile.type === 'pdf' ? (
+                  <iframe
+                    src={`${previewFile.url}#toolbar=1`}
+                    className="w-full h-full border-0 rounded-lg bg-card"
+                    title="Visor de PDF"
+                  />
+                ) : previewFile.type === 'image' ? (
+                  <img
+                    src={previewFile.url}
+                    alt={previewFile.name}
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-sm text-foreground font-semibold">
+                      La vista previa no está disponible para este tipo de archivo.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 mb-4">
+                      Por favor, descárguelo para visualizarlo en su dispositivo.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = previewFile.url;
+                        a.download = previewFile.name;
+                        a.target = '_blank';
+                        a.click();
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar archivo
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
