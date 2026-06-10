@@ -88,6 +88,7 @@ export function AuditoriaView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             id="auditoria-search"
+            autoComplete="off"
           />
         </div>
         <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>

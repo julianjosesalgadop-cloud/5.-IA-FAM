@@ -161,6 +161,7 @@ export default function DashboardPage() {
               value={placaSearch}
               onChange={(e) => setPlacaSearch(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground font-mono uppercase"
+              autoComplete="off"
             />
           </div>
 
