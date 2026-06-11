@@ -34,6 +34,30 @@ export function ExpedientesList() {
   const [tipoFilter, setTipoFilter] = useState<string>('');
   const [sortField, setSortField] = useState<string>('fecha_incidente');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [presetRange, setPresetRange] = useState('todo');
+
+  useEffect(() => {
+    const today = new Date();
+    if (presetRange === 'este-mes') {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      setFechaInicio(start.toISOString().split('T')[0]);
+      setFechaFin(today.toISOString().split('T')[0]);
+    } else if (presetRange === 'ultimos-30') {
+      const start = new Date();
+      start.setDate(today.getDate() - 30);
+      setFechaInicio(start.toISOString().split('T')[0]);
+      setFechaFin(today.toISOString().split('T')[0]);
+    } else if (presetRange === 'este-anio') {
+      const start = new Date(today.getFullYear(), 0, 1);
+      setFechaInicio(start.toISOString().split('T')[0]);
+      setFechaFin(today.toISOString().split('T')[0]);
+    } else if (presetRange === 'todo') {
+      setFechaInicio('');
+      setFechaFin('');
+    }
+  }, [presetRange]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -121,6 +145,14 @@ export function ExpedientesList() {
       exp.nombre_conductor?.toLowerCase().includes(search.toLowerCase());
     const matchEstado = !estadoFilter || exp.estado === estadoFilter;
     const matchTipo = !tipoFilter || exp.tipo_reclamacion === tipoFilter;
+
+    if (fechaInicio && (!exp.fecha_incidente || exp.fecha_incidente < fechaInicio)) {
+      return false;
+    }
+    if (fechaFin && (!exp.fecha_incidente || exp.fecha_incidente > fechaFin)) {
+      return false;
+    }
+
     return matchSearch && matchEstado && matchTipo;
   });
 
@@ -197,6 +229,57 @@ export function ExpedientesList() {
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
+
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          value={presetRange}
+          onChange={(e) => setPresetRange(e.target.value)}
+          id="expedientes-date-preset"
+        >
+          <option value="todo">Todas las fechas</option>
+          <option value="este-mes">Este Mes</option>
+          <option value="ultimos-30">Últimos 30 días</option>
+          <option value="este-anio">Este Año</option>
+          <option value="personalizado">Rango Personalizado</option>
+        </select>
+
+        {presetRange === 'personalizado' && (
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              className="h-10 bg-background border-border text-xs w-[135px]"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              placeholder="Inicio"
+            />
+            <span className="text-xs text-muted-foreground">a</span>
+            <Input
+              type="date"
+              className="h-10 bg-background border-border text-xs w-[135px]"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              placeholder="Fin"
+            />
+          </div>
+        )}
+
+        {(search || estadoFilter || tipoFilter || presetRange !== 'todo' || fechaInicio || fechaFin) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch('');
+              setEstadoFilter('');
+              setTipoFilter('');
+              setPresetRange('todo');
+              setFechaInicio('');
+              setFechaFin('');
+            }}
+            className="text-muted-foreground hover:text-foreground text-xs"
+          >
+            Limpiar filtros
+          </Button>
+        )}
 
         <div className="flex items-center gap-2 ml-auto">
           <Button variant="outline" size="sm" onClick={fetchExpedientes} title="Refrescar">
