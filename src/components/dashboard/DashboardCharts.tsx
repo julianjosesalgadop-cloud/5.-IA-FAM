@@ -25,6 +25,7 @@ import type { Expediente } from '@/types/database';
 
 interface DashboardChartsProps {
   expedientes: Expediente[];
+  unfilteredExpedientes: Expediente[];
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -36,17 +37,38 @@ const CUSTOM_TOOLTIP_STYLE = {
 
 function CustomTooltipBar({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const data = payload[0].payload;
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
-        {payload.map((p: any) => (
-          <div key={p.name} className="flex items-center gap-2 text-foreground">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-            <span className="font-medium">
-              {p.name === 'valor' ? 'Valor Aprobado:' : ''} {p.name === 'valor' ? formatCOP(p.value) : `${p.value} expedientes`}
-            </span>
-          </div>
-        ))}
+        {payload.map((p: any) => {
+          const val = p.value || 0;
+          let filteredPct = 0;
+          let generalPct = 0;
+
+          if (p.name === 'valor' || p.name === 'aprobado') {
+            filteredPct = data.totalFilteredApprovedSum > 0 ? (val / data.totalFilteredApprovedSum) * 100 : 0;
+            generalPct = data.totalGeneralApprovedSum > 0 ? (val / data.totalGeneralApprovedSum) * 100 : 0;
+          } else {
+            filteredPct = data.totalFilteredCases > 0 ? (val / data.totalFilteredCases) * 100 : 0;
+            generalPct = data.totalGeneralCases > 0 ? (val / data.totalGeneralCases) * 100 : 0;
+          }
+
+          return (
+            <div key={p.name} className="flex flex-col gap-0.5 text-foreground">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                <span className="font-medium">
+                  {p.name === 'valor' || p.name === 'aprobado' ? 'Valor Aprobado:' : 'Casos:'} {p.name === 'valor' || p.name === 'aprobado' ? formatCOP(val) : `${val} expedientes`}
+                </span>
+              </div>
+              <div className="pl-4 text-[10px] text-muted-foreground flex gap-2">
+                <span>Filtrado: {filteredPct.toFixed(1)}%</span>
+                <span>General: {generalPct.toFixed(1)}%</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -55,25 +77,80 @@ function CustomTooltipBar({ active, payload, label }: any) {
 
 function CustomTooltipFinanzas({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const data = payload[0].payload;
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
-        {payload.map((p: any) => (
-          <div key={p.dataKey} className="flex justify-between gap-4 text-foreground">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-              <span className="capitalize font-medium">{p.name}:</span>
+        {payload.map((p: any) => {
+          const val = p.value || 0;
+          let filteredPct = 0;
+          let generalPct = 0;
+
+          if (p.name === 'cotizado') {
+            filteredPct = data.totalFilteredCotizadoSum > 0 ? (val / data.totalFilteredCotizadoSum) * 100 : 0;
+            generalPct = data.totalGeneralCotizadoSum > 0 ? (val / data.totalGeneralCotizadoSum) * 100 : 0;
+          } else if (p.name === 'negociado') {
+            filteredPct = data.totalFilteredNegociadoSum > 0 ? (val / data.totalFilteredNegociadoSum) * 100 : 0;
+            generalPct = data.totalGeneralNegociadoSum > 0 ? (val / data.totalGeneralNegociadoSum) * 100 : 0;
+          } else if (p.name === 'aprobado') {
+            filteredPct = data.totalFilteredApprovedSum > 0 ? (val / data.totalFilteredApprovedSum) * 100 : 0;
+            generalPct = data.totalGeneralApprovedSum > 0 ? (val / data.totalGeneralApprovedSum) * 100 : 0;
+          }
+
+          return (
+            <div key={p.dataKey || p.name} className="flex flex-col gap-0.5 text-foreground">
+              <div className="flex justify-between gap-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                  <span className="capitalize font-medium">{p.name}:</span>
+                </div>
+                <span className="font-semibold number-font">{formatCOP(val)}</span>
+              </div>
+              <div className="pl-3.5 text-[10px] text-muted-foreground flex gap-2">
+                <span>Filtrado: {filteredPct.toFixed(1)}%</span>
+                <span>General: {generalPct.toFixed(1)}%</span>
+              </div>
             </div>
-            <span className="font-semibold number-font">{formatCOP(p.value)}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
   return null;
 }
 
-export function DashboardCharts({ expedientes }: DashboardChartsProps) {
+function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }: any) {
+  if (active && payload && payload.length) {
+    const p = payload[0];
+    const data = p.payload;
+    const val = p.value || 0;
+    
+    let filteredTotal = isValueCOP ? data.totalFilteredApprovedSum : data.totalFilteredCases;
+    let generalTotal = isValueCOP ? data.totalGeneralApprovedSum : data.totalGeneralCases;
+
+    const filteredPct = filteredTotal > 0 ? (val / filteredTotal) * 100 : 0;
+    const generalPct = generalTotal > 0 ? (val / generalTotal) * 100 : 0;
+
+    return (
+      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1 shadow-lg">
+        <p className="font-semibold text-foreground mb-1">{p.name || label || data.name}</p>
+        <div className="flex items-center gap-2 text-foreground">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
+          <span className="font-semibold">
+            {isValueCOP ? formatCOP(val) : `${val} expedientes`}
+          </span>
+        </div>
+        <div className="text-[10px] text-muted-foreground flex gap-2 pt-1 border-t border-border/50 mt-1">
+          <span>Filtrado: {filteredPct.toFixed(1)}%</span>
+          <span>General: {generalPct.toFixed(1)}%</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+export function DashboardCharts({ expedientes, unfilteredExpedientes }: DashboardChartsProps) {
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -82,6 +159,15 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
   } | null>(null);
 
   // 1. Monthly trend calculations
+  const totalFilteredCount = expedientes.length;
+  const totalGeneralCount = unfilteredExpedientes.length;
+  const totalFilteredApproved = expedientes.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
+  const totalGeneralApproved = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
+  const totalFilteredCotizado = expedientes.reduce((acc, e) => acc + (e.valor_cotizacion || 0), 0);
+  const totalGeneralCotizado = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_cotizacion || 0), 0);
+  const totalFilteredNegociado = expedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
+  const totalGeneralNegociado = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
+
   const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const monthlyData = MONTH_NAMES.map((name, index) => {
     const cases = expedientes.filter((e) => {
@@ -100,22 +186,37 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
       cotizado: sumCotizado,
       negociado: sumNegociado,
       aprobado: sumAprobado,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+      totalFilteredCotizadoSum: totalFilteredCotizado,
+      totalGeneralCotizadoSum: totalGeneralCotizado,
+      totalFilteredNegociadoSum: totalFilteredNegociado,
+      totalGeneralNegociadoSum: totalGeneralNegociado,
     };
   });
 
   // 2. Claim Type Distribution
-  const CLAIM_TYPES = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro'] as const;
+  const CLAIM_TYPES = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Afectación por orden público', 'Otro'] as const;
   const TIPO_COLORS = {
     'Siniestro': 'hsl(0, 72%, 55%)',
     'Carrocería': 'hsl(25, 92%, 50%)',
     'Vidrios': 'hsl(197, 71%, 52%)',
     'Repuestos': 'hsl(270, 60%, 60%)',
     'Pérdida parcial': 'hsl(340, 75%, 55%)',
+    'Afectación por orden público': 'hsl(142, 71%, 45%)',
     'Otro': 'hsl(215, 20%, 55%)',
   };
   const tipoData = CLAIM_TYPES.map((type) => {
     const count = expedientes.filter((e) => e.tipo_reclamacion === type).length;
-    return { name: type, value: count, fill: TIPO_COLORS[type] };
+    return { 
+      name: type, 
+      value: count, 
+      fill: TIPO_COLORS[type as keyof typeof TIPO_COLORS],
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    };
   }).filter((t) => t.value > 0);
 
   // 3. Status Distribution
@@ -140,7 +241,13 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
   };
   const culpabilidadData = CULPABILIDAD_TYPES.map((type) => {
     const count = expedientes.filter((e) => (e.culpabilidad || 'Sin definir') === type).length;
-    return { name: type, value: count, fill: CULPABILIDAD_COLORS[type] };
+    return { 
+      name: type, 
+      value: count, 
+      fill: CULPABILIDAD_COLORS[type],
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    };
   }).filter((t) => t.value > 0);
 
   // 5. Causa Raíz Distribution
@@ -150,7 +257,46 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
     causaGroups[causa] = (causaGroups[causa] || 0) + 1;
   });
   const causaData = Object.entries(causaGroups)
-    .map(([name, value]) => ({ name, value }))
+    .map(([name, value]) => ({ 
+      name, 
+      value,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  // 6. Afectación FAM por Propietario (Top 5)
+  const propietarioGroups: Record<string, number> = {};
+  expedientes.forEach((e) => {
+    const prop = e.propietario ? e.propietario.trim() : 'Sin definir';
+    propietarioGroups[prop] = (propietarioGroups[prop] || 0) + (e.valor_final_aprobado || 0);
+  });
+  const propietarioData = Object.entries(propietarioGroups)
+    .map(([name, value]) => ({ 
+      name, 
+      value,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  // 7. Afectación FAM por Conductor (Top 5)
+  const conductorGroups: Record<string, number> = {};
+  expedientes.forEach((e) => {
+    const cond = e.nombre_conductor ? e.nombre_conductor.trim() : 'Sin definir';
+    conductorGroups[cond] = (conductorGroups[cond] || 0) + (e.valor_final_aprobado || 0);
+  });
+  const conductorData = Object.entries(conductorGroups)
+    .map(([name, value]) => ({ 
+      name, 
+      value,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
@@ -223,7 +369,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                 <Cell key={index} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} />
+            <Tooltip content={<CustomTooltipPercentages />} />
             <Legend
               iconSize={8}
               formatter={(value) => (
@@ -366,7 +512,7 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
                 <Cell key={index} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} />
+            <Tooltip content={<CustomTooltipPercentages />} />
             <Legend
               iconSize={8}
               formatter={(value) => (
@@ -393,11 +539,95 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
             <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
             <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} axisLine={false} tickLine={false} width={160} />
-            <Tooltip contentStyle={CUSTOM_TOOLTIP_STYLE} />
+            <Tooltip content={<CustomTooltipPercentages />} />
             <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
               <LabelList
                 dataKey="value"
                 position="right"
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderAfectacionPropietario = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {propietarioData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            layout="vertical"
+            data={propietarioData}
+            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={130}
+            />
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+            <Bar dataKey="value" fill="hsl(217, 91%, 55%)" radius={[0, 3, 3, 0]} barSize={15}>
+              <LabelList
+                dataKey="value"
+                position="right"
+                formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderAfectacionConductor = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {conductorData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            layout="vertical"
+            data={conductorData}
+            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={130}
+            />
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+            <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
+              <LabelList
+                dataKey="value"
+                position="right"
+                formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
                 style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
               />
             </Bar>
@@ -640,6 +870,74 @@ export function DashboardCharts({ expedientes }: DashboardChartsProps) {
           </CardHeader>
           <CardContent>
             {renderCausasRaiz(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Afectación FAM por Propietario */}
+      <motion.div
+        className="lg:col-span-2"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Afectación FAM por Propietario</CardTitle>
+              <CardDescription>Costo total acumulado de afectación al Fondo por propietario (Top 5)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'afectacion-propietario',
+                title: 'Afectación FAM por Propietario',
+                description: 'Costo total acumulado de afectación al Fondo por propietario (Top 5)',
+                render: renderAfectacionPropietario
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderAfectacionPropietario(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Afectación FAM por Conductor */}
+      <motion.div
+        className="lg:col-span-1"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Afectación FAM por Conductor</CardTitle>
+              <CardDescription>Costo total acumulado por conductor (Top 5)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'afectacion-conductor',
+                title: 'Afectación FAM por Conductor',
+                description: 'Costo total acumulado por conductor (Top 5)',
+                render: renderAfectacionConductor
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderAfectacionConductor(240)}
           </CardContent>
         </Card>
       </motion.div>

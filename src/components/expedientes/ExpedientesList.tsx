@@ -142,7 +142,8 @@ export function ExpedientesList() {
       exp.placa?.toLowerCase().includes(search.toLowerCase()) ||
       exp.numero_interno?.toLowerCase().includes(search.toLowerCase()) ||
       exp.propietario?.toLowerCase().includes(search.toLowerCase()) ||
-      exp.nombre_conductor?.toLowerCase().includes(search.toLowerCase());
+      exp.nombre_conductor?.toLowerCase().includes(search.toLowerCase()) ||
+      exp.numero_acta?.toLowerCase().includes(search.toLowerCase());
     const matchEstado = !estadoFilter || exp.estado === estadoFilter;
     const matchTipo = !tipoFilter || exp.tipo_reclamacion === tipoFilter;
 
@@ -208,30 +209,6 @@ export function ExpedientesList() {
 
         <select
           className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          value={estadoFilter}
-          onChange={(e) => setEstadoFilter(e.target.value)}
-          id="expedientes-estado-filter"
-        >
-          <option value="">Todos los estados</option>
-          {ESTADOS_EXPEDIENTE.map((e) => (
-            <option key={e} value={e}>{e}</option>
-          ))}
-        </select>
-
-        <select
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          value={tipoFilter}
-          onChange={(e) => setTipoFilter(e.target.value)}
-          id="expedientes-tipo-filter"
-        >
-          <option value="">Todos los tipos</option>
-          {TIPOS_RECLAMACION.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-
-        <select
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           value={presetRange}
           onChange={(e) => setPresetRange(e.target.value)}
           id="expedientes-date-preset"
@@ -262,6 +239,30 @@ export function ExpedientesList() {
             />
           </div>
         )}
+
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          value={estadoFilter}
+          onChange={(e) => setEstadoFilter(e.target.value)}
+          id="expedientes-estado-filter"
+        >
+          <option value="">Todos los estados</option>
+          {ESTADOS_EXPEDIENTE.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          value={tipoFilter}
+          onChange={(e) => setTipoFilter(e.target.value)}
+          id="expedientes-tipo-filter"
+        >
+          <option value="">Todos los tipos</option>
+          {TIPOS_RECLAMACION.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
 
         {(search || estadoFilter || tipoFilter || presetRange !== 'todo' || fechaInicio || fechaFin) && (
           <Button

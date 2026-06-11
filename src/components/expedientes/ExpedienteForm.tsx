@@ -72,14 +72,17 @@ function CurrencyInputField({
 const expedienteSchema = z.object({
   fecha_incidente: z.string().min(1, 'Requerido'),
   placa: z.string().min(1, 'Requerido').toUpperCase(),
-  numero_interno: z.string().optional(),
+  numero_interno: z.string().min(1, 'Requerido'),
+  tipo_servicio: z.enum(['Intermunicipal', 'Especial', 'Urbano', 'Otro']).default('Intermunicipal'),
+  tipo_servicio_otro: z.string().optional(),
   propietario: z.string().optional(),
   propietarios: z.array(z.object({
     nombre: z.string().min(1, 'Requerido'),
     tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']),
     numero_documento: z.string().min(1, 'Requerido'),
   })).min(1, 'Debe registrar al menos un propietario'),
-  tipo_reclamacion: z.enum(['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro']),
+  tipo_reclamacion: z.enum(['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Afectación por orden público', 'Otro']),
+  tipo_reclamacion_otro: z.string().optional(),
   ciudad_origen: z.string().optional(),
   ciudad_destino: z.string().optional(),
   concepto: z.string().optional(),
@@ -99,6 +102,7 @@ const expedienteSchema = z.object({
     valor_a_pagar: z.number().min(0).optional().nullable(),
     nombre_archivo: z.string().optional().nullable(),
     storage_path: z.string().optional().nullable(),
+    seleccionada: z.boolean().optional(),
   }).refine(val => {
     if (val.concepto === 'OTROS') {
       return !!val.concepto_otro && val.concepto_otro.trim().length > 0;
@@ -129,6 +133,12 @@ const expedienteSchema = z.object({
   causa_raiz: z.string().optional(),
   causa_raiz_otra: z.string().optional(),
   observaciones_comite: z.string().optional(),
+  numero_acta: z.string().optional().nullable().refine((val) => {
+    if (!val) return true;
+    return /^ACTA \d{4}$/i.test(val);
+  }, {
+    message: 'El formato del acta debe ser ACTA #### (ej: ACTA 0001)'
+  }),
   // Autorización
   autorizado_por: z.string().optional(),
   cargo_autorizador: z.string().optional(),
@@ -136,6 +146,22 @@ const expedienteSchema = z.object({
   memorando_pago_nombre: z.string().optional().nullable(),
   memorando_pago_storage_path: z.string().optional().nullable(),
   memorando_pago_archivo_nombre: z.string().optional().nullable(),
+}).refine(val => {
+  if (val.tipo_servicio === 'Otro') {
+    return !!val.tipo_servicio_otro && val.tipo_servicio_otro.trim().length > 0;
+  }
+  return true;
+}, {
+  message: 'Debe especificar el tipo de servicio',
+  path: ['tipo_servicio_otro']
+}).refine(val => {
+  if (val.tipo_reclamacion === 'Otro') {
+    return !!val.tipo_reclamacion_otro && val.tipo_reclamacion_otro.trim().length > 0;
+  }
+  return true;
+}, {
+  message: 'Debe especificar el tipo de reclamación',
+  path: ['tipo_reclamacion_otro']
 });
 
 type ExpedienteFormData = z.infer<typeof expedienteSchema>;
@@ -281,10 +307,21 @@ export function ExpedienteForm({
   const initialCausaRaiz = defaultValues?.causa_raiz;
   const isCustomCausaRaiz = initialCausaRaiz && !CAUSAS_RAIZ_DEFAULT.includes(initialCausaRaiz as any);
 
+  // Check if initial tipo_reclamacion is custom
+  const initialTipoReclamacion = defaultValues?.tipo_reclamacion;
+  const isCustomTipoReclamacion = initialTipoReclamacion && !TIPOS_RECLAMACION.includes(initialTipoReclamacion as any);
+
+  // Check if initial tipo_servicio is custom
+  const initialTipoServicio = (defaultValues as any)?.tipo_servicio;
+  const isCustomTipoServicio = initialTipoServicio && !['Intermunicipal', 'Especial', 'Urbano'].includes(initialTipoServicio);
+
   const form = useForm<ExpedienteFormData>({
     resolver: zodResolver(expedienteSchema),
     defaultValues: {
-      tipo_reclamacion: 'Siniestro',
+      tipo_reclamacion: isCustomTipoReclamacion ? 'Otro' : (initialTipoReclamacion || 'Siniestro'),
+      tipo_reclamacion_otro: isCustomTipoReclamacion ? initialTipoReclamacion : '',
+      tipo_servicio: isCustomTipoServicio ? 'Otro' : (initialTipoServicio || 'Intermunicipal'),
+      tipo_servicio_otro: isCustomTipoServicio ? initialTipoServicio : '',
       culpabilidad: 'Sin definir',
       propietarios: defaultValues?.propietarios && defaultValues.propietarios.length > 0
         ? defaultValues.propietarios
@@ -313,37 +350,34 @@ export function ExpedienteForm({
 
   const { register, watch, setValue, formState: { errors }, control } = form;
 
+  const cotizaciones = watch('cotizaciones') || [];
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'cotizaciones',
   });
 
+  // Auto-seleccionar cotización si solo hay una
+  React.useEffect(() => {
+    if (cotizaciones.length === 1 && !cotizaciones[0]?.seleccionada) {
+      setValue('cotizaciones.0.seleccionada', true);
+    }
+  }, [cotizaciones.length, setValue, cotizaciones]);
+
   const { fields: propietariosFields, append: appendPropietario, remove: removePropietario } = useFieldArray({
     control,
     name: 'propietarios',
   });
-
-  const cotizaciones = watch('cotizaciones') || [];
   const watchCausaRaiz = watch('causa_raiz');
 
   // Calcular totales financieros de cotizaciones en tiempo de renderizado
-  let totalCotizacion = 0;
-  let totalNegociado = 0;
-  let totalDeducible = 0;
-  let totalAPagar = 0;
+  const selectedCotIndex = cotizaciones.findIndex((c) => c.seleccionada);
+  const selectedCot = cotizaciones[selectedCotIndex !== -1 ? selectedCotIndex : 0];
 
-  cotizaciones.forEach((cot) => {
-    const vCot = cot.valor_cotizacion || 0;
-    const vNeg = cot.valor_negociado || 0;
-    const pct = cot.porcentaje_deducible || 0;
-    const vDed = Math.round((vNeg * pct) / 100);
-    const vPag = Math.max(0, vNeg - vDed);
-
-    totalCotizacion += vCot;
-    totalNegociado += vNeg;
-    totalDeducible += vDed;
-    totalAPagar += vPag;
-  });
+  const totalCotizacion = cotizaciones.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+  const totalNegociado = selectedCot ? (selectedCot.valor_negociado || 0) : 0;
+  const totalDeducible = selectedCot ? Math.round((totalNegociado * (selectedCot.porcentaje_deducible || 0)) / 100) : 0;
+  const totalAPagar = selectedCot ? Math.max(0, totalNegociado - totalDeducible) : 0;
 
   const valorRecVehiculo = watch('valor_recobro_vehiculo') || 0;
   const valorRecAbogado = watch('valor_recobro_abogado') || 0;
@@ -369,23 +403,36 @@ export function ExpedienteForm({
         };
       });
 
-      const { causa_raiz_otra, ...restData } = data;
+      // Encontrar la cotización seleccionada para guardar sus datos consolidados
+      const selIndex = data.cotizaciones?.findIndex((c) => c.seleccionada);
+      const activeCot = updatedCotizaciones[selIndex !== undefined && selIndex !== -1 ? selIndex : 0];
+
+      const finalNegociado = activeCot ? (activeCot.valor_negociado || 0) : 0;
+      const finalDeducible = activeCot ? (activeCot.valor_deducible || 0) : 0;
+      const finalAPagar = activeCot ? (activeCot.valor_a_pagar || 0) : 0;
+
+      const { causa_raiz_otra, tipo_reclamacion_otro, tipo_servicio_otro, ...restData } = data;
       const finalCausaRaiz = data.causa_raiz === 'Otro' ? (causa_raiz_otra || 'Otro') : data.causa_raiz;
+      const finalTipoReclamacion = data.tipo_reclamacion === 'Otro' ? (tipo_reclamacion_otro || 'Otro') : data.tipo_reclamacion;
+      const finalTipoServicio = data.tipo_servicio === 'Otro' ? (tipo_servicio_otro || 'Otro') : data.tipo_servicio;
       const finalData = {
         ...restData,
         causa_raiz: finalCausaRaiz,
+        tipo_reclamacion: finalTipoReclamacion,
+        tipo_servicio: finalTipoServicio,
         fecha_comite: data.fecha_comite ? data.fecha_comite : null,
         fecha_autorizacion: data.fecha_autorizacion ? data.fecha_autorizacion : null,
+        numero_acta: data.numero_acta ? data.numero_acta.trim().toUpperCase() : null,
         propietario: data.propietarios && data.propietarios.length > 0
           ? data.propietarios.map((p) => p.nombre).join(', ')
           : '',
         cotizaciones: updatedCotizaciones,
         valor_cotizacion: totalCotizacion,
-        valor_negociado: totalNegociado,
-        valor_deducible: totalDeducible,
-        valor_a_pagar: totalAPagar,
-        // porcentaje_deducible se guarda como el de la primera cotización
-        porcentaje_deducible: updatedCotizaciones[0]?.porcentaje_deducible || null,
+        valor_negociado: finalNegociado,
+        valor_deducible: finalDeducible,
+        valor_a_pagar: finalAPagar,
+        // porcentaje_deducible se guarda como el de la cotización seleccionada
+        porcentaje_deducible: activeCot?.porcentaje_deducible || null,
         porcentaje_recobro_vehiculo: pctVehiculo,
         porcentaje_recobro_abogado: pctAbogado,
         porcentaje_recobro_empresa: pctEmpresa,
@@ -533,25 +580,59 @@ export function ExpedienteForm({
                     <Input type="date" {...register('fecha_incidente')} className={inputClass} />
                     {errors.fecha_incidente && <p className="text-red-400 text-xs">{errors.fecha_incidente.message}</p>}
                   </FormField>
-                  <FormField label="Tipo de Reclamación" required>
-                    <select
-                      {...register('tipo_reclamacion')}
-                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      {TIPOS_RECLAMACION.map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </FormField>
+                  <div className="space-y-1.5">
+                    <FormField label="Tipo de Reclamación" required>
+                      <select
+                        {...register('tipo_reclamacion')}
+                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {TIPOS_RECLAMACION.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                    {watch('tipo_reclamacion') === 'Otro' && (
+                      <div className="pt-1.5">
+                        <Label className="text-xs text-muted-foreground font-semibold">Especifique Tipo de Reclamación *</Label>
+                        <Input placeholder="¿Cuál?" {...register('tipo_reclamacion_otro')} className={inputClass} />
+                        {errors.tipo_reclamacion_otro && <p className="text-red-400 text-xs mt-1">{errors.tipo_reclamacion_otro.message}</p>}
+                      </div>
+                    )}
+                  </div>
                 </FieldGroup>
                 <FieldGroup>
                   <FormField label="Placa" required>
                     <Input placeholder="ABC-123" {...register('placa')} className={`${inputClass} font-mono uppercase`} />
                     {errors.placa && <p className="text-red-400 text-xs">{errors.placa.message}</p>}
                   </FormField>
-                  <FormField label="Número Interno">
+                  <FormField label="Número Interno" required>
                     <Input placeholder="Ej: 0042" {...register('numero_interno')} className={inputClass} />
+                    {errors.numero_interno && <p className="text-red-400 text-xs">{errors.numero_interno.message}</p>}
                   </FormField>
+                </FieldGroup>
+
+                <FieldGroup>
+                  <FormField label="Tipo de Servicio" required>
+                    <select
+                      {...register('tipo_servicio')}
+                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="Intermunicipal">Intermunicipal</option>
+                      <option value="Especial">Especial</option>
+                      <option value="Urbano">Urbano</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                    {errors.tipo_servicio && <p className="text-red-400 text-xs">{errors.tipo_servicio.message}</p>}
+                  </FormField>
+                  
+                  {watch('tipo_servicio') === 'Otro' ? (
+                    <FormField label="Especifique Tipo de Servicio" required>
+                      <Input placeholder="¿Cuál?" {...register('tipo_servicio_otro')} className={inputClass} />
+                      {errors.tipo_servicio_otro && <p className="text-red-400 text-xs">{errors.tipo_servicio_otro.message}</p>}
+                    </FormField>
+                  ) : (
+                    <div />
+                  )}
                 </FieldGroup>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -749,13 +830,39 @@ export function ExpedienteForm({
                       const vDed = Math.round((vNeg * pct) / 100);
                       const vPag = Math.max(0, vNeg - vDed);
 
+                      const isSelected = !!watch(`cotizaciones.${idx}.seleccionada`);
                       return (
-                        <div key={fieldItem.id} className="relative p-5 rounded-2xl border border-border bg-card shadow-sm space-y-4">
+                        <div key={fieldItem.id} className={`relative p-5 rounded-2xl border bg-card shadow-sm space-y-4 transition-all ${isSelected ? 'border-green-500/80 shadow-green-500/5' : 'border-border'}`}>
                           {/* Header / Delete button */}
                           <div className="flex items-center justify-between pb-2 border-b border-border/60">
-                            <span className="text-xs font-bold text-primary uppercase tracking-wider font-mono">
-                              Cotización #{idx + 1}
-                            </span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-bold text-primary uppercase tracking-wider font-mono">
+                                Cotización #{idx + 1}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="checkbox"
+                                  id={`cotizaciones-sel-${idx}`}
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    fields.forEach((_, i) => {
+                                      setValue(`cotizaciones.${i}.seleccionada`, i === idx);
+                                    });
+                                  }}
+                                  className="w-4 h-4 rounded border-gray-300 text-green-500 focus:ring-green-500 bg-background cursor-pointer"
+                                />
+                                <label
+                                  htmlFor={`cotizaciones-sel-${idx}`}
+                                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer font-medium select-none"
+                                >
+                                  {isSelected ? (
+                                    <span className="text-green-400 font-semibold">✓ Aprobada para Desembolso</span>
+                                  ) : (
+                                    <span>Seleccionar para Desembolso</span>
+                                  )}
+                                </label>
+                              </div>
+                            </div>
                             {fields.length > 1 && (
                               <Button
                                 type="button"
@@ -947,23 +1054,23 @@ export function ExpedienteForm({
                 {/* Summary of totals */}
                 <div className="rounded-xl border border-border p-5 bg-secondary/20 space-y-3">
                   <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">
-                    Consolidado de Cotizaciones
+                    Consolidado Financiero (Cotización Seleccionada)
                   </h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Cotizado:</span>
+                    <span className="text-muted-foreground">Total Cotizado (Todas las cotizaciones):</span>
                     <span className="number-font text-foreground font-semibold">{formatCOPInput(totalCotizacion)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Negociado:</span>
+                    <span className="text-muted-foreground">Valor Negociado (Aprobado):</span>
                     <span className="number-font text-foreground font-semibold">{formatCOPInput(totalNegociado)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Deducibles Aplicados:</span>
+                    <span className="text-muted-foreground">Deducible Aplicado (Aprobado):</span>
                     <span className="number-font text-yellow-400 font-semibold">- {formatCOPInput(totalDeducible)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-base font-bold">
-                    <span>Total Neto a Pagar:</span>
+                    <span>Neto a Pagar (Desembolso):</span>
                     <span className="number-font text-green-400">{formatCOPInput(totalAPagar)}</span>
                   </div>
                 </div>
@@ -1085,6 +1192,33 @@ export function ExpedienteForm({
                   <FormField label="Fecha del Comité">
                     <Input type="date" {...register('fecha_comite')} className={inputClass} />
                   </FormField>
+                  <FormField label="Número de Acta">
+                    <Input 
+                      placeholder="Ej: ACTA 0001" 
+                      {...register('numero_acta')} 
+                      className={`${inputClass} font-mono`}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val) {
+                          const numOnly = val.replace(/\D/g, '');
+                          if (numOnly) {
+                            setValue('numero_acta', `ACTA ${numOnly.padStart(4, '0')}`);
+                          } else {
+                            const match = val.match(/acta\s*(\d+)/i);
+                            if (match && match[1]) {
+                              setValue('numero_acta', `ACTA ${match[1].padStart(4, '0')}`);
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    {errors.numero_acta && (
+                      <p className="text-red-400 text-xs mt-1">{errors.numero_acta.message}</p>
+                    )}
+                  </FormField>
+                </FieldGroup>
+
+                <div className="mt-4">
                   <FormField label="Causa Raíz">
                     <select
                       {...register('causa_raiz')}
@@ -1102,7 +1236,7 @@ export function ExpedienteForm({
                       className={`${inputClass} ${watchCausaRaiz === 'Otro' ? '' : 'hidden'}`}
                     />
                   </FormField>
-                </FieldGroup>
+                </div>
                 <FormField label="Observaciones del Comité">
                   <textarea
                     {...register('observaciones_comite')}

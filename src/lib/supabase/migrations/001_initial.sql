@@ -59,9 +59,10 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   fecha_incidente DATE NOT NULL,
   placa TEXT NOT NULL,
   numero_interno TEXT,
+  tipo_servicio TEXT,
   propietario TEXT NOT NULL,
   propietarios JSONB DEFAULT '[]'::jsonb,
-  tipo_reclamacion TEXT NOT NULL CHECK (tipo_reclamacion IN ('Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro')),
+  tipo_reclamacion TEXT NOT NULL,
   ciudad_origen TEXT,
   ciudad_destino TEXT,
   concepto TEXT,
@@ -97,6 +98,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   fecha_comite DATE,
   causa_raiz TEXT,
   observaciones_comite TEXT,
+  numero_acta TEXT,
 
   -- Autorización
   autorizado_por TEXT,

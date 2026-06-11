@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type TipoReclamacion = 'Siniestro' | 'Vidrios' | 'Carrocería' | 'Repuestos' | 'Pérdida parcial' | 'Otro';
+export type TipoReclamacion = 'Siniestro' | 'Vidrios' | 'Carrocería' | 'Repuestos' | 'Pérdida parcial' | 'Afectación por orden público' | 'Otro' | string;
 export type Culpabilidad = 'Conductor' | 'Tercero' | 'Compartida' | 'Sin definir';
 export type EstadoExpediente = 'Pendiente' | 'Revisado' | 'Aprobado' | 'Rechazado';
 export type RolUsuario = 'admin' | 'analista' | 'consultor';
@@ -12,6 +12,7 @@ export interface Expediente {
   fecha_incidente: string;
   placa: string;
   numero_interno: string | null;
+  tipo_servicio: string | null;
   propietario: string;
   tipo_reclamacion: TipoReclamacion;
   ciudad_origen: string | null;
@@ -39,6 +40,7 @@ export interface Expediente {
     valor_a_pagar: number;
     nombre_archivo?: string | null;
     storage_path?: string | null;
+    seleccionada?: boolean;
   }[] | null;
   propietarios?: {
     nombre: string;
@@ -64,6 +66,7 @@ export interface Expediente {
   fecha_comite: string | null;
   causa_raiz: string | null;
   observaciones_comite: string | null;
+  numero_acta: string | null;
   // Autorización
   autorizado_por: string | null;
   cargo_autorizador: string | null;

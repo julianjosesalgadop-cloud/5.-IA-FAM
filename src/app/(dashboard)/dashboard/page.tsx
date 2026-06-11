@@ -191,7 +191,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <DashboardKPIs expedientes={filteredExpedientes} />
-            <DashboardCharts expedientes={filteredExpedientes} />
+            <DashboardCharts expedientes={filteredExpedientes} unfilteredExpedientes={expedientes} />
           </>
         )}
       </div>

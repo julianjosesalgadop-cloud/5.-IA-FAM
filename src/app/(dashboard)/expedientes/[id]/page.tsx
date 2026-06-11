@@ -286,7 +286,7 @@ export default function ExpedienteDetailPage() {
       const generalData = [
         ['No. Expediente:', expediente.numero_expediente, 'Estado:', expediente.estado],
         ['Fecha Incidente:', formatDate(expediente.fecha_incidente), 'Tipo Reclamación:', expediente.tipo_reclamacion],
-        ['Vehículo Placa:', expediente.placa, 'Número Interno:', expediente.numero_interno || '—'],
+        ['Vehículo Placa:', expediente.placa, 'Número Interno:', `${expediente.numero_interno || '—'} / Servicio: ${(expediente as any).tipo_servicio || '—'}`],
         ['Propietario(s):', expediente.propietarios && expediente.propietarios.length > 0
           ? expediente.propietarios.map(p => `${p.nombre} (${p.tipo_documento}: ${p.numero_documento})`).join(', ')
           : expediente.propietario, 'Ruta:', `${expediente.ciudad_origen || '—'} a ${expediente.ciudad_destino || '—'}`],
@@ -342,7 +342,7 @@ export default function ExpedienteDetailPage() {
 
         const cotHeaders = [['Proveedor / Taller', 'Concepto', 'V. Cotizado', 'V. Negociado', 'Deducible', 'V. Deducible', 'V. a Pagar']];
         const cotRows = expediente.cotizaciones.map((cot) => [
-          `${cot.proveedor}${cot.tipo_documento && cot.numero_documento ? ` (${cot.tipo_documento}: ${cot.numero_documento})` : ''}`,
+          `${cot.proveedor}${cot.tipo_documento && cot.numero_documento ? ` (${cot.tipo_documento}: ${cot.numero_documento})` : ''}${cot.seleccionada ? ' * [Desembolso]' : ''}`,
           cot.concepto === 'OTROS' ? (cot.concepto_otro || 'OTROS') : cot.concepto,
           formatCOP(cot.valor_cotizacion),
           formatCOP(cot.valor_negociado),
@@ -404,7 +404,8 @@ export default function ExpedienteDetailPage() {
       doc.text('COMITÉ DE SEGURIDAD VIAL & AUTORIZACIÓN', 12, (doc as any).lastAutoTable.finalY + 10);
 
       const comData = [
-        ['Fecha de Comité:', formatDate(expediente.fecha_comite), 'Causa Raíz:', expediente.causa_raiz || '—'],
+        ['Fecha de Comité:', formatDate(expediente.fecha_comite), 'Número de Acta:', expediente.numero_acta || '—'],
+        ['Causa Raíz:', { content: expediente.causa_raiz || '—', colSpan: 3 }, '', ''],
         ['Observaciones Comité:', { content: expediente.observaciones_comite || '—', colSpan: 3 }, '', ''],
         ['Autorizado Por:', expediente.autorizado_por || '—', 'Cargo Autorizador:', expediente.cargo_autorizador || '—'],
         ['Fecha Autorización:', formatDate(expediente.fecha_autorizacion), 'Memorando de Pago:', expediente.memorando_pago_nombre || '—'],
@@ -634,6 +635,12 @@ export default function ExpedienteDetailPage() {
                           {expediente.numero_interno || '—'}
                         </span>
                       </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Tipo de Servicio</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {(expediente as any).tipo_servicio || '—'}
+                        </span>
+                      </div>
                       <div className="space-y-1.5 md:col-span-2">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider block">Propietarios Asociados</span>
                         {expediente.propietarios && expediente.propietarios.length > 0 ? (
@@ -716,9 +723,16 @@ export default function ExpedienteDetailPage() {
                                 {expediente.cotizaciones.map((cot, i) => (
                                   <tr key={cot.id || i} className="hover:bg-secondary/10 transition-colors">
                                     <td className="px-4 py-3">
-                                      <span className="font-medium text-foreground block">{cot.proveedor}</span>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className="font-medium text-foreground">{cot.proveedor}</span>
+                                        {cot.seleccionada && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">
+                                            ✓ Desembolso
+                                          </span>
+                                        )}
+                                      </div>
                                       {cot.tipo_documento && cot.numero_documento && (
-                                        <span className="text-xs text-muted-foreground font-mono">
+                                        <span className="text-xs text-muted-foreground font-mono block mt-0.5">
                                           {cot.tipo_documento}: {cot.numero_documento}
                                         </span>
                                       )}
@@ -893,6 +907,12 @@ export default function ExpedienteDetailPage() {
                         </span>
                       </div>
                       <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Número de Acta</span>
+                        <span className="text-sm font-semibold flex items-center gap-2 font-mono text-yellow-400">
+                          {expediente.numero_acta || '—'}
+                        </span>
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider block">Causa Raíz Dictaminada</span>
                         <span className="text-sm font-semibold text-foreground block bg-secondary/50 p-2 rounded border border-border">
                           {expediente.causa_raiz || 'Pendiente de definir causa.'}

@@ -1,4 +1,12 @@
-export const TIPOS_RECLAMACION = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro'] as const;
+export const TIPOS_RECLAMACION = [
+  'Siniestro',
+  'Vidrios',
+  'Carrocería',
+  'Repuestos',
+  'Pérdida parcial',
+  'Afectación por orden público',
+  'Otro',
+] as const;
 
 export const CULPABILIDADES = ['Conductor', 'Tercero', 'Compartida', 'Sin definir'] as const;
 
