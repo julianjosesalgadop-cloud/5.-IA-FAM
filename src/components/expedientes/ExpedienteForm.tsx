@@ -242,6 +242,38 @@ export function ExpedienteForm({
     return 'Otro';
   });
 
+  const [existingActas, setExistingActas] = useState<string[]>([]);
+  const [actaMode, setActaMode] = useState<'select' | 'new'>('select');
+
+  useEffect(() => {
+    const fetchActas = async () => {
+      try {
+        const list = await dbService.getExpedientes();
+        const actas = Array.from(
+          new Set(
+            list
+              .map((e) => e.numero_acta)
+              .filter((acta): acta is string => typeof acta === 'string' && acta.trim() !== '')
+          )
+        ).sort();
+        setExistingActas(actas);
+        
+        if (actas.length === 0) {
+          setActaMode('new');
+        } else if (defaultValues?.numero_acta) {
+          if (actas.includes(defaultValues.numero_acta)) {
+            setActaMode('select');
+          } else {
+            setActaMode('new');
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching existing actas:', err);
+      }
+    };
+    fetchActas();
+  }, [defaultValues?.numero_acta]);
+
   useEffect(() => {
     if (defaultValues) {
       if (defaultValues.autorizado_por === 'MARTHA BIBIANA RINCON REYES') {
@@ -363,7 +395,6 @@ export function ExpedienteForm({
       setValue('cotizaciones.0.seleccionada', true);
     }
   }, [cotizaciones.length, setValue, cotizaciones]);
-
   const { fields: propietariosFields, append: appendPropietario, remove: removePropietario } = useFieldArray({
     control,
     name: 'propietarios',
@@ -373,6 +404,7 @@ export function ExpedienteForm({
   // Calcular totales financieros de cotizaciones en tiempo de renderizado
   const selectedCotIndex = cotizaciones.findIndex((c) => c.seleccionada);
   const selectedCot = cotizaciones[selectedCotIndex !== -1 ? selectedCotIndex : 0];
+  const selectedValorCotizacion = selectedCot ? (selectedCot.valor_cotizacion || 0) : 0;
 
   const totalCotizacion = cotizaciones.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
   const totalNegociado = selectedCot ? (selectedCot.valor_negociado || 0) : 0;
@@ -407,6 +439,7 @@ export function ExpedienteForm({
       const selIndex = data.cotizaciones?.findIndex((c) => c.seleccionada);
       const activeCot = updatedCotizaciones[selIndex !== undefined && selIndex !== -1 ? selIndex : 0];
 
+      const finalValorCotizacion = activeCot ? (activeCot.valor_cotizacion || 0) : 0;
       const finalNegociado = activeCot ? (activeCot.valor_negociado || 0) : 0;
       const finalDeducible = activeCot ? (activeCot.valor_deducible || 0) : 0;
       const finalAPagar = activeCot ? (activeCot.valor_a_pagar || 0) : 0;
@@ -427,7 +460,7 @@ export function ExpedienteForm({
           ? data.propietarios.map((p) => p.nombre).join(', ')
           : '',
         cotizaciones: updatedCotizaciones,
-        valor_cotizacion: totalCotizacion,
+        valor_cotizacion: finalValorCotizacion,
         valor_negociado: finalNegociado,
         valor_deducible: finalDeducible,
         valor_a_pagar: finalAPagar,
@@ -1057,8 +1090,10 @@ export function ExpedienteForm({
                     Consolidado Financiero (Cotización Seleccionada)
                   </h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Cotizado (Todas las cotizaciones):</span>
-                    <span className="number-font text-foreground font-semibold">{formatCOPInput(totalCotizacion)}</span>
+                    <span className="text-muted-foreground">
+                      {cotizaciones.length > 1 ? 'Valor Cotizado (Seleccionada):' : 'Valor Cotizado:'}
+                    </span>
+                    <span className="number-font text-foreground font-semibold">{formatCOPInput(selectedValorCotizacion)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Valor Negociado (Aprobado):</span>
@@ -1193,25 +1228,65 @@ export function ExpedienteForm({
                     <Input type="date" {...register('fecha_comite')} className={inputClass} />
                   </FormField>
                   <FormField label="Número de Acta">
-                    <Input 
-                      placeholder="Ej: ACTA 0001" 
-                      {...register('numero_acta')} 
-                      className={`${inputClass} font-mono`}
-                      onBlur={(e) => {
-                        const val = e.target.value.trim();
-                        if (val) {
-                          const numOnly = val.replace(/\D/g, '');
-                          if (numOnly) {
-                            setValue('numero_acta', `ACTA ${numOnly.padStart(4, '0')}`);
-                          } else {
-                            const match = val.match(/acta\s*(\d+)/i);
-                            if (match && match[1]) {
-                              setValue('numero_acta', `ACTA ${match[1].padStart(4, '0')}`);
+                    {actaMode === 'select' ? (
+                      <div className="space-y-2">
+                        <select
+                          {...register('numero_acta')}
+                          className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+                        >
+                          <option value="">Seleccionar acta...</option>
+                          {existingActas.map((acta) => (
+                            <option key={acta} value={acta}>
+                              {acta}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActaMode('new');
+                            setValue('numero_acta', '');
+                          }}
+                          className="text-xs text-brand-400 hover:text-brand-500 underline flex items-center gap-1 mt-1 font-semibold"
+                        >
+                          + Registrar nueva acta
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Input 
+                          placeholder="Ej: ACTA 0001" 
+                          {...register('numero_acta')} 
+                          className={`${inputClass} font-mono`}
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val) {
+                              const numOnly = val.replace(/\D/g, '');
+                              if (numOnly) {
+                                setValue('numero_acta', `ACTA ${numOnly.padStart(4, '0')}`);
+                              } else {
+                                const match = val.match(/acta\s*(\d+)/i);
+                                if (match && match[1]) {
+                                  setValue('numero_acta', `ACTA ${match[1].padStart(4, '0')}`);
+                                }
+                              }
                             }
-                          }
-                        }
-                      }}
-                    />
+                          }}
+                        />
+                        {existingActas.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActaMode('select');
+                              setValue('numero_acta', '');
+                            }}
+                            className="text-xs text-brand-400 hover:text-brand-500 underline flex items-center gap-1 mt-1 font-semibold"
+                          >
+                            Seleccionar acta existente
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {errors.numero_acta && (
                       <p className="text-red-400 text-xs mt-1">{errors.numero_acta.message}</p>
                     )}

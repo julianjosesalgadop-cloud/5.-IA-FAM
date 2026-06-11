@@ -38,20 +38,21 @@ const CUSTOM_TOOLTIP_STYLE = {
 function CustomTooltipBar({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const isFiltered = data.totalFilteredCases < data.totalGeneralCases;
+    
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((p: any) => {
           const val = p.value || 0;
-          let filteredPct = 0;
-          let generalPct = 0;
+          let pct = 0;
 
           if (p.name === 'valor' || p.name === 'aprobado') {
-            filteredPct = data.totalFilteredApprovedSum > 0 ? (val / data.totalFilteredApprovedSum) * 100 : 0;
-            generalPct = data.totalGeneralApprovedSum > 0 ? (val / data.totalGeneralApprovedSum) * 100 : 0;
+            const denom = isFiltered ? data.totalFilteredApprovedSum : data.totalGeneralApprovedSum;
+            pct = denom > 0 ? (val / denom) * 100 : 0;
           } else {
-            filteredPct = data.totalFilteredCases > 0 ? (val / data.totalFilteredCases) * 100 : 0;
-            generalPct = data.totalGeneralCases > 0 ? (val / data.totalGeneralCases) * 100 : 0;
+            const denom = isFiltered ? data.totalFilteredCases : data.totalGeneralCases;
+            pct = denom > 0 ? (val / denom) * 100 : 0;
           }
 
           return (
@@ -62,9 +63,8 @@ function CustomTooltipBar({ active, payload, label }: any) {
                   {p.name === 'valor' || p.name === 'aprobado' ? 'Valor Aprobado:' : 'Casos:'} {p.name === 'valor' || p.name === 'aprobado' ? formatCOP(val) : `${val} expedientes`}
                 </span>
               </div>
-              <div className="pl-4 text-[10px] text-muted-foreground flex gap-2">
-                <span>Filtrado: {filteredPct.toFixed(1)}%</span>
-                <span>General: {generalPct.toFixed(1)}%</span>
+              <div className="pl-4 text-[10px] text-muted-foreground">
+                <span>{isFiltered ? 'Porcentaje (Filtrado)' : 'Porcentaje'}: {pct.toFixed(1)}%</span>
               </div>
             </div>
           );
@@ -78,23 +78,24 @@ function CustomTooltipBar({ active, payload, label }: any) {
 function CustomTooltipFinanzas({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const isFiltered = data.totalFilteredCases < data.totalGeneralCases;
+    
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((p: any) => {
           const val = p.value || 0;
-          let filteredPct = 0;
-          let generalPct = 0;
+          let pct = 0;
 
           if (p.name === 'cotizado') {
-            filteredPct = data.totalFilteredCotizadoSum > 0 ? (val / data.totalFilteredCotizadoSum) * 100 : 0;
-            generalPct = data.totalGeneralCotizadoSum > 0 ? (val / data.totalGeneralCotizadoSum) * 100 : 0;
+            const denom = isFiltered ? data.totalFilteredCotizadoSum : data.totalGeneralCotizadoSum;
+            pct = denom > 0 ? (val / denom) * 100 : 0;
           } else if (p.name === 'negociado') {
-            filteredPct = data.totalFilteredNegociadoSum > 0 ? (val / data.totalFilteredNegociadoSum) * 100 : 0;
-            generalPct = data.totalGeneralNegociadoSum > 0 ? (val / data.totalGeneralNegociadoSum) * 100 : 0;
+            const denom = isFiltered ? data.totalFilteredNegociadoSum : data.totalGeneralNegociadoSum;
+            pct = denom > 0 ? (val / denom) * 100 : 0;
           } else if (p.name === 'aprobado') {
-            filteredPct = data.totalFilteredApprovedSum > 0 ? (val / data.totalFilteredApprovedSum) * 100 : 0;
-            generalPct = data.totalGeneralApprovedSum > 0 ? (val / data.totalGeneralApprovedSum) * 100 : 0;
+            const denom = isFiltered ? data.totalFilteredApprovedSum : data.totalGeneralApprovedSum;
+            pct = denom > 0 ? (val / denom) * 100 : 0;
           }
 
           return (
@@ -106,9 +107,8 @@ function CustomTooltipFinanzas({ active, payload, label }: any) {
                 </div>
                 <span className="font-semibold number-font">{formatCOP(val)}</span>
               </div>
-              <div className="pl-3.5 text-[10px] text-muted-foreground flex gap-2">
-                <span>Filtrado: {filteredPct.toFixed(1)}%</span>
-                <span>General: {generalPct.toFixed(1)}%</span>
+              <div className="pl-3.5 text-[10px] text-muted-foreground">
+                <span>{isFiltered ? 'Porcentaje (Filtrado)' : 'Porcentaje'}: {pct.toFixed(1)}%</span>
               </div>
             </div>
           );
@@ -125,11 +125,16 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
     const data = p.payload;
     const val = p.value || 0;
     
-    let filteredTotal = isValueCOP ? data.totalFilteredApprovedSum : data.totalFilteredCases;
-    let generalTotal = isValueCOP ? data.totalGeneralApprovedSum : data.totalGeneralCases;
+    const isFiltered = data.totalFilteredCases < data.totalGeneralCases;
+    
+    let total = 0;
+    if (isValueCOP) {
+      total = isFiltered ? data.totalFilteredApprovedSum : data.totalGeneralApprovedSum;
+    } else {
+      total = isFiltered ? data.totalFilteredCases : data.totalGeneralCases;
+    }
 
-    const filteredPct = filteredTotal > 0 ? (val / filteredTotal) * 100 : 0;
-    const generalPct = generalTotal > 0 ? (val / generalTotal) * 100 : 0;
+    const pct = total > 0 ? (val / total) * 100 : 0;
 
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1 shadow-lg">
@@ -140,9 +145,8 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
             {isValueCOP ? formatCOP(val) : `${val} expedientes`}
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground flex gap-2 pt-1 border-t border-border/50 mt-1">
-          <span>Filtrado: {filteredPct.toFixed(1)}%</span>
-          <span>General: {generalPct.toFixed(1)}%</span>
+        <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-1">
+          <span>{isFiltered ? 'Porcentaje (Filtrado)' : 'Porcentaje'}: {pct.toFixed(1)}%</span>
         </div>
       </div>
     );
