@@ -369,14 +369,18 @@ export const dbService = {
       if (idx === -1) throw new Error('Expediente no encontrado');
  
       const old = list[idx];
+      const currentUser = getMockUser();
+      const isAdmin = currentUser.rol === 'admin';
 
-      if (old.estado === 'Aprobado' || old.estado === 'Rechazado') {
-        throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
-      }
-      if (old.estado === 'Revisado') {
-        const updatedKeys = Object.keys(payload).filter(k => k !== 'updated_at');
-        if (updatedKeys.length > 1 || (updatedKeys.length === 1 && updatedKeys[0] !== 'estado')) {
-          throw new Error('En estado Revisado solo se permite cambiar el estado.');
+      if (!isAdmin) {
+        if (old.estado === 'Aprobado' || old.estado === 'Rechazado') {
+          throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
+        }
+        if (old.estado === 'Revisado') {
+          const updatedKeys = Object.keys(payload).filter(k => k !== 'updated_at');
+          if (updatedKeys.length > 1 || (updatedKeys.length === 1 && updatedKeys[0] !== 'estado')) {
+            throw new Error('En estado Revisado solo se permite cambiar el estado.');
+          }
         }
       }
 
@@ -408,9 +412,20 @@ export const dbService = {
 
     const supabase = createBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    let isAdmin = false;
+    if (user) {
+      const { data: profile } = await supabase
+        .from('perfiles')
+        .select('rol')
+        .eq('id', user.id)
+        .single();
+      isAdmin = (profile as any)?.rol === 'admin';
+    }
+
     const { data: oldData } = await supabase.from('expedientes').select('*').eq('id', id).single();
  
-    if (oldData) {
+    if (oldData && !isAdmin) {
       if (oldData.estado === 'Aprobado' || oldData.estado === 'Rechazado') {
         throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
       }

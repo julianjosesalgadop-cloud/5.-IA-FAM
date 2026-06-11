@@ -499,7 +499,7 @@ export default function ExpedienteDetailPage() {
                 <div className="flex items-center gap-1.5 ml-2 border border-border rounded-lg p-1 bg-secondary/20">
                   <span className="text-xs text-muted-foreground px-2">Estado:</span>
                   {['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'].map((status) => {
-                    const isLocked = expediente.estado === 'Aprobado' || expediente.estado === 'Rechazado';
+                    const isLocked = (expediente.estado === 'Aprobado' || expediente.estado === 'Rechazado') && currentUser.rol !== 'admin';
                     const isActive = expediente.estado === status;
                     return (
                       <button
