@@ -18,12 +18,12 @@ const COLUMNS = [
   { label: 'Acta', key: 'numero_acta' },
   { label: 'Fecha', key: 'fecha_incidente' },
   { label: 'Interno/Placa', key: 'numero_interno' },
-  { label: 'Propietario', key: 'propietario' },
   { label: 'Tipo', key: 'tipo_reclamacion' },
-  { label: 'Conductor', key: 'nombre_conductor' },
-  { label: 'Culpabilidad', key: 'culpabilidad' },
   { label: 'Valor Aprobado', key: 'valor_final_aprobado' },
   { label: 'Estado', key: 'estado' },
+  { label: 'Propietario', key: 'propietario' },
+  { label: 'Conductor', key: 'nombre_conductor' },
+  { label: 'Culpabilidad', key: 'culpabilidad' },
 ] as const;
 
 export function ExpedientesList() {
@@ -379,19 +379,10 @@ export function ExpedientesList() {
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-3 max-w-[180px] truncate text-foreground">
-                      {exp.propietario}
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getTipoReclamacionColor(exp.tipo_reclamacion || '')}`}>
                         {exp.tipo_reclamacion}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                      {exp.nombre_conductor || '—'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-xs">
-                      {exp.culpabilidad || '—'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap number-font font-semibold text-foreground">
                       {formatCOP(exp.valor_final_aprobado)}
@@ -400,6 +391,15 @@ export function ExpedientesList() {
                       <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getEstadoBadgeColor(exp.estado || '')}`}>
                         {exp.estado}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 max-w-[180px] truncate text-foreground">
+                      {exp.propietario}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {exp.nombre_conductor || '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-xs">
+                      {exp.culpabilidad || '—'}
                     </td>
                   </motion.tr>
                 ))}
