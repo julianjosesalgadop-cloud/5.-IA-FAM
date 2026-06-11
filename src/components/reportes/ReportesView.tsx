@@ -318,69 +318,13 @@ export function ReportesView() {
           No hay expedientes registrados para los filtros seleccionados.
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top placas */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="border-border bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground">Top 5 Vehículos por Reclamaciones</CardTitle>
-                <CardDescription>Vehículos con mayor frecuencia de incidentes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topPlacas.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-muted-foreground">Sin datos</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={topPlacas} layout="vertical" barSize={14} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                      <XAxis type="number" tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                      <YAxis dataKey="placa" type="category" tick={{ fill: 'hsl(215,20%,55%)', fontSize: 11, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={65} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: 'hsl(222,39%,12%)', border: '1px solid hsl(222,26%,22%)', borderRadius: '8px', color: 'hsl(210,40%,95%)', fontSize: 12 }}
-                        formatter={(val: number, name: string) => [name === 'total' ? `${val} expedientes` : formatCOP(val), name === 'total' ? 'Expedientes' : 'Valor Aprobado']}
-                      />
-                      <Bar dataKey="total" radius={[0, 3, 3, 0]} fill="hsl(217,91%,55%)">
-                        {topPlacas.map((_, i) => (
-                          <Cell key={i} fill={i === 0 ? 'hsl(43,96%,52%)' : 'hsl(217,91%,55%)'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Top conductores */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="border-border bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground">Top 5 Conductores</CardTitle>
-                <CardDescription>Conductores con mayor recurrencia de reportes</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-2">
-                {topConductores.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-muted-foreground">Sin datos</div>
-                ) : (
-                  topConductores.map((c, i) => (
-                    <div key={c.nombre} className="flex items-center gap-3 py-1.5 border-b border-border/40 last:border-0">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-gold-500/20 text-gold-500 border border-gold-500/30' : 'bg-secondary text-muted-foreground'}`}>
-                        {i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{c.nombre}</p>
-                        <p className="text-xs text-muted-foreground font-medium">Costo Total: {formatCOP(c.valor)}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-bold number-font text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-lg">{c.total} casos</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+        <Card className="border-border bg-card p-8 text-center text-muted-foreground">
+          <FileText className="w-8 h-8 mx-auto mb-3 text-primary/60" />
+          <p className="font-semibold text-foreground text-sm">Filtros aplicados correctamente</p>
+          <p className="text-xs mt-1">
+            Los datos consolidados han sido filtrados. Use los botones superiores para exportar el reporte consolidado en formato Excel (.xlsx) o PDF (.pdf).
+          </p>
+        </Card>
       )}
     </div>
   );

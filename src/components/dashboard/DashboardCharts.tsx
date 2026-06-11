@@ -26,6 +26,10 @@ import type { Expediente } from '@/types/database';
 interface DashboardChartsProps {
   expedientes: Expediente[];
   unfilteredExpedientes: Expediente[];
+  onSelectPlaca?: (placa: string) => void;
+  onSelectConductor?: (conductor: string) => void;
+  selectedPlaca?: string;
+  selectedConductor?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -154,7 +158,14 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
   return null;
 }
 
-export function DashboardCharts({ expedientes, unfilteredExpedientes }: DashboardChartsProps) {
+export function DashboardCharts({
+  expedientes,
+  unfilteredExpedientes,
+  onSelectPlaca,
+  onSelectConductor,
+  selectedPlaca,
+  selectedConductor,
+}: DashboardChartsProps) {
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -302,6 +313,48 @@ export function DashboardCharts({ expedientes, unfilteredExpedientes }: Dashboar
     }))
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  // 8. Top 5 Vehículos por Reclamaciones
+  const placaGroups: Record<string, { total: number; valor: number }> = {};
+  expedientes.forEach((e) => {
+    if (!e.placa) return;
+    const p = e.placa.trim().toUpperCase();
+    if (!placaGroups[p]) placaGroups[p] = { total: 0, valor: 0 };
+    placaGroups[p].total += 1;
+    placaGroups[p].valor += e.valor_final_aprobado || 0;
+  });
+  const topPlacasData = Object.entries(placaGroups)
+    .map(([placa, data]) => ({ 
+      name: placa, 
+      placa,
+      value: data.total, 
+      valor: data.valor,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .sort((a, b) => b.value - a.value || b.valor - a.valor)
+    .slice(0, 5);
+
+  // 9. Top 5 Conductores por Reclamaciones
+  const condGroups: Record<string, { total: number; valor: number }> = {};
+  expedientes.forEach((e) => {
+    if (!e.nombre_conductor) return;
+    const name = e.nombre_conductor.trim();
+    if (!condGroups[name]) condGroups[name] = { total: 0, valor: 0 };
+    condGroups[name].total += 1;
+    condGroups[name].valor += e.valor_final_aprobado || 0;
+  });
+  const topConductoresData = Object.entries(condGroups)
+    .map(([nombre, data]) => ({ 
+      name: nombre, 
+      nombre,
+      value: data.total, 
+      valor: data.valor,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .sort((a, b) => b.value - a.value || b.valor - a.valor)
     .slice(0, 5);
 
   const hasData = expedientes.length > 0;
@@ -641,6 +694,122 @@ export function DashboardCharts({ expedientes, unfilteredExpedientes }: Dashboar
     </div>
   );
 
+  const renderTopPlacas = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {topPlacasData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de vehículos</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            layout="vertical"
+            data={topPlacasData}
+            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fontFamily: 'monospace' }}
+              axisLine={false}
+              tickLine={false}
+              width={90}
+            />
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
+            <Bar 
+              dataKey="value" 
+              fill="hsl(217, 91%, 55%)"
+              radius={[0, 3, 3, 0]} 
+              barSize={15}
+              onClick={(data) => {
+                if (data && data.placa && onSelectPlaca) {
+                  onSelectPlaca(data.placa);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {topPlacasData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                />
+              ))}
+              <LabelList
+                dataKey="value"
+                position="right"
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderTopConductores = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {topConductoresData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de conductores</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            layout="vertical"
+            data={topConductoresData}
+            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={130}
+            />
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
+            <Bar 
+              dataKey="value" 
+              fill="hsl(43, 96%, 52%)"
+              radius={[0, 3, 3, 0]} 
+              barSize={15}
+              onClick={(data) => {
+                if (data && data.nombre && onSelectConductor) {
+                  onSelectConductor(data.nombre);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {topConductoresData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedConductor === d.nombre ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                />
+              ))}
+              <LabelList
+                dataKey="value"
+                position="right"
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Monthly trend */}
@@ -942,6 +1111,74 @@ export function DashboardCharts({ expedientes, unfilteredExpedientes }: Dashboar
           </CardHeader>
           <CardContent>
             {renderAfectacionConductor(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Top 5 Vehículos por Reclamaciones */}
+      <motion.div
+        className="lg:col-span-2"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Top 5 Vehículos por Reclamaciones</CardTitle>
+              <CardDescription>Vehículos con mayor frecuencia de incidentes</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'top-vehiculos',
+                title: 'Top 5 Vehículos por Reclamaciones',
+                description: 'Vehículos con mayor frecuencia de incidentes',
+                render: renderTopPlacas
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderTopPlacas(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Top 5 Conductores por Reclamaciones */}
+      <motion.div
+        className="lg:col-span-1"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.0, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Top 5 Conductores</CardTitle>
+              <CardDescription>Conductores con mayor recurrencia de reportes</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'top-conductores',
+                title: 'Top 5 Conductores',
+                description: 'Conductores con mayor recurrencia de reportes',
+                render: renderTopConductores
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderTopConductores(240)}
           </CardContent>
         </Card>
       </motion.div>

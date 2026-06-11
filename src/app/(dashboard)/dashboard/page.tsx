@@ -5,9 +5,10 @@ import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DashboardPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -19,6 +20,8 @@ export default function DashboardPage() {
   const [presetRange, setPresetRange] = useState('todo');
   const [tipoReclamacion, setTipoReclamacion] = useState('todos');
   const [placaSearch, setPlacaSearch] = useState('');
+  const [selectedChartPlaca, setSelectedChartPlaca] = useState('');
+  const [selectedChartConductor, setSelectedChartConductor] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -76,6 +79,14 @@ export default function DashboardPage() {
       const matchPlaca = e.placa?.toLowerCase().includes(placaSearch.toLowerCase());
       const matchInterno = e.numero_interno?.toLowerCase().includes(placaSearch.toLowerCase());
       if (!matchPlaca && !matchInterno) return false;
+    }
+    // 4. Chart Placa Filter
+    if (selectedChartPlaca) {
+      if (e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    }
+    // 5. Chart Conductor Filter
+    if (selectedChartConductor) {
+      if (e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     }
     return true;
   });
@@ -165,7 +176,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch) && (
+          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor) && (
             <Button
               variant="ghost"
               size="sm"
@@ -175,6 +186,8 @@ export default function DashboardPage() {
                 setPresetRange('todo');
                 setTipoReclamacion('todos');
                 setPlacaSearch('');
+                setSelectedChartPlaca('');
+                setSelectedChartConductor('');
               }}
               className="text-xs text-red-400 hover:text-red-500 h-10 px-3"
             >
@@ -191,10 +204,81 @@ export default function DashboardPage() {
         ) : (
           <>
             <DashboardKPIs expedientes={filteredExpedientes} />
-            <DashboardCharts expedientes={filteredExpedientes} unfilteredExpedientes={expedientes} />
+            <DashboardCharts 
+              expedientes={filteredExpedientes} 
+              unfilteredExpedientes={expedientes} 
+              onSelectPlaca={setSelectedChartPlaca}
+              onSelectConductor={setSelectedChartConductor}
+              selectedPlaca={selectedChartPlaca}
+              selectedConductor={selectedChartConductor}
+            />
           </>
         )}
       </div>
+
+      {/* Active Chart Filters Notification */}
+      <AnimatePresence>
+        {(selectedChartPlaca || selectedChartConductor) && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-24 right-6 z-50 w-80 bg-card border border-border shadow-2xl rounded-xl p-4 overflow-hidden backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/60">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Filtros Activos (Gráfico)</h4>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedChartPlaca('');
+                  setSelectedChartConductor('');
+                }}
+                className="text-[10px] text-red-400 hover:text-red-500 font-semibold p-0 h-auto"
+              >
+                Quitar Todos
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {selectedChartPlaca && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Vehículo</p>
+                    <p className="text-xs font-mono font-bold text-foreground truncate">{selectedChartPlaca}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartPlaca('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartConductor && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Conductor</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartConductor}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartConductor('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
