@@ -135,7 +135,9 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
               {group.items.map((item) => {
                 const Icon = ICONS[item.icon];
                 const isActive =
-                  pathname === item.href || pathname.startsWith(item.href + '/');
+                  item.href === '/expedientes'
+                    ? pathname === '/expedientes' || (pathname.startsWith('/expedientes/') && !pathname.startsWith('/expedientes/nuevo'))
+                    : pathname === item.href || pathname.startsWith(item.href + '/');
                 return (
                   <Link
                     key={item.href}
