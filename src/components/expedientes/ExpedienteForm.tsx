@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -201,13 +201,30 @@ export function ExpedienteForm({
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // 1. Scroll any parent element with overflow auto/scroll
+      let parent = formRef.current?.parentElement;
+      while (parent) {
+        const style = window.getComputedStyle(parent);
+        const hasOverflow = style.overflowY === 'auto' || style.overflowY === 'scroll' || 
+                            style.overflow === 'auto' || style.overflow === 'scroll';
+        if (hasOverflow) {
+          parent.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        parent = parent.parentElement;
+      }
+      
+      // 2. Also scroll the main container if found
       const mainEl = document.querySelector('main');
       if (mainEl) {
         mainEl.scrollTo({ top: 0, behavior: 'smooth' });
       }
+
+      // 3. Fallback: Scroll window
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [step]);
 
@@ -566,6 +583,7 @@ export function ExpedienteForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={form.handleSubmit(onSubmit)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
