@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx';
 
 const COLUMNS = [
   { label: 'Expediente', key: 'numero_expediente' },
+  { label: 'Acta', key: 'numero_acta' },
   { label: 'Fecha', key: 'fecha_incidente' },
   { label: 'Interno/Placa', key: 'numero_interno' },
   { label: 'Propietario', key: 'propietario' },
@@ -94,6 +95,7 @@ export function ExpedientesList() {
     try {
       const wsData = sorted.map((e) => ({
         'No. Expediente': e.numero_expediente,
+        'Acta': e.numero_acta ? e.numero_acta.replace(/[^0-9]/g, '') : '',
         'Fecha Incidente': e.fecha_incidente,
         'Placa': e.placa,
         'No. Interno': e.numero_interno || '',
@@ -337,7 +339,7 @@ export function ExpedientesList() {
               <AnimatePresence mode="popLayout">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                    <td colSpan={10} className="py-12 text-center text-muted-foreground">
                       <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                       Cargando expedientes...
                     </td>
@@ -356,6 +358,9 @@ export function ExpedientesList() {
                       <span className="font-mono text-xs font-semibold text-primary group-hover:underline">
                         {exp.numero_expediente}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground font-mono text-xs">
+                      {exp.numero_acta ? exp.numero_acta.replace(/[^0-9]/g, '') : '—'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-muted-foreground number-font text-xs">
                       {formatDate(exp.fecha_incidente)}
