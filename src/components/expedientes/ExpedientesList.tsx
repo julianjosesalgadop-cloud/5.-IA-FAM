@@ -12,6 +12,8 @@ import { ESTADOS_EXPEDIENTE, TIPOS_RECLAMACION } from '@/lib/constants';
 import { dbService } from '@/lib/services/dbService';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLUMNS = [
   { label: 'Expediente', key: 'numero_expediente' },
@@ -134,6 +136,123 @@ export function ExpedientesList() {
     } catch (err) {
       console.error(err);
       toast.error('Error al exportar a Excel');
+    }
+  };
+
+  const loadLogoBase64 = (): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = '/logo.png';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          resolve('');
+        }
+      };
+      img.onerror = () => resolve('');
+    });
+  };
+
+  const handleExportPDF = async () => {
+    if (sorted.length === 0) {
+      toast.warning('No hay expedientes para exportar');
+      return;
+    }
+
+    toast.info('Generando reporte PDF...');
+    try {
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+      const logoB64 = await loadLogoBase64();
+
+      if (logoB64) {
+        doc.addImage(logoB64, 'PNG', 12, 10, 20, 20);
+      }
+
+      // Title
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(27, 54, 93);
+      doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
+      doc.setFontSize(10);
+      doc.setFont('Helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
+      doc.text(`Reporte de Expedientes — Generado el ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 36, 26);
+
+      // Line
+      doc.setDrawColor(217, 91, 42);
+      doc.setLineWidth(0.8);
+      doc.line(12, 33, 285, 33);
+
+      // Metricas
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(27, 54, 93);
+      doc.text('RESUMEN DE EXPEDIENTES', 12, 42);
+
+      const totalAprobado = sorted.reduce((s, e) => s + (e.valor_final_aprobado || 0), 0);
+      const totalCasos = sorted.length;
+
+      autoTable(doc, {
+        startY: 46,
+        theme: 'plain',
+        body: [
+          ['Total Expedientes:', `${totalCasos} casos`, 'Valor Aprobado Total:', formatCOP(totalAprobado)],
+          ['Filtro Estado:', estadoFilter || 'Todos', 'Filtro Tipo:', tipoFilter || 'Todos'],
+          ['Rango de fechas:', `${fechaInicio || 'Inicio'} a ${fechaFin || 'Fin'}`, '', ''],
+        ],
+        styles: { fontSize: 9 },
+      });
+
+      // Detalle de expedientes
+      doc.setFont('Helvetica', 'bold');
+      doc.text('DETALLE DE EXPEDIENTES REGISTRADOS', 12, (doc as any).lastAutoTable.finalY + 8);
+
+      const tableData = sorted.map((e) => [
+        e.numero_expediente,
+        e.numero_acta ? e.numero_acta.replace(/[^0-9]/g, '') : '—',
+        formatDate(e.fecha_incidente),
+        e.numero_interno ? `${e.numero_interno} (${e.placa})` : e.placa,
+        e.tipo_reclamacion,
+        formatCOP(e.valor_final_aprobado),
+        e.estado,
+        e.propietario || '—',
+        e.nombre_conductor || '—',
+        e.culpabilidad || '—',
+      ]);
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 12,
+        head: [['Expediente', 'Acta', 'Fecha', 'Interno/Placa', 'Tipo', 'V. Aprobado', 'Estado', 'Propietario', 'Conductor', 'Culpabilidad']],
+        body: tableData,
+        headStyles: { fillColor: [27, 54, 93], fontSize: 8.5 },
+        bodyStyles: { fontSize: 7.5 },
+      });
+
+      // Pagination/Footer text
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Página ${i} de ${pageCount} — Reportes SIGFAM — Flota Sugamuxi S.A.`, 12, 200);
+      }
+
+      doc.save(`SIGFAM_Reporte_Expedientes_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success('Reporte PDF descargado correctamente');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al generar el reporte PDF');
     }
   };
 
@@ -289,11 +408,15 @@ export function ExpedientesList() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportExcel} id="expedientes-export-btn">
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 mr-1.5 text-green-500" />
             Exportar Excel
           </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPDF} id="expedientes-export-pdf-btn">
+            <FileText className="w-4 h-4 mr-1.5 text-red-500" />
+            Exportar PDF
+          </Button>
           <Button size="sm" onClick={() => router.push('/expedientes/nuevo')} id="expedientes-nuevo-btn">
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-1.5" />
             Nuevo Expediente
           </Button>
         </div>

@@ -726,7 +726,7 @@ export default function ExpedienteDetailPage() {
                                       <div className="flex flex-wrap items-center gap-2">
                                         <span className="font-medium text-foreground">{cot.proveedor}</span>
                                         {cot.seleccionada && (
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">
+                                          <span className="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">
                                             ✓ Desembolso
                                           </span>
                                         )}
