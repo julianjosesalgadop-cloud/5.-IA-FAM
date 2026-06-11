@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Download, FileText, RefreshCw } from 'lucide-react';
+import { Plus, Search, Download, FileText, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,18 @@ import { dbService } from '@/lib/services/dbService';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
+const COLUMNS = [
+  { label: 'Expediente', key: 'numero_expediente' },
+  { label: 'Fecha', key: 'fecha_incidente' },
+  { label: 'Interno/Placa', key: 'numero_interno' },
+  { label: 'Propietario', key: 'propietario' },
+  { label: 'Tipo', key: 'tipo_reclamacion' },
+  { label: 'Conductor', key: 'nombre_conductor' },
+  { label: 'Culpabilidad', key: 'culpabilidad' },
+  { label: 'Valor Aprobado', key: 'valor_final_aprobado' },
+  { label: 'Estado', key: 'estado' },
+] as const;
+
 export function ExpedientesList() {
   const router = useRouter();
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -20,6 +32,17 @@ export function ExpedientesList() {
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<string>('');
   const [tipoFilter, setTipoFilter] = useState<string>('');
+  const [sortField, setSortField] = useState<string>('fecha_incidente');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const fetchExpedientes = async () => {
     setLoading(true);
@@ -39,13 +62,13 @@ export function ExpedientesList() {
   }, []);
 
   const handleExportExcel = () => {
-    if (filtered.length === 0) {
+    if (sorted.length === 0) {
       toast.warning('No hay expedientes para exportar');
       return;
     }
 
     try {
-      const wsData = filtered.map((e) => ({
+      const wsData = sorted.map((e) => ({
         'No. Expediente': e.numero_expediente,
         'Fecha Incidente': e.fecha_incidente,
         'Placa': e.placa,
@@ -100,6 +123,40 @@ export function ExpedientesList() {
     const matchTipo = !tipoFilter || exp.tipo_reclamacion === tipoFilter;
     return matchSearch && matchEstado && matchTipo;
   });
+
+  const sorted = React.useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let valA: any = a[sortField as keyof Expediente];
+      let valB: any = b[sortField as keyof Expediente];
+
+      if (valA === null || valA === undefined) valA = '';
+      if (valB === null || valB === undefined) valB = '';
+
+      if (sortField === 'valor_final_aprobado') {
+        const numA = Number(valA) || 0;
+        const numB = Number(valB) || 0;
+        return sortOrder === 'asc' ? numA - numB : numB - numA;
+      }
+
+      if (sortField === 'numero_interno') {
+        const numA = parseInt(valA, 10);
+        const numB = parseInt(valB, 10);
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return sortOrder === 'asc' ? numA - numB : numB - numA;
+        }
+        return sortOrder === 'asc'
+          ? String(valA).localeCompare(String(valB), 'es', { sensitivity: 'base' })
+          : String(valB).localeCompare(String(valA), 'es', { sensitivity: 'base' });
+      }
+
+      const strA = String(valA);
+      const strB = String(valB);
+
+      return sortOrder === 'asc'
+        ? strA.localeCompare(strB, 'es', { sensitivity: 'base' })
+        : strB.localeCompare(strA, 'es', { sensitivity: 'base' });
+    });
+  }, [filtered, sortField, sortOrder]);
 
   return (
     <div className="space-y-5">
@@ -158,7 +215,7 @@ export function ExpedientesList() {
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground">
-        Mostrando <span className="font-semibold text-foreground">{filtered.length}</span> expedientes
+        Mostrando <span className="font-semibold text-foreground">{sorted.length}</span> expedientes
       </p>
 
       {/* Table */}
@@ -167,11 +224,29 @@ export function ExpedientesList() {
           <table className="w-full min-w-[1100px] text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/20">
-                {['Expediente', 'Fecha', 'Interno/Placa', 'Propietario', 'Tipo', 'Conductor', 'Culpabilidad', 'Valor Aprobado', 'Estado'].map((col) => (
-                  <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                    {col}
-                  </th>
-                ))}
+                {COLUMNS.map((col) => {
+                  const isSortedByThis = sortField === col.key;
+                  return (
+                    <th
+                      key={col.label}
+                      onClick={() => handleSort(col.key)}
+                      className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-secondary/40 select-none transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>{col.label}</span>
+                        {isSortedByThis ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                          ) : (
+                            <ArrowDown className="w-3.5 h-3.5 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -183,7 +258,7 @@ export function ExpedientesList() {
                       Cargando expedientes...
                     </td>
                   </tr>
-                ) : filtered.map((exp, i) => (
+                ) : sorted.map((exp, i) => (
                   <motion.tr
                     key={exp.id}
                     initial={{ opacity: 0, y: 4 }}
@@ -243,7 +318,7 @@ export function ExpedientesList() {
             </tbody>
           </table>
 
-          {!loading && filtered.length === 0 && (
+          {!loading && sorted.length === 0 && (
             <div className="py-16 text-center">
               <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground">No se encontraron expedientes</p>
