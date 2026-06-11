@@ -62,32 +62,40 @@ export default function DashboardPage() {
     }
   }, [presetRange]);
 
-  const filteredExpedientes = expedientes.filter((e) => {
-    // 1. Date Filter
-    if (fechaInicio) {
-      if (!e.fecha_incidente || e.fecha_incidente < fechaInicio) return false;
-    }
-    if (fechaFin) {
-      if (!e.fecha_incidente || e.fecha_incidente > fechaFin) return false;
-    }
-    // 2. Claim Type Filter
-    if (tipoReclamacion !== 'todos') {
-      if (e.tipo_reclamacion !== tipoReclamacion) return false;
-    }
-    // 3. Plate / Internal Number Filter
+  // 1. Base Filtered Array (General Filters: Dates, Claim Type, Search Query)
+  const baseFilteredExpedientes = expedientes.filter((e) => {
+    // Date Filter
+    if (fechaInicio && (!e.fecha_incidente || e.fecha_incidente < fechaInicio)) return false;
+    if (fechaFin && (!e.fecha_incidente || e.fecha_incidente > fechaFin)) return false;
+    
+    // Claim Type Filter
+    if (tipoReclamacion !== 'todos' && e.tipo_reclamacion !== tipoReclamacion) return false;
+    
+    // Plate / Internal Number Filter
     if (placaSearch) {
       const matchPlaca = e.placa?.toLowerCase().includes(placaSearch.toLowerCase());
       const matchInterno = e.numero_interno?.toLowerCase().includes(placaSearch.toLowerCase());
       if (!matchPlaca && !matchInterno) return false;
     }
-    // 4. Chart Placa Filter
-    if (selectedChartPlaca) {
-      if (e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
-    }
-    // 5. Chart Conductor Filter
-    if (selectedChartConductor) {
-      if (e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
-    }
+    return true;
+  });
+
+  // 2. Array for Vehicles Chart: baseFiltered + driver filter (excludes vehicle filter to prevent self-collapsing)
+  const expedientesForVehicles = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
+    return true;
+  });
+
+  // 3. Array for Drivers Chart: baseFiltered + vehicle filter (excludes driver filter to prevent self-collapsing)
+  const expedientesForDrivers = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    return true;
+  });
+
+  // 4. Final Filtered Array for KPIs and general charts (includes both selected charts filters)
+  const filteredExpedientes = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     return true;
   });
 
@@ -206,9 +214,11 @@ export default function DashboardPage() {
             <DashboardKPIs expedientes={filteredExpedientes} />
             <DashboardCharts 
               expedientes={filteredExpedientes} 
-              unfilteredExpedientes={expedientes} 
-              onSelectPlaca={setSelectedChartPlaca}
-              onSelectConductor={setSelectedChartConductor}
+              unfilteredExpedientes={expedientes}
+              expedientesForVehicles={expedientesForVehicles}
+              expedientesForDrivers={expedientesForDrivers}
+              onSelectPlaca={(placa) => setSelectedChartPlaca(current => current === placa ? '' : placa)}
+              onSelectConductor={(conductor) => setSelectedChartConductor(current => current === conductor ? '' : conductor)}
               selectedPlaca={selectedChartPlaca}
               selectedConductor={selectedChartConductor}
             />

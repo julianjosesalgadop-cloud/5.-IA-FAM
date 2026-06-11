@@ -26,6 +26,8 @@ import type { Expediente } from '@/types/database';
 interface DashboardChartsProps {
   expedientes: Expediente[];
   unfilteredExpedientes: Expediente[];
+  expedientesForVehicles?: Expediente[];
+  expedientesForDrivers?: Expediente[];
   onSelectPlaca?: (placa: string) => void;
   onSelectConductor?: (conductor: string) => void;
   selectedPlaca?: string;
@@ -161,11 +163,16 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
 export function DashboardCharts({
   expedientes,
   unfilteredExpedientes,
+  expedientesForVehicles,
+  expedientesForDrivers,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
   selectedConductor,
 }: DashboardChartsProps) {
+  // Use specialized arrays if passed, otherwise fallback to default filtered array
+  const ev = expedientesForVehicles || expedientes;
+  const ed = expedientesForDrivers || expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -317,7 +324,7 @@ export function DashboardCharts({
 
   // 8. Top 5 Vehículos por Reclamaciones
   const placaGroups: Record<string, { total: number; valor: number }> = {};
-  expedientes.forEach((e) => {
+  ev.forEach((e) => {
     if (!e.placa) return;
     const p = e.placa.trim().toUpperCase();
     if (!placaGroups[p]) placaGroups[p] = { total: 0, valor: 0 };
@@ -330,7 +337,7 @@ export function DashboardCharts({
       placa,
       value: data.total, 
       valor: data.valor,
-      totalFilteredCases: totalFilteredCount,
+      totalFilteredCases: ev.length,
       totalGeneralCases: totalGeneralCount,
     }))
     .sort((a, b) => b.value - a.value || b.valor - a.valor)
@@ -338,7 +345,7 @@ export function DashboardCharts({
 
   // 9. Top 5 Conductores por Reclamaciones
   const condGroups: Record<string, { total: number; valor: number }> = {};
-  expedientes.forEach((e) => {
+  ed.forEach((e) => {
     if (!e.nombre_conductor) return;
     const name = e.nombre_conductor.trim();
     if (!condGroups[name]) condGroups[name] = { total: 0, valor: 0 };
@@ -351,7 +358,7 @@ export function DashboardCharts({
       nombre,
       value: data.total, 
       valor: data.valor,
-      totalFilteredCases: totalFilteredCount,
+      totalFilteredCases: ed.length,
       totalGeneralCases: totalGeneralCount,
     }))
     .sort((a, b) => b.value - a.value || b.valor - a.valor)
@@ -716,7 +723,36 @@ export function DashboardCharts({
             <YAxis
               dataKey="name"
               type="category"
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11, fontFamily: 'monospace' }}
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const isSelected = selectedPlaca === value;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectPlaca) {
+                        onSelectPlaca(value);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dx={-6}
+                      dy={4}
+                      textAnchor="end"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-mono text-[11px] font-semibold transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      {value}
+                    </text>
+                  </g>
+                );
+              }}
               axisLine={false}
               tickLine={false}
               width={90}
@@ -728,8 +764,9 @@ export function DashboardCharts({
               radius={[0, 3, 3, 0]} 
               barSize={15}
               onClick={(data) => {
-                if (data && data.placa && onSelectPlaca) {
-                  onSelectPlaca(data.placa);
+                const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
+                if (val && onSelectPlaca) {
+                  onSelectPlaca(val);
                 }
               }}
               className="cursor-pointer"
@@ -774,7 +811,36 @@ export function DashboardCharts({
             <YAxis
               dataKey="name"
               type="category"
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const isSelected = selectedConductor === value;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectConductor) {
+                        onSelectConductor(value);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dx={-6}
+                      dy={4}
+                      textAnchor="end"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                    </text>
+                  </g>
+                );
+              }}
               axisLine={false}
               tickLine={false}
               width={130}
@@ -786,8 +852,9 @@ export function DashboardCharts({
               radius={[0, 3, 3, 0]} 
               barSize={15}
               onClick={(data) => {
-                if (data && data.nombre && onSelectConductor) {
-                  onSelectConductor(data.nombre);
+                const val = data?.nombre || data?.payload?.nombre || data?.name || data?.payload?.name;
+                if (val && onSelectConductor) {
+                  onSelectConductor(val);
                 }
               }}
               className="cursor-pointer"
