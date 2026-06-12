@@ -28,10 +28,23 @@ interface DashboardChartsProps {
   unfilteredExpedientes: Expediente[];
   expedientesForVehicles?: Expediente[];
   expedientesForDrivers?: Expediente[];
+  expedientesForPropietarios?: Expediente[];
   onSelectPlaca?: (placa: string) => void;
   onSelectConductor?: (conductor: string) => void;
   selectedPlaca?: string;
   selectedConductor?: string;
+  onSelectProprietario?: (proprietario: string) => void;
+  selectedProprietario?: string;
+  onSelectTipoReclamacion?: (tipo: string) => void;
+  selectedTipoReclamacion?: string;
+  onSelectMonth?: (month: number | null) => void;
+  selectedMonth?: number | null;
+  onSelectStatus?: (status: string) => void;
+  selectedStatus?: string;
+  onSelectCulpabilidad?: (culpabilidad: string) => void;
+  selectedCulpabilidad?: string;
+  onSelectCausaRaiz?: (causa: string) => void;
+  selectedCausaRaiz?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -165,14 +178,28 @@ export function DashboardCharts({
   unfilteredExpedientes,
   expedientesForVehicles,
   expedientesForDrivers,
+  expedientesForPropietarios,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
   selectedConductor,
+  onSelectProprietario,
+  selectedProprietario,
+  onSelectTipoReclamacion,
+  selectedTipoReclamacion,
+  onSelectMonth,
+  selectedMonth,
+  onSelectStatus,
+  selectedStatus,
+  onSelectCulpabilidad,
+  selectedCulpabilidad,
+  onSelectCausaRaiz,
+  selectedCausaRaiz,
 }: DashboardChartsProps) {
   // Use specialized arrays if passed, otherwise fallback to default filtered array
   const ev = expedientesForVehicles || expedientes;
   const ed = expedientesForDrivers || expedientes;
+  const ep = expedientesForPropietarios || expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -203,6 +230,7 @@ export function DashboardCharts({
     const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
     return {
       mes: name,
+      monthIndex: index,
       expedientes: cases.length,
       valor: sumAprobado,
       cotizado: sumCotizado,
@@ -290,7 +318,7 @@ export function DashboardCharts({
 
   // 6. Afectación FAM por Propietario (Top 5)
   const propietarioGroups: Record<string, number> = {};
-  expedientes.forEach((e) => {
+  ep.forEach((e) => {
     const prop = e.propietario ? e.propietario.trim() : 'Sin definir';
     propietarioGroups[prop] = (propietarioGroups[prop] || 0) + (e.valor_final_aprobado || 0);
   });
@@ -403,7 +431,17 @@ export function DashboardCharts({
   const renderExpedientesPorMes = (height: number) => (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={monthlyData} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
+        <AreaChart 
+          data={monthlyData} 
+          margin={{ left: -20, right: 10, top: 10, bottom: 0 }}
+          onClick={(data) => {
+            const activeTooltipIndex = data?.activeTooltipIndex;
+            if (activeTooltipIndex !== undefined && onSelectMonth) {
+              onSelectMonth(activeTooltipIndex);
+            }
+          }}
+          className="cursor-pointer"
+        >
           <defs>
             <linearGradient id="colorExpedientes" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="hsl(217,91%,55%)" stopOpacity={0.2} />
@@ -411,7 +449,40 @@ export function DashboardCharts({
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <XAxis 
+            dataKey="mes" 
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const value = payload?.value || '';
+              const idx = MONTH_NAMES.indexOf(value);
+              const isSelected = selectedMonth === idx;
+              return (
+                <g 
+                  style={{ pointerEvents: 'auto' }} 
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectMonth && idx !== -1) {
+                      onSelectMonth(idx);
+                    }
+                  }}
+                >
+                  <text
+                    x={x}
+                    y={y}
+                    dy={12}
+                    textAnchor="middle"
+                    fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                    className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                  >
+                    {value}
+                  </text>
+                </g>
+              );
+            }}
+            axisLine={false} 
+            tickLine={false} 
+          />
           <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
           <Tooltip content={<CustomTooltipBar />} />
           <Area
@@ -421,7 +492,7 @@ export function DashboardCharts({
             strokeWidth={2}
             fill="url(#colorExpedientes)"
             dot={{ fill: 'hsl(217,91%,55%)', strokeWidth: 0, r: 3 }}
-            activeDot={{ r: 5, fill: 'hsl(43,96%,52%)' }}
+            activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(142,71%,45%)' : 'hsl(43,96%,52%)' }}
           >
             <LabelList
               dataKey="expedientes"
@@ -452,17 +523,45 @@ export function DashboardCharts({
               dataKey="value"
               label={({ value }) => value}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectTipoReclamacion) {
+                  onSelectTipoReclamacion(val);
+                }
+              }}
+              className="cursor-pointer"
             >
-              {tipoData.map((entry, index) => (
-                <Cell key={index} fill={entry.fill} />
-              ))}
+              {tipoData.map((entry, index) => {
+                const isSelected = selectedTipoReclamacion === entry.name;
+                return (
+                  <Cell 
+                    key={index} 
+                    fill={entry.fill}
+                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                    opacity={selectedTipoReclamacion && !isSelected ? 0.45 : 1}
+                  />
+                );
+              })}
             </Pie>
             <Tooltip content={<CustomTooltipPercentages />} />
             <Legend
               iconSize={8}
-              formatter={(value) => (
-                <span className="text-xs text-muted-foreground font-medium">{value}</span>
-              )}
+              onClick={(data) => {
+                const val = data?.value;
+                if (val && onSelectTipoReclamacion) {
+                  onSelectTipoReclamacion(val);
+                }
+              }}
+              className="cursor-pointer"
+              formatter={(value) => {
+                const isSelected = selectedTipoReclamacion === value;
+                return (
+                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
+                    {value}
+                  </span>
+                );
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -473,9 +572,53 @@ export function DashboardCharts({
   const renderMontoAprobado = (height: number) => (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={monthlyData} barSize={height > 300 ? 35 : 20} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+        <BarChart 
+          data={monthlyData} 
+          barSize={height > 300 ? 35 : 20} 
+          margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+          onClick={(data) => {
+            const activeTooltipIndex = data?.activeTooltipIndex;
+            if (activeTooltipIndex !== undefined && onSelectMonth) {
+              onSelectMonth(activeTooltipIndex);
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <XAxis 
+            dataKey="mes" 
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const value = payload?.value || '';
+              const idx = MONTH_NAMES.indexOf(value);
+              const isSelected = selectedMonth === idx;
+              return (
+                <g 
+                  style={{ pointerEvents: 'auto' }} 
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectMonth && idx !== -1) {
+                      onSelectMonth(idx);
+                    }
+                  }}
+                >
+                  <text
+                    x={x}
+                    y={y}
+                    dy={12}
+                    textAnchor="middle"
+                    fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                    className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                  >
+                    {value}
+                  </text>
+                </g>
+              );
+            }}
+            axisLine={false} 
+            tickLine={false} 
+          />
           <YAxis
             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
             axisLine={false}
@@ -483,19 +626,34 @@ export function DashboardCharts({
             tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
           />
           <Tooltip content={<CustomTooltipBar />} />
-          <Bar dataKey="valor" name="valor" fill="hsl(217,91%,55%)" radius={[3, 3, 0, 0]}>
+          <Bar 
+            dataKey="valor" 
+            name="valor" 
+            fill="hsl(217,91%,55%)" 
+            radius={[3, 3, 0, 0]}
+            onClick={(data) => {
+              const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
+              if (monthIdx !== undefined && onSelectMonth) {
+                onSelectMonth(monthIdx);
+              }
+            }}
+            className="cursor-pointer"
+          >
             <LabelList
               dataKey="valor"
               position="top"
               formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
             />
-            {monthlyData.map((entry, i) => (
-              <Cell
-                key={i}
-                fill={entry.valor > 0 ? 'hsl(217, 91%, 55%)' : 'rgba(255,255,255,0.1)'}
-              />
-            ))}
+            {monthlyData.map((entry, i) => {
+              const isSelected = selectedMonth === entry.monthIndex;
+              return (
+                <Cell
+                  key={i}
+                  fill={isSelected ? 'hsl(142, 71%, 45%)' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(59, 130, 246, 0.15)' : 'hsl(217, 91%, 55%)') : 'rgba(255,255,255,0.1)')}
+                />
+              );
+            })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -507,8 +665,17 @@ export function DashboardCharts({
       {estadoData.map((item) => {
         const total = estadoData.reduce((sum, d) => sum + d.value, 0);
         const pct = total ? Math.round((item.value / total) * 100) : 0;
+        const isSelected = selectedStatus === item.name;
         return (
-          <div key={item.name} className="space-y-1">
+          <div 
+            key={item.name} 
+            className={`space-y-1 cursor-pointer p-1.5 rounded-lg transition-colors border ${
+              isSelected 
+                ? 'border-green-500/50 bg-green-500/5' 
+                : 'border-transparent hover:bg-secondary/20'
+            }`}
+            onClick={() => onSelectStatus && onSelectStatus(item.name)}
+          >
             <div className="flex items-center justify-between text-xs sm:text-sm">
               <span className="text-muted-foreground font-medium">{item.name}</span>
               <span className="font-semibold number-font" style={{ color: item.fill }}>
@@ -533,9 +700,54 @@ export function DashboardCharts({
   const renderGestionCostos = (height: number) => (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={monthlyData} barGap={height > 300 ? 6 : 4} barSize={height > 300 ? 16 : undefined} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+        <BarChart 
+          data={monthlyData} 
+          barGap={height > 300 ? 6 : 4} 
+          barSize={height > 300 ? 16 : undefined} 
+          margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+          onClick={(data) => {
+            const activeTooltipIndex = data?.activeTooltipIndex;
+            if (activeTooltipIndex !== undefined && onSelectMonth) {
+              onSelectMonth(activeTooltipIndex);
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <XAxis 
+            dataKey="mes" 
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const value = payload?.value || '';
+              const idx = MONTH_NAMES.indexOf(value);
+              const isSelected = selectedMonth === idx;
+              return (
+                <g 
+                  style={{ pointerEvents: 'auto' }} 
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectMonth && idx !== -1) {
+                      onSelectMonth(idx);
+                    }
+                  }}
+                >
+                  <text
+                    x={x}
+                    y={y}
+                    dy={12}
+                    textAnchor="middle"
+                    fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                    className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                  >
+                    {value}
+                  </text>
+                </g>
+              );
+            }}
+            axisLine={false} 
+            tickLine={false} 
+          />
           <YAxis
             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
             axisLine={false}
@@ -549,29 +761,92 @@ export function DashboardCharts({
               <span className="text-xs text-muted-foreground font-medium capitalize">{value}</span>
             )}
           />
-          <Bar dataKey="cotizado" name="cotizado" fill="hsl(0, 72%, 55%)" radius={[2, 2, 0, 0]}>
+          <Bar 
+            dataKey="cotizado" 
+            name="cotizado" 
+            fill="hsl(0, 72%, 55%)" 
+            radius={[2, 2, 0, 0]}
+            onClick={(data) => {
+              const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
+              if (monthIdx !== undefined && onSelectMonth) {
+                onSelectMonth(monthIdx);
+              }
+            }}
+            className="cursor-pointer"
+          >
             <LabelList
               dataKey="cotizado"
               position="top"
               formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
+            {monthlyData.map((entry, i) => {
+              const isSelected = selectedMonth === entry.monthIndex;
+              return (
+                <Cell 
+                  key={i} 
+                  fill={entry.cotizado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(239, 68, 68, 0.15)' : 'hsl(0, 72%, 55%)') : 'rgba(255,255,255,0.05)'}
+                />
+              );
+            })}
           </Bar>
-          <Bar dataKey="negociado" name="negociado" fill="hsl(43, 96%, 52%)" radius={[2, 2, 0, 0]}>
+          <Bar 
+            dataKey="negociado" 
+            name="negociado" 
+            fill="hsl(43, 96%, 52%)" 
+            radius={[2, 2, 0, 0]}
+            onClick={(data) => {
+              const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
+              if (monthIdx !== undefined && onSelectMonth) {
+                onSelectMonth(monthIdx);
+              }
+            }}
+            className="cursor-pointer"
+          >
             <LabelList
               dataKey="negociado"
               position="top"
               formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
+            {monthlyData.map((entry, i) => {
+              const isSelected = selectedMonth === entry.monthIndex;
+              return (
+                <Cell 
+                  key={i} 
+                  fill={entry.negociado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(245, 158, 11, 0.15)' : 'hsl(43, 96%, 52%)') : 'rgba(255,255,255,0.05)'}
+                />
+              );
+            })}
           </Bar>
-          <Bar dataKey="aprobado" name="aprobado" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]}>
+          <Bar 
+            dataKey="aprobado" 
+            name="aprobado" 
+            fill="hsl(142, 71%, 45%)" 
+            radius={[2, 2, 0, 0]}
+            onClick={(data) => {
+              const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
+              if (monthIdx !== undefined && onSelectMonth) {
+                onSelectMonth(monthIdx);
+              }
+            }}
+            className="cursor-pointer"
+          >
             <LabelList
               dataKey="aprobado"
               position="top"
               formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
+            {monthlyData.map((entry, i) => {
+              const isSelected = selectedMonth === entry.monthIndex;
+              return (
+                <Cell 
+                  key={i} 
+                  fill={entry.aprobado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(34, 197, 94, 0.15)' : 'hsl(142, 71%, 45%)') : 'rgba(255,255,255,0.05)'}
+                />
+              );
+            })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -595,17 +870,45 @@ export function DashboardCharts({
               dataKey="value"
               label={({ value }) => value}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectCulpabilidad) {
+                  onSelectCulpabilidad(val);
+                }
+              }}
+              className="cursor-pointer"
             >
-              {culpabilidadData.map((entry, index) => (
-                <Cell key={index} fill={entry.fill} />
-              ))}
+              {culpabilidadData.map((entry, index) => {
+                const isSelected = selectedCulpabilidad === entry.name;
+                return (
+                  <Cell 
+                    key={index} 
+                    fill={entry.fill}
+                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                    opacity={selectedCulpabilidad && !isSelected ? 0.45 : 1}
+                  />
+                );
+              })}
             </Pie>
             <Tooltip content={<CustomTooltipPercentages />} />
             <Legend
               iconSize={8}
-              formatter={(value) => (
-                <span className="text-xs text-muted-foreground font-medium">{value}</span>
-              )}
+              onClick={(data) => {
+                const val = data?.value;
+                if (val && onSelectCulpabilidad) {
+                  onSelectCulpabilidad(val);
+                }
+              }}
+              className="cursor-pointer"
+              formatter={(value) => {
+                const isSelected = selectedCulpabilidad === value;
+                return (
+                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
+                    {value}
+                  </span>
+                );
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -626,9 +929,63 @@ export function DashboardCharts({
           >
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
             <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-            <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} axisLine={false} tickLine={false} width={160} />
+            <YAxis 
+              dataKey="name" 
+              type="category" 
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const isSelected = selectedCausaRaiz === value;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectCausaRaiz) {
+                        onSelectCausaRaiz(value);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dx={-6}
+                      dy={4}
+                      textAnchor="end"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      {value.length > 22 ? `${value.slice(0, 20)}...` : value}
+                    </text>
+                  </g>
+                );
+              }}
+              axisLine={false} 
+              tickLine={false} 
+              width={160} 
+            />
             <Tooltip content={<CustomTooltipPercentages />} />
-            <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
+            <Bar 
+              dataKey="value" 
+              fill="hsl(43, 96%, 52%)" 
+              radius={[0, 3, 3, 0]} 
+              barSize={15}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectCausaRaiz) {
+                  onSelectCausaRaiz(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {causaData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedCausaRaiz === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                />
+              ))}
               <LabelList
                 dataKey="value"
                 position="right"
@@ -663,13 +1020,60 @@ export function DashboardCharts({
             <YAxis
               dataKey="name"
               type="category"
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const isSelected = selectedProprietario === value;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectProprietario) {
+                        onSelectProprietario(value);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dx={-6}
+                      dy={4}
+                      textAnchor="end"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                    </text>
+                  </g>
+                );
+              }}
               axisLine={false}
               tickLine={false}
               width={130}
             />
             <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
-            <Bar dataKey="value" fill="hsl(217, 91%, 55%)" radius={[0, 3, 3, 0]} barSize={15}>
+            <Bar 
+              dataKey="value" 
+              fill="hsl(217, 91%, 55%)" 
+              radius={[0, 3, 3, 0]} 
+              barSize={15}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectProprietario) {
+                  onSelectProprietario(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {propietarioData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedProprietario === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                />
+              ))}
               <LabelList
                 dataKey="value"
                 position="right"
@@ -705,13 +1109,60 @@ export function DashboardCharts({
             <YAxis
               dataKey="name"
               type="category"
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const isSelected = selectedConductor === value;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectConductor) {
+                        onSelectConductor(value);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dx={-6}
+                      dy={4}
+                      textAnchor="end"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                    </text>
+                  </g>
+                );
+              }}
               axisLine={false}
               tickLine={false}
               width={130}
             />
             <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
-            <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
+            <Bar 
+              dataKey="value" 
+              fill="hsl(43, 96%, 52%)" 
+              radius={[0, 3, 3, 0]} 
+              barSize={15}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectConductor) {
+                  onSelectConductor(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {conductorData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedConductor === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                />
+              ))}
               <LabelList
                 dataKey="value"
                 position="right"
