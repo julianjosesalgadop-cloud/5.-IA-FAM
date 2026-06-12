@@ -322,6 +322,30 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
+  // 7b. Afectación FAM por Vehículo (Top 5)
+  const vehiculoAfectacionGroups: Record<string, { totalVal: number; placa: string; interno: string | null }> = {};
+  ev.forEach((e) => {
+    if (!e.placa) return;
+    const p = e.placa.trim().toUpperCase();
+    const int = e.numero_interno ? e.numero_interno.trim() : null;
+    const key = int ? `${int} (${p})` : p;
+    if (!vehiculoAfectacionGroups[key]) {
+      vehiculoAfectacionGroups[key] = { totalVal: 0, placa: p, interno: int };
+    }
+    vehiculoAfectacionGroups[key].totalVal += e.valor_final_aprobado || 0;
+  });
+  const vehiculoAfectacionData = Object.entries(vehiculoAfectacionGroups)
+    .map(([name, data]) => ({
+      name,
+      placa: data.placa,
+      value: data.totalVal,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
   // 8. Top 5 Vehículos por Reclamaciones
   const placaGroups: Record<string, { total: number; valor: number }> = {};
   ev.forEach((e) => {
@@ -688,6 +712,99 @@ export function DashboardCharts({
             />
             <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
             <Bar dataKey="value" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]} barSize={15}>
+              <LabelList
+                dataKey="value"
+                position="right"
+                formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderAfectacionVehiculo = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {vehiculoAfectacionData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            layout="vertical"
+            data={vehiculoAfectacionData}
+            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const item = vehiculoAfectacionData.find(d => d.name === value);
+                const itemPlaca = item ? item.placa : '';
+                const isSelected = selectedPlaca === itemPlaca;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectPlaca && itemPlaca) {
+                        onSelectPlaca(itemPlaca);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dx={-6}
+                      dy={4}
+                      textAnchor="end"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      {value}
+                    </text>
+                  </g>
+                );
+              }}
+              axisLine={false}
+              tickLine={false}
+              width={130}
+            />
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+            <Bar 
+              dataKey="value" 
+              fill="hsl(217, 91%, 55%)" 
+              radius={[0, 3, 3, 0]} 
+              barSize={15}
+              onClick={(data) => {
+                const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
+                const item = vehiculoAfectacionData.find(d => d.name === val || d.placa === val);
+                const itemPlaca = item ? item.placa : val;
+                if (itemPlaca && onSelectPlaca) {
+                  onSelectPlaca(itemPlaca);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {vehiculoAfectacionData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                />
+              ))}
               <LabelList
                 dataKey="value"
                 position="right"
@@ -1182,12 +1299,46 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
+      {/* Afectación FAM por Vehículo */}
+      <motion.div
+        className="lg:col-span-3"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Afectación FAM por Vehículo</CardTitle>
+              <CardDescription>Costo total acumulado de afectación al Fondo por vehículo (Top 5)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'afectacion-vehiculo',
+                title: 'Afectación FAM por Vehículo',
+                description: 'Costo total acumulado de afectación al Fondo por vehículo (Top 5)',
+                render: renderAfectacionVehiculo
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderAfectacionVehiculo(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Top 5 Vehículos por Reclamaciones */}
       <motion.div
         className="lg:col-span-2"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9, duration: 0.4 }}
+        transition={{ delay: 1.0, duration: 0.4 }}
       >
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1221,7 +1372,7 @@ export function DashboardCharts({
         className="lg:col-span-1"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.0, duration: 0.4 }}
+        transition={{ delay: 1.1, duration: 0.4 }}
       >
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

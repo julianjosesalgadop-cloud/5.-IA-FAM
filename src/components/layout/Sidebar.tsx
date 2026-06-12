@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   Shield,
+  SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -42,6 +43,7 @@ const NAV_GROUPS = [
     title: 'Sistema',
     items: [
       { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin'] },
+      { href: '/parametrizacion', label: 'Parametrización', icon: 'SlidersHorizontal', roles: ['admin'] },
       { href: '/auditoria', label: 'Auditoría', icon: 'Shield', roles: ['admin'] },
     ],
   },
@@ -53,6 +55,7 @@ const ICONS: Record<string, React.ElementType> = {
   PlusCircle,
   BarChart3,
   Settings,
+  SlidersHorizontal,
   Shield,
 };
 
