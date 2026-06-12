@@ -120,6 +120,9 @@ const defaultCamposConfig: Record<string, CampoConfig> = {
   concepto: { label: 'Concepto / Descripción', placeholder: 'Escriba una descripción...', visible: true, requerido: false },
   
   // Paso 2
+  cotizaciones_proveedor: { label: 'Taller / Proveedor', placeholder: 'Ej: Talleres Unidos', visible: true, requerido: true },
+  cotizaciones_tipo_documento: { label: 'Tipo de Documento', placeholder: '', visible: true, requerido: false },
+  cotizaciones_numero_documento: { label: 'Número de Documento', placeholder: 'Número de doc', visible: true, requerido: false },
   valor_cotizacion: { label: 'Valor Cotización', placeholder: '$ 0', visible: true, requerido: false },
   valor_negociado: { label: 'Valor Negociado', placeholder: '$ 0', visible: true, requerido: false },
   valor_salvamento: { label: 'Valor Salvamento', placeholder: '$ 0', visible: true, requerido: false },

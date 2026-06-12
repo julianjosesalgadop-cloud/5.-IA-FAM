@@ -84,7 +84,7 @@ const baseSchema = z.object({
   valor_cotizacion: z.number().min(0).optional().nullable(),
   cotizaciones: z.array(z.object({
     id: z.string(),
-    proveedor: z.string().min(1, 'Requerido'),
+    proveedor: z.string().optional(),
     tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
     numero_documento: z.string().optional().nullable(),
     concepto: z.string().min(1, 'Requerido'),
@@ -176,9 +176,15 @@ function getExpedienteSchema(campoConfig: Record<string, any>) {
       : z.number().min(0).optional().nullable(),
     cotizaciones: z.array(z.object({
       id: z.string(),
-      proveedor: z.string().min(1, 'Requerido'),
-      tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
-      numero_documento: z.string().optional().nullable(),
+      proveedor: isRequired('cotizaciones_proveedor', true)
+        ? z.string().min(1, 'Requerido')
+        : z.string().optional(),
+      tipo_documento: isRequired('cotizaciones_tipo_documento', false)
+        ? z.enum(['CC', 'CE', 'TI', 'NIT', 'PP'], { errorMap: () => ({ message: 'Requerido' }) })
+        : z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
+      numero_documento: isRequired('cotizaciones_numero_documento', false)
+        ? z.string().min(1, 'Requerido')
+        : z.string().optional().nullable(),
       concepto: z.string().min(1, 'Requerido'),
       concepto_otro: z.string().optional(),
       valor_cotizacion: z.number().min(0),
@@ -1118,43 +1124,64 @@ export function ExpedienteForm({
 
                             {/* Row 1: Provider Identity */}
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                              <div className="md:col-span-5">
-                                <FormField label="Taller / Proveedor" required>
-                                  <Input
-                                    placeholder="Ej: Talleres Unidos"
-                                    {...register(`cotizaciones.${idx}.proveedor` as const)}
-                                    className={inputClass}
-                                  />
-                                  {errors.cotizaciones?.[idx]?.proveedor && (
-                                    <p className="text-red-400 text-xs mt-1">Requerido</p>
-                                  )}
-                                </FormField>
-                              </div>
-
-                              <div className="md:col-span-3">
-                                <FormField label="Tipo de Documento">
-                                  <select
-                                    {...register(`cotizaciones.${idx}.tipo_documento` as const)}
-                                    className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                              {formConfig.campoConfig.cotizaciones_proveedor?.visible && (
+                                <div className="md:col-span-5">
+                                  <FormField 
+                                    label={formConfig.campoConfig.cotizaciones_proveedor.label} 
+                                    required={formConfig.campoConfig.cotizaciones_proveedor.requerido}
                                   >
-                                    <option value="NIT">NIT - NIT</option>
-                                    <option value="CC">CC - Cédula de Ciudadanía</option>
-                                    <option value="CE">CE - Cédula de Extranjería</option>
-                                    <option value="TI">TI - Tarjeta de Identidad</option>
-                                    <option value="PP">PP - Pasaporte</option>
-                                  </select>
-                                </FormField>
-                              </div>
+                                    <Input
+                                      placeholder={formConfig.campoConfig.cotizaciones_proveedor.placeholder}
+                                      {...register(`cotizaciones.${idx}.proveedor` as const)}
+                                      className={inputClass}
+                                    />
+                                    {errors.cotizaciones?.[idx]?.proveedor && (
+                                      <p className="text-red-400 text-xs mt-1">Requerido</p>
+                                    )}
+                                  </FormField>
+                                </div>
+                              )}
 
-                              <div className="md:col-span-4">
-                                <FormField label="Número de Documento">
-                                  <Input
-                                    placeholder="Número de doc"
-                                    {...register(`cotizaciones.${idx}.numero_documento` as const)}
-                                    className={`${inputClass} number-font`}
-                                  />
-                                </FormField>
-                              </div>
+                              {formConfig.campoConfig.cotizaciones_tipo_documento?.visible && (
+                                <div className="md:col-span-3">
+                                  <FormField 
+                                    label={formConfig.campoConfig.cotizaciones_tipo_documento.label} 
+                                    required={formConfig.campoConfig.cotizaciones_tipo_documento.requerido}
+                                  >
+                                    <select
+                                      {...register(`cotizaciones.${idx}.tipo_documento` as const)}
+                                      className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                    >
+                                      <option value="NIT">NIT - NIT</option>
+                                      <option value="CC">CC - Cédula de Ciudadanía</option>
+                                      <option value="CE">CE - Cédula de Extranjería</option>
+                                      <option value="TI">TI - Tarjeta de Identidad</option>
+                                      <option value="PP">PP - Pasaporte</option>
+                                    </select>
+                                    {errors.cotizaciones?.[idx]?.tipo_documento && (
+                                      <p className="text-red-400 text-xs mt-1">Requerido</p>
+                                    )}
+                                  </FormField>
+                                </div>
+                              )}
+
+                              {formConfig.campoConfig.cotizaciones_numero_documento?.visible && (
+                                <div className="md:col-span-4">
+                                  <FormField 
+                                    label={formConfig.campoConfig.cotizaciones_numero_documento.label} 
+                                    required={formConfig.campoConfig.cotizaciones_numero_documento.requerido}
+                                  >
+                                    <Input
+                                      placeholder={formConfig.campoConfig.cotizaciones_numero_documento.placeholder}
+                                      {...register(`cotizaciones.${idx}.numero_documento` as const)}
+                                      className={`${inputClass} number-font`}
+                                    />
+                                    {errors.cotizaciones?.[idx]?.numero_documento && (
+                                      <p className="text-red-400 text-xs mt-1">Requerido</p>
+                                    )}
+                                  </FormField>
+                                </div>
+                              )}
                             </div>
 
                             {/* Row 1.5: Concept */}

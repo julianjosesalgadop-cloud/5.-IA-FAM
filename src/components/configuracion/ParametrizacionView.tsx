@@ -106,6 +106,9 @@ const DEFAULT_CATALOGS = {
     concepto: { label: 'Concepto / Descripción', placeholder: 'Escriba una descripción...', visible: true, requerido: false },
     
     // Paso 2
+    cotizaciones_proveedor: { label: 'Taller / Proveedor', placeholder: 'Ej: Talleres Unidos', visible: true, requerido: true },
+    cotizaciones_tipo_documento: { label: 'Tipo de Documento', placeholder: '', visible: true, requerido: false },
+    cotizaciones_numero_documento: { label: 'Número de Documento', placeholder: 'Número de doc', visible: true, requerido: false },
     valor_cotizacion: { label: 'Valor Cotización', placeholder: '$ 0', visible: true, requerido: false },
     valor_negociado: { label: 'Valor Negociado', placeholder: '$ 0', visible: true, requerido: false },
     valor_salvamento: { label: 'Valor Salvamento', placeholder: '$ 0', visible: true, requerido: false },
@@ -413,7 +416,7 @@ export function ParametrizacionView() {
 
   // Define keys for each step to handle resets/saves grouped
   const step1Keys = ['fecha_incidente', 'placa', 'numero_interno', 'tipo_servicio', 'propietarios', 'tipo_reclamacion', 'ciudad_origen', 'ciudad_destino', 'concepto'];
-  const step2Keys = ['valor_cotizacion', 'valor_negociado', 'valor_salvamento', 'valor_final_aprobado'];
+  const step2Keys = ['cotizaciones_proveedor', 'cotizaciones_tipo_documento', 'cotizaciones_numero_documento', 'valor_cotizacion', 'valor_negociado', 'valor_salvamento', 'valor_final_aprobado'];
   const step3Keys = ['nombre_conductor', 'id_conductor', 'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 'memorando_descuento', 'recobro_vehiculo', 'recobro_abogado', 'recobro_empresa'];
   const step4Keys = ['fecha_comite', 'numero_acta', 'causa_raiz', 'observaciones_comite', 'autorizado_por', 'cargo_autorizador', 'fecha_autorizacion', 'memorando_pago_nombre', 'memorando_pago_archivo'];
 
