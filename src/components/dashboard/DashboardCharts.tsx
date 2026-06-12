@@ -155,13 +155,18 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
 
     const pct = total > 0 ? (val / total) * 100 : 0;
 
+    // Resolve a meaningful title (prefer data.name or label over generic 'value')
+    const displayName = (data?.name && data.name !== 'value') 
+      ? data.name 
+      : ((label && label !== 'value') ? label : (p.name !== 'value' ? p.name : 'Detalle'));
+
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1 shadow-lg">
-        <p className="font-semibold text-foreground mb-1">{p.name || label || data.name}</p>
+        <p className="font-semibold text-foreground mb-1">{displayName}</p>
         <div className="flex items-center gap-2 text-foreground">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
           <span className="font-semibold">
-            {isValueCOP ? formatCOP(val) : `${val} expedientes`}
+            {isValueCOP ? `Afectación: ${formatCOP(val)}` : `Reclamaciones: ${val} ${val === 1 ? 'expediente' : 'expedientes'}`}
           </span>
         </div>
         <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-1">
