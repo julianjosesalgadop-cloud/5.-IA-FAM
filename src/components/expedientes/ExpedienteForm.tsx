@@ -418,27 +418,27 @@ export function ExpedienteForm({
   const formConfig = useFormConfig();
 
   const activeTiposReclamacion = React.useMemo(() => 
-    formConfig.tiposReclamacion.filter(t => t.activo).sort((a, b) => a.orden - b.orden).map(t => t.label),
+    formConfig.tiposReclamacion?.filter(t => t?.activo && t?.label?.trim()?.toLowerCase() !== 'otro').sort((a, b) => (a?.orden || 0) - (b?.orden || 0)).map(t => t.label) || [],
     [formConfig.tiposReclamacion]
   );
   
   const activeTiposServicio = React.useMemo(() => 
-    formConfig.tiposServicio.filter(t => t.activo).sort((a, b) => a.orden - b.orden).map(t => t.label),
+    formConfig.tiposServicio?.filter(t => t?.activo && t?.label?.trim()?.toLowerCase() !== 'otro').sort((a, b) => (a?.orden || 0) - (b?.orden || 0)).map(t => t.label) || [],
     [formConfig.tiposServicio]
   );
 
   const activeCulpabilidades = React.useMemo(() => 
-    formConfig.culpabilidades.filter(c => c.activo).sort((a, b) => a.orden - b.orden).map(c => c.label),
+    formConfig.culpabilidades?.filter(c => c?.activo).sort((a, b) => (a?.orden || 0) - (b?.orden || 0)).map(c => c.label) || [],
     [formConfig.culpabilidades]
   );
 
   const activeAutorizadosPor = React.useMemo(() => 
-    formConfig.autorizadosPor.filter(a => a.activo).map(a => a.label),
+    formConfig.autorizadosPor?.filter(a => a?.activo && a?.label?.trim()?.toLowerCase() !== 'otro').map(a => a.label) || [],
     [formConfig.autorizadosPor]
   );
 
   const activeCargos = React.useMemo(() => 
-    formConfig.cargos.filter(c => c.activo).map(c => c.label),
+    formConfig.cargos?.filter(c => c?.activo && c?.label?.trim()?.toLowerCase() !== 'otro').map(c => c.label) || [],
     [formConfig.cargos]
   );
 
@@ -1636,7 +1636,7 @@ export function ExpedienteForm({
                         className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring mb-2"
                       >
                         <option value="">Seleccionar causa...</option>
-                        {formConfig.causasRaiz.map((c) => (
+                        {formConfig.causasRaiz?.filter(c => c && c.trim().toLowerCase() !== 'otro').map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}
                         <option value="Otro">Otro (Especificar)</option>
