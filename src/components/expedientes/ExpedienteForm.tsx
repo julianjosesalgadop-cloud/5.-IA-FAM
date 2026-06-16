@@ -135,8 +135,23 @@ const baseSchema = z.object({
 
 type ExpedienteFormData = z.infer<typeof baseSchema>;
 
-function getExpedienteSchema(campoConfig: Record<string, any>) {
+function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: number) {
   const isRequired = (key: string, defaultRequired = false) => {
+    // Si estamos en un paso menor al 4, los campos de la Fase 4 (Comité y Autorización) no deben ser requeridos
+    const camposFase4 = [
+      'fecha_comite',
+      'numero_acta',
+      'observaciones_comite',
+      'autorizado_por',
+      'cargo_autorizador',
+      'fecha_autorizacion',
+      'memorando_pago_nombre',
+      'memorando_pago_archivo'
+    ];
+    if (camposFase4.includes(key) && currentStep < 4) {
+      return false;
+    }
+
     const cfg = campoConfig?.[key];
     if (!cfg) return defaultRequired;
     return cfg.visible && cfg.requerido;
@@ -428,8 +443,8 @@ export function ExpedienteForm({
   );
 
   const dynamicSchema = React.useMemo(() => {
-    return getExpedienteSchema(formConfig.campoConfig);
-  }, [formConfig.campoConfig]);
+    return getExpedienteSchema(formConfig.campoConfig, step);
+  }, [formConfig.campoConfig, step]);
 
   useEffect(() => {
     if (defaultValues) {
@@ -540,6 +555,44 @@ export function ExpedienteForm({
   });
 
   const { register, watch, setValue, formState: { errors }, control } = form;
+
+  // Redireccionar al paso con errores al fallar la validación
+  useEffect(() => {
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      const firstErrorKey = errorKeys[0];
+      
+      const step1Fields = [
+        'fecha_incidente', 'tipo_reclamacion', 'tipo_reclamacion_otro', 
+        'placa', 'numero_interno', 'tipo_servicio', 'tipo_servicio_otro', 
+        'propietarios', 'ciudad_origen', 'ciudad_destino', 'concepto'
+      ];
+      const step2Fields = [
+        'cotizaciones', 'valor_cotizacion', 'valor_negociado', 
+        'valor_salvamento', 'valor_final_aprobado'
+      ];
+      const step3Fields = [
+        'nombre_conductor', 'tipo_documento_conductor', 'id_conductor', 
+        'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 
+        'memorando_descuento', 'valor_recobro_vehiculo', 'valor_recobro_abogado', 
+        'valor_recobro_empresa'
+      ];
+      
+      let targetStep = 4;
+      if (step1Fields.includes(firstErrorKey)) {
+        targetStep = 1;
+      } else if (step2Fields.includes(firstErrorKey)) {
+        targetStep = 2;
+      } else if (step3Fields.includes(firstErrorKey)) {
+        targetStep = 3;
+      }
+      
+      if (targetStep !== step) {
+        setStep(targetStep);
+        toast.error(`Complete los campos requeridos en el Paso ${targetStep}`);
+      }
+    }
+  }, [errors, step]);
 
   const cotizaciones = watch('cotizaciones') || [];
 
@@ -1742,7 +1795,7 @@ export function ExpedienteForm({
       </motion.div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <Button
           type="button"
           variant="outline"
@@ -1754,21 +1807,26 @@ export function ExpedienteForm({
           Anterior
         </Button>
 
-        {step < formConfig.pasos.length ? (
-          <Button
-            type="button"
-            onClick={() => setStep(Math.min(formConfig.pasos.length, step + 1))}
-            id="expediente-form-next"
-          >
-            Siguiente
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        ) : (
-          <Button type="submit" disabled={isSubmitting} id="expediente-form-submit">
-            <Save className="w-4 h-4" />
-            {isSubmitting ? 'Guardando...' : 'Guardar Expediente'}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {step < formConfig.pasos.length && (
+            <Button
+              type="button"
+              onClick={() => setStep(Math.min(formConfig.pasos.length, step + 1))}
+              id="expediente-form-next"
+              variant={step < 3 ? 'default' : 'outline'}
+            >
+              Siguiente
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          )}
+
+          {(step === 3 || step === 4) && (
+            <Button type="submit" disabled={isSubmitting} id="expediente-form-submit">
+              <Save className="w-4 h-4" />
+              {isSubmitting ? 'Guardando...' : 'Guardar Expediente'}
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   );
