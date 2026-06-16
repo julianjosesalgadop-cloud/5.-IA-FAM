@@ -818,7 +818,7 @@ export function ExpedienteForm({
       }
     } catch (error: any) {
       console.error("Error al guardar el expediente:", error?.message || error?.details || error);
-      toast.error('Error al guardar el expediente');
+      toast.error(error?.message || 'Error al guardar el expediente');
     } finally {
       setIsSubmitting(false);
     }

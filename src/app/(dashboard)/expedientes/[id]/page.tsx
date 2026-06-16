@@ -102,16 +102,16 @@ export default function ExpedienteDetailPage() {
 
   const handleDelete = async () => {
     if (!expediente) return;
-    const confirmed = window.confirm('¿Está seguro de que desea eliminar este expediente de manera lógica?');
+    const confirmed = window.confirm('¿Está seguro de que desea inactivar este expediente?');
     if (!confirmed) return;
 
     try {
       await dbService.deleteExpedienteLogical(expediente.id);
-      toast.success('Expediente eliminado correctamente');
+      toast.success('Expediente inactivado correctamente');
       router.push('/expedientes');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Error al eliminar el expediente');
+      toast.error(error?.message || 'Error al inactivar el expediente');
     }
   };
 
@@ -522,10 +522,10 @@ export default function ExpedienteDetailPage() {
                 </div>
               )}
 
-              {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
+              {currentUser.rol === 'admin' && (
                 <Button variant="destructive" size="sm" onClick={handleDelete}>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar Lógico
+                  Inactivar Expediente
                 </Button>
               )}
             </>

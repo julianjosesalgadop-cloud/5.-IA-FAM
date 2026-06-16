@@ -313,8 +313,51 @@ export const dbService = {
     return data;
   },
 
+  checkDuplicateExpediente: async (
+    placa: string,
+    fechaIncidente: string,
+    tipoReclamacion: string,
+    excludeId?: string
+  ): Promise<void> => {
+    const formattedPlaca = placa.trim().toUpperCase();
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
+      const duplicate = list.find((e) => 
+        e.deleted_at === null &&
+        e.placa.trim().toUpperCase() === formattedPlaca &&
+        e.fecha_incidente === fechaIncidente &&
+        e.tipo_reclamacion === tipoReclamacion &&
+        e.id !== excludeId
+      );
+      if (duplicate) {
+        throw new Error(`Ya existe un expediente activo (${duplicate.numero_expediente}) para el vehículo con placa ${placa} con la misma fecha de incidente (${fechaIncidente}) y tipo de reclamación (${tipoReclamacion}).`);
+      }
+      return;
+    }
+
+    const supabase = createBrowserClient();
+    let query = supabase
+      .from('expedientes')
+      .select('numero_expediente')
+      .is('deleted_at', null)
+      .eq('placa', formattedPlaca)
+      .eq('fecha_incidente', fechaIncidente)
+      .eq('tipo_reclamacion', tipoReclamacion);
+    
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    if (data) {
+      throw new Error(`Ya existe un expediente activo (${data.numero_expediente}) para el vehículo con placa ${placa} con la misma fecha de incidente (${fechaIncidente}) y tipo de reclamación (${tipoReclamacion}).`);
+    }
+  },
+
   createExpediente: async (payload: Omit<Expediente, 'id' | 'numero_expediente' | 'created_at' | 'updated_at' | 'created_by' | 'deleted_at'>): Promise<Expediente> => {
     await verifyRole(['admin', 'analista']);
+    await dbService.checkDuplicateExpediente(payload.placa, payload.fecha_incidente, payload.tipo_reclamacion);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const user = getMockUser();
@@ -378,6 +421,11 @@ export const dbService = {
       const currentUser = getMockUser();
       const isAdmin = currentUser.rol === 'admin';
 
+      const newPlaca = payload.placa ?? old.placa;
+      const newFecha = payload.fecha_incidente ?? old.fecha_incidente;
+      const newTipo = payload.tipo_reclamacion ?? old.tipo_reclamacion;
+      await dbService.checkDuplicateExpediente(newPlaca, newFecha, newTipo, id);
+
       if (!isAdmin) {
         if (old.estado === 'Aprobado' || old.estado === 'Rechazado') {
           throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
@@ -431,6 +479,13 @@ export const dbService = {
 
     const { data: oldData } = await supabase.from('expedientes').select('*').eq('id', id).single();
  
+    if (oldData) {
+      const newPlaca = payload.placa ?? oldData.placa;
+      const newFecha = payload.fecha_incidente ?? oldData.fecha_incidente;
+      const newTipo = payload.tipo_reclamacion ?? oldData.tipo_reclamacion;
+      await dbService.checkDuplicateExpediente(newPlaca, newFecha, newTipo, id);
+    }
+
     if (oldData && !isAdmin) {
       if (oldData.estado === 'Aprobado' || oldData.estado === 'Rechazado') {
         throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
@@ -480,10 +535,6 @@ export const dbService = {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
       if (idx !== -1) {
-        const old = list[idx];
-        if (old.estado !== 'Pendiente') {
-          throw new Error('Solo se pueden eliminar expedientes en estado Pendiente.');
-        }
         list[idx].deleted_at = new Date().toISOString();
         setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
         logMockAudit(id, 'ELIMINAR', 'deleted_at', null, list[idx].deleted_at);
@@ -493,11 +544,6 @@ export const dbService = {
 
     const supabase = createBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: oldData } = await supabase.from('expedientes').select('estado').eq('id', id).single();
-
-    if (oldData && oldData.estado !== 'Pendiente') {
-      throw new Error('Solo se pueden eliminar expedientes en estado Pendiente.');
-    }
  
     const { error } = await supabase
       .from('expedientes')
@@ -511,7 +557,7 @@ export const dbService = {
       usuario_id: user?.id || null,
       usuario_email: user?.email || null,
       accion: 'ELIMINAR',
-      valor_nuevo: 'Expediente eliminado lógicamente.',
+      valor_nuevo: 'Expediente inactivado.',
     } as any);
   },
 
