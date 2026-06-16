@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type TipoReclamacion = 'Siniestro' | 'Vidrios' | 'Carrocería' | 'Repuestos' | 'Pérdida parcial' | 'Afectación por orden público' | 'Otro' | string;
 export type Culpabilidad = 'Conductor' | 'Tercero' | 'Compartida' | 'Sin definir';
-export type EstadoExpediente = 'Pendiente' | 'Revisado' | 'Aprobado' | 'Rechazado';
+export type EstadoExpediente = 'Pendiente' | 'Revisado' | 'Aprobado' | 'Rechazado' | 'Inactivo';
 export type RolUsuario = 'admin' | 'analista' | 'consultor';
 export type AccionAuditoria = 'CREAR' | 'EDITAR' | 'ELIMINAR' | 'ESTADO' | 'FINANCIERO' | 'DOCUMENTO';
 

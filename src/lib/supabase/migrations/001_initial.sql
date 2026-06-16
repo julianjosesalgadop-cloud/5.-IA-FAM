@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   memorando_pago_nombre TEXT,
   memorando_pago_storage_path TEXT,
   memorando_pago_archivo_nombre TEXT,
-  estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Revisado', 'Aprobado', 'Rechazado')),
+  estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Revisado', 'Aprobado', 'Rechazado', 'Inactivo')),
 
   -- Metadata
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -197,7 +197,7 @@ ALTER TABLE public.perfiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas expedientes
 CREATE POLICY "expedientes_select" ON public.expedientes FOR SELECT TO authenticated USING (
-  deleted_at IS NULL OR
+  estado <> 'Inactivo' OR
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
 CREATE POLICY "expedientes_insert" ON public.expedientes FOR INSERT TO authenticated WITH CHECK (

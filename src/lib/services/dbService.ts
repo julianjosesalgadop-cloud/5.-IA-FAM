@@ -278,13 +278,14 @@ export const dbService = {
   getExpedientes: async (): Promise<Expediente[]> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
-      return list.filter((e) => e.deleted_at === null);
+      return list.filter((e) => e.estado !== 'Inactivo' && e.deleted_at === null);
     }
 
     const supabase = createBrowserClient();
     const { data, error } = await supabase
       .from('expedientes')
       .select('*')
+      .neq('estado', 'Inactivo')
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -295,7 +296,7 @@ export const dbService = {
   getExpedienteById: async (id: string): Promise<Expediente | null> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
-      const item = list.find((e) => e.id === id && e.deleted_at === null);
+      const item = list.find((e) => e.id === id);
       return item || null;
     }
 
@@ -324,6 +325,7 @@ export const dbService = {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const duplicate = list.find((e) => 
         e.deleted_at === null &&
+        e.estado !== 'Inactivo' &&
         e.placa.trim().toUpperCase() === formattedPlaca &&
         e.fecha_incidente === fechaIncidente &&
         e.tipo_reclamacion === tipoReclamacion &&
@@ -340,6 +342,7 @@ export const dbService = {
       .from('expedientes')
       .select('numero_expediente')
       .is('deleted_at', null)
+      .neq('estado', 'Inactivo')
       .eq('placa', formattedPlaca)
       .eq('fecha_incidente', fechaIncidente)
       .eq('tipo_reclamacion', tipoReclamacion);
@@ -535,19 +538,22 @@ export const dbService = {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
       if (idx !== -1) {
-        list[idx].deleted_at = new Date().toISOString();
+        const old = list[idx];
+        list[idx].estado = 'Inactivo';
+        list[idx].updated_at = new Date().toISOString();
         setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
-        logMockAudit(id, 'ELIMINAR', 'deleted_at', null, list[idx].deleted_at);
+        logMockAudit(id, 'ESTADO', 'estado', old.estado, 'Inactivo');
       }
       return;
     }
 
     const supabase = createBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const { data: oldData } = await supabase.from('expedientes').select('estado').eq('id', id).single();
  
     const { error } = await supabase
       .from('expedientes')
-      .update({ deleted_at: new Date().toISOString() } as any)
+      .update({ estado: 'Inactivo' } as any)
       .eq('id', id);
 
     if (error) throw error;
@@ -556,8 +562,10 @@ export const dbService = {
       expediente_id: id,
       usuario_id: user?.id || null,
       usuario_email: user?.email || null,
-      accion: 'ELIMINAR',
-      valor_nuevo: 'Expediente inactivado.',
+      accion: 'ESTADO',
+      campo_modificado: 'estado',
+      valor_anterior: oldData?.estado || null,
+      valor_nuevo: 'Inactivo',
     } as any);
   },
 

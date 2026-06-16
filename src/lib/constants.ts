@@ -10,7 +10,7 @@ export const TIPOS_RECLAMACION = [
 
 export const CULPABILIDADES = ['Conductor', 'Tercero', 'Compartida', 'Sin definir'] as const;
 
-export const ESTADOS_EXPEDIENTE = ['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'] as const;
+export const ESTADOS_EXPEDIENTE = ['Pendiente', 'Revisado', 'Aprobado', 'Rechazado', 'Inactivo'] as const;
 
 export const PORCENTAJES_DEDUCIBLE = [
   { label: '50%', value: 50 },
