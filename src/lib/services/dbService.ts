@@ -278,14 +278,13 @@ export const dbService = {
   getExpedientes: async (): Promise<Expediente[]> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
-      return list.filter((e) => e.estado !== 'Inactivo' && e.deleted_at === null);
+      return list.filter((e) => e.deleted_at === null);
     }
 
     const supabase = createBrowserClient();
     const { data, error } = await supabase
       .from('expedientes')
       .select('*')
-      .neq('estado', 'Inactivo')
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 

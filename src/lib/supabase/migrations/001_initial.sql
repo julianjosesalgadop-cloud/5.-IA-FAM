@@ -196,10 +196,7 @@ ALTER TABLE public.catalogos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.perfiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas expedientes
-CREATE POLICY "expedientes_select" ON public.expedientes FOR SELECT TO authenticated USING (
-  estado <> 'Inactivo' OR
-  EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
-);
+CREATE POLICY "expedientes_select" ON public.expedientes FOR SELECT TO authenticated USING (deleted_at IS NULL);
 CREATE POLICY "expedientes_insert" ON public.expedientes FOR INSERT TO authenticated WITH CHECK (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
