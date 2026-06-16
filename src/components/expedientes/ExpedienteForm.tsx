@@ -186,9 +186,7 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
     concepto: isRequired('concepto', false)
       ? z.string().min(1, 'Requerido')
       : z.string().optional(),
-    valor_cotizacion: isRequired('valor_cotizacion', false)
-      ? z.number().min(0, 'Monto debe ser positivo')
-      : z.number().min(0).optional().nullable(),
+    valor_cotizacion: z.number().min(0).optional().nullable(),
     cotizaciones: z.array(z.object({
       id: z.string(),
       proveedor: isRequired('cotizaciones_proveedor', true)
@@ -202,8 +200,12 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
         : z.string().optional().nullable(),
       concepto: z.string().min(1, 'Requerido'),
       concepto_otro: z.string().optional(),
-      valor_cotizacion: z.number().min(0),
-      valor_negociado: z.number().min(0),
+      valor_cotizacion: isRequired('valor_cotizacion', false)
+        ? z.number({ invalid_type_error: 'Requerido' }).min(1, 'Monto debe ser positivo')
+        : z.number().min(0).optional().nullable(),
+      valor_negociado: isRequired('valor_negociado', false)
+        ? z.number({ invalid_type_error: 'Requerido' }).min(1, 'Monto debe ser positivo')
+        : z.number().min(0).optional().nullable(),
       porcentaje_deducible: z.number().min(0),
       valor_deducible: z.number().min(0).optional().nullable(),
       valor_a_pagar: z.number().min(0).optional().nullable(),
@@ -219,9 +221,7 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
       message: 'Debe especificar el concepto cuando se selecciona "OTROS"',
       path: ['concepto_otro']
     })).optional().nullable(),
-    valor_negociado: isRequired('valor_negociado', false)
-      ? z.number().min(0, 'Monto debe ser positivo')
-      : z.number().min(0).optional().nullable(),
+    valor_negociado: z.number().min(0).optional().nullable(),
     porcentaje_deducible: z.number().optional().nullable(),
     valor_salvamento: isRequired('valor_salvamento', false)
       ? z.number().min(0, 'Monto debe ser positivo')
@@ -562,11 +562,33 @@ export function ExpedienteForm({
     if (errorKeys.length === 0) return;
 
     const getFieldLabel = (key: string): string => {
+      if (key === 'cotizaciones') {
+        const cotErrors = formErrors.cotizaciones;
+        if (Array.isArray(cotErrors)) {
+          const subFields = new Set<string>();
+          cotErrors.forEach((err: any) => {
+            if (err) {
+              Object.keys(err).forEach(subKey => {
+                if (subKey === 'proveedor') subFields.add('Taller / Proveedor');
+                else if (subKey === 'tipo_documento') subFields.add('Tipo de Documento');
+                else if (subKey === 'numero_documento') subFields.add('Número de Documento');
+                else if (subKey === 'concepto') subFields.add('Concepto de la Cotización');
+                else if (subKey === 'valor_cotizacion') subFields.add('Valor Cotización');
+                else if (subKey === 'valor_negociado') subFields.add('Valor Negociado');
+                else if (subKey === 'concepto_otro') subFields.add('Especificar Concepto');
+              });
+            }
+          });
+          if (subFields.size > 0) {
+            return Array.from(subFields).join(', ');
+          }
+        }
+        return 'Cotizaciones';
+      }
       const cfg = formConfig.campoConfig[key];
       if (cfg?.label) return cfg.label;
       const specialLabels: Record<string, string> = {
         propietarios: 'Propietarios',
-        cotizaciones: 'Cotizaciones',
         tipo_reclamacion_otro: 'Otro Tipo de Reclamación',
         tipo_servicio_otro: 'Otro Tipo de Servicio',
         causa_raiz_otra: 'Otra Causa Raíz',
