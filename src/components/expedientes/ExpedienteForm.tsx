@@ -542,7 +542,7 @@ export function ExpedienteForm({
         concepto_otro: '', 
         valor_cotizacion: 0, 
         valor_negociado: 0, 
-        porcentaje_deducible: 0, 
+        porcentaje_deducible: 10, 
         valor_deducible: 0, 
         valor_a_pagar: 0,
         nombre_archivo: null,
@@ -556,43 +556,80 @@ export function ExpedienteForm({
 
   const { register, watch, setValue, formState: { errors }, control } = form;
 
-  // Redireccionar al paso con errores al fallar la validación
-  useEffect(() => {
-    const errorKeys = Object.keys(errors);
-    if (errorKeys.length > 0) {
-      const firstErrorKey = errorKeys[0];
-      
-      const step1Fields = [
-        'fecha_incidente', 'tipo_reclamacion', 'tipo_reclamacion_otro', 
-        'placa', 'numero_interno', 'tipo_servicio', 'tipo_servicio_otro', 
-        'propietarios', 'ciudad_origen', 'ciudad_destino', 'concepto'
-      ];
-      const step2Fields = [
-        'cotizaciones', 'valor_cotizacion', 'valor_negociado', 
-        'valor_salvamento', 'valor_final_aprobado'
-      ];
-      const step3Fields = [
-        'nombre_conductor', 'tipo_documento_conductor', 'id_conductor', 
-        'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 
-        'memorando_descuento', 'valor_recobro_vehiculo', 'valor_recobro_abogado', 
-        'valor_recobro_empresa'
-      ];
-      
-      let targetStep = 4;
-      if (step1Fields.includes(firstErrorKey)) {
-        targetStep = 1;
-      } else if (step2Fields.includes(firstErrorKey)) {
-        targetStep = 2;
-      } else if (step3Fields.includes(firstErrorKey)) {
-        targetStep = 3;
-      }
-      
-      if (targetStep !== step) {
-        setStep(targetStep);
-        toast.error(`Complete los campos requeridos en el Paso ${targetStep}`);
-      }
+  // Manejar fallos de validación al intentar guardar el formulario
+  const onInvalidSubmit = (formErrors: any) => {
+    const errorKeys = Object.keys(formErrors);
+    if (errorKeys.length === 0) return;
+
+    const getFieldLabel = (key: string): string => {
+      const cfg = formConfig.campoConfig[key];
+      if (cfg?.label) return cfg.label;
+      const specialLabels: Record<string, string> = {
+        propietarios: 'Propietarios',
+        cotizaciones: 'Cotizaciones',
+        tipo_reclamacion_otro: 'Otro Tipo de Reclamación',
+        tipo_servicio_otro: 'Otro Tipo de Servicio',
+        causa_raiz_otra: 'Otra Causa Raíz',
+      };
+      return specialLabels[key] || key;
+    };
+
+    const step1Fields = [
+      'fecha_incidente', 'tipo_reclamacion', 'tipo_reclamacion_otro', 
+      'placa', 'numero_interno', 'tipo_servicio', 'tipo_servicio_otro', 
+      'propietarios', 'ciudad_origen', 'ciudad_destino', 'concepto'
+    ];
+    const step2Fields = [
+      'cotizaciones', 'valor_cotizacion', 'valor_negociado', 
+      'valor_salvamento', 'valor_final_aprobado'
+    ];
+    const step3Fields = [
+      'nombre_conductor', 'tipo_documento_conductor', 'id_conductor', 
+      'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 
+      'memorando_descuento', 'valor_recobro_vehiculo', 'valor_recobro_abogado', 
+      'valor_recobro_empresa'
+    ];
+    
+    // Buscar paso del primer error para redireccionar
+    const firstErrorKey = errorKeys[0];
+    let targetStep = 4;
+    if (step1Fields.includes(firstErrorKey)) {
+      targetStep = 1;
+    } else if (step2Fields.includes(firstErrorKey)) {
+      targetStep = 2;
+    } else if (step3Fields.includes(firstErrorKey)) {
+      targetStep = 3;
     }
-  }, [errors, step]);
+    
+    if (targetStep !== step) {
+      setStep(targetStep);
+    }
+
+    // Agrupar errores por paso
+    const missingStep1 = errorKeys.filter(k => step1Fields.includes(k)).map(k => getFieldLabel(k));
+    const missingStep2 = errorKeys.filter(k => step2Fields.includes(k)).map(k => getFieldLabel(k));
+    const missingStep3 = errorKeys.filter(k => step3Fields.includes(k)).map(k => getFieldLabel(k));
+    const missingStep4 = errorKeys.filter(k => !step1Fields.includes(k) && !step2Fields.includes(k) && !step3Fields.includes(k)).map(k => getFieldLabel(k));
+
+    const messageParts = [];
+    if (missingStep1.length > 0) messageParts.push(`Paso 1: ${missingStep1.join(', ')}`);
+    if (missingStep2.length > 0) messageParts.push(`Paso 2: ${missingStep2.join(', ')}`);
+    if (missingStep3.length > 0) messageParts.push(`Paso 3: ${missingStep3.join(', ')}`);
+    if (missingStep4.length > 0) messageParts.push(`Paso 4: ${missingStep4.join(', ')}`);
+
+    toast.error(
+      <div className="space-y-1 text-left">
+        <p className="font-bold text-sm">No se pudo guardar el expediente</p>
+        <p className="text-xs text-muted-foreground">Faltan diligenciar los siguientes campos obligatorios:</p>
+        <div className="text-xs space-y-1 mt-2 font-semibold border-l-2 border-destructive pl-2">
+          {messageParts.map((part, index) => (
+            <p key={index}>{part}</p>
+          ))}
+        </div>
+      </div>,
+      { duration: 6000 }
+    );
+  };
 
   const cotizaciones = watch('cotizaciones') || [];
 
@@ -791,7 +828,7 @@ export function ExpedienteForm({
   return (
     <form
       ref={formRef}
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit(onSubmit, onInvalidSubmit)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
           e.preventDefault();
@@ -1110,7 +1147,7 @@ export function ExpedienteForm({
                           concepto_otro: '', 
                           valor_cotizacion: 0, 
                           valor_negociado: 0, 
-                          porcentaje_deducible: 0, 
+                          porcentaje_deducible: 10, 
                           valor_deducible: 0, 
                           valor_a_pagar: 0,
                           nombre_archivo: null,
