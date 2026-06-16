@@ -1385,17 +1385,17 @@ export function ExpedienteForm({
                               <FormField label="Documento PDF de la Cotización">
                                 <div className="relative flex items-center justify-between border border-border bg-background rounded-lg px-3 h-10 overflow-hidden text-sm">
                                   <span className="truncate pr-4 text-muted-foreground">
-                                    {cotizacionFiles[fieldItem.id]
-                                      ? cotizacionFiles[fieldItem.id].name
+                                    {cotizacionFiles[cotizaciones[idx]?.id || '']
+                                      ? cotizacionFiles[cotizaciones[idx]?.id || ''].name
                                       : (watch(`cotizaciones.${idx}.nombre_archivo`) || 'Ningún archivo seleccionado')}
                                   </span>
-                                  {(cotizacionFiles[fieldItem.id] || watch(`cotizaciones.${idx}.nombre_archivo`)) ? (
+                                  {(cotizacionFiles[cotizaciones[idx]?.id || ''] || watch(`cotizaciones.${idx}.nombre_archivo`)) ? (
                                     <button
                                       type="button"
                                       onClick={() => {
                                         setCotizacionFiles((prev) => {
                                           const copy = { ...prev };
-                                          delete copy[fieldItem.id];
+                                          delete copy[cotizaciones[idx]?.id || ''];
                                           return copy;
                                         });
                                         setValue(`cotizaciones.${idx}.nombre_archivo`, null);
@@ -1415,7 +1415,7 @@ export function ExpedienteForm({
                                         onChange={(e) => {
                                           const file = e.target.files?.[0];
                                           if (file) {
-                                            handleCotizacionFileChange(fieldItem.id, idx, file);
+                                            handleCotizacionFileChange(cotizaciones[idx]?.id || '', idx, file);
                                             e.target.value = ''; // Limpiar input
                                           }
                                         }}

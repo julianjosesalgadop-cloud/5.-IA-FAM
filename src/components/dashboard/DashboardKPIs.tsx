@@ -37,7 +37,6 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
   const pendingCount = expedientes.filter((e) => e.estado === 'Pendiente').length;
   const approvedCount = expedientes.filter((e) => e.estado === 'Aprobado').length;
   const rejectedCount = expedientes.filter((e) => e.estado === 'Rechazado').length;
-  const reviewedCount = expedientes.filter((e) => e.estado === 'Revisado').length;
 
   const totalRecobros = expedientes.reduce(
     (sum, e) =>
@@ -54,7 +53,8 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
   const pctPending = totalCases ? Math.round((pendingCount / totalCases) * 100) : 0;
   const pctApproved = totalCases ? Math.round((approvedCount / totalCases) * 100) : 0;
   const pctRejected = totalCases ? Math.round((rejectedCount / totalCases) * 100) : 0;
-  const pctReviewed = totalCases ? Math.round((reviewedCount / totalCases) * 100) : 0;
+
+  const avgApproved = totalCases ? Math.round(totalApprovedVal / totalCases) : 0;
 
   const kpis = [
     {
@@ -103,11 +103,11 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
       bg: 'bg-red-500/10',
     },
     {
-      label: 'En Revisión',
-      value: reviewedCount,
-      change: `${pctReviewed}% del total`,
+      label: 'Afectación Promedio',
+      value: formatCOP(avgApproved),
+      change: 'Costo medio por caso',
       changeType: 'neutral' as const,
-      icon: AlertCircle,
+      icon: DollarSign,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
     },
