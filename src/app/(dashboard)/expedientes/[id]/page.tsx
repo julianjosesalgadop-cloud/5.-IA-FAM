@@ -184,7 +184,7 @@ export default function ExpedienteDetailPage() {
 
   const handleDownloadDoc = async (storagePath: string, fileName: string) => {
     try {
-      const url = await dbService.getDownloadUrl(storagePath);
+      const url = await dbService.getDownloadUrl(storagePath, fileName);
       // Create element to trigger download or open tab
       const a = document.createElement('a');
       a.href = url;
@@ -206,7 +206,7 @@ export default function ExpedienteDetailPage() {
 
   const handlePreviewDoc = async (storagePath: string, fileName: string) => {
     try {
-      const url = await dbService.getDownloadUrl(storagePath);
+      const url = await dbService.getDownloadUrl(storagePath, fileName);
       setPreviewFile({
         url,
         name: fileName,

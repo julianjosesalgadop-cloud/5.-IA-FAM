@@ -42,8 +42,13 @@ export const onedriveService = {
   uploadFile: async (fileBuffer: Buffer, fileName: string, expedienteId: string): Promise<{ itemId: string; storagePath: string }> => {
     const token = await getAccessToken();
     
+    // Sanitize the filename to avoid OData URL parsing issues (e.g. parentheses or spaces in path)
+    const cleanFileName = fileName
+      .replace(/[\s()\[\]]/g, '_') // Replace spaces, (), [] with underscores
+      .replace(/[^a-zA-Z0-9._-]/g, ''); // Keep only safe chars
+
     // Graph PUT API supports files up to 250MB in a single request.
-    const sanitizedFileName = encodeURIComponent(fileName);
+    const sanitizedFileName = encodeURIComponent(cleanFileName);
     const path = `SIGFAM/expedientes/${expedienteId}/${sanitizedFileName}`;
     const url = `https://graph.microsoft.com/v1.0/users/${ONEDRIVE_USER}/drive/root:/${path}:/content`;
 

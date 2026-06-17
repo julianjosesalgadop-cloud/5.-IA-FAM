@@ -745,7 +745,7 @@ export const dbService = {
     } as any);
   },
 
-  getDownloadUrl: async (storagePath: string): Promise<string> => {
+  getDownloadUrl: async (storagePath: string, fileName?: string): Promise<string> => {
     if (IS_MOCK_MODE) {
       // In mock mode, we just return a placeholder or create a simulated file download
       return `https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600&auto=format&fit=crop`;
@@ -753,7 +753,8 @@ export const dbService = {
 
     if (storagePath.startsWith('onedrive:')) {
       const itemId = storagePath.replace('onedrive:', '');
-      return `/api/onedrive/download?itemId=${itemId}`;
+      const nameParam = fileName ? `&fileName=${encodeURIComponent(fileName)}` : '';
+      return `/api/onedrive/download?itemId=${itemId}${nameParam}`;
     }
 
     const supabase = createBrowserClient();
