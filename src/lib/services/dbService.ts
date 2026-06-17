@@ -589,7 +589,8 @@ export const dbService = {
   uploadDocumento: async (
     expedienteId: string,
     file: File,
-    tipoDocumento: string
+    tipoDocumento: string,
+    numeroExpediente?: string
   ): Promise<Documento> => {
     await verifyRole(['admin', 'analista']);
     if (IS_MOCK_MODE) {
@@ -639,6 +640,9 @@ export const dbService = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('expedienteId', expedienteId);
+    if (numeroExpediente) {
+      formData.append('numeroExpediente', numeroExpediente);
+    }
 
     const uploadRes = await fetch('/api/onedrive/upload', {
       method: 'POST',

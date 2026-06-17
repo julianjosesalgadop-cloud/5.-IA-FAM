@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 export interface PasoConfig {
   id: number;
@@ -169,9 +170,47 @@ export function useFormConfig() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadFromLocalStorage = () => {
+    const loadConfiguration = async () => {
       try {
+        const IS_MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+        let dbConfigs: Record<string, any> = {};
+
+        if (!IS_MOCK_MODE) {
+          try {
+            const supabase = createClient();
+            const { data, error } = await supabase
+              .from('catalogos')
+              .select('tipo, valor')
+              .in('tipo', [
+                'fam_config_pasos_form',
+                'fam_config_tipos_reclamacion',
+                'fam_config_tipos_servicio',
+                'fam_config_tipos_doc_paso1',
+                'fam_config_conceptos_cot',
+                'fam_config_deducibles',
+                'fam_config_culpabilidades',
+                'fam_config_causas',
+                'fam_config_autorizados_por',
+                'fam_config_cargos',
+                'fam_config_campos'
+              ]);
+            
+            if (!error && data) {
+              (data as any[]).forEach((row: any) => {
+                try {
+                  dbConfigs[row.tipo] = JSON.parse(row.valor);
+                } catch (e) {
+                  console.error('Error parsing config row', row.tipo, e);
+                }
+              });
+            }
+          } catch (dbErr) {
+            console.error('Error querying catalogos table from Supabase:', dbErr);
+          }
+        }
+
         const getJSON = <T>(key: string, fallback: T): T => {
+          if (dbConfigs[key] !== undefined) return dbConfigs[key] as T;
           if (typeof window === 'undefined') return fallback;
           const stored = localStorage.getItem(key);
           if (!stored) return fallback;
@@ -190,9 +229,10 @@ export function useFormConfig() {
         const storedDeducibles = getJSON<{ label: string; value: number; activo: boolean }[]>('fam_config_deducibles', defaultDeducibles);
         const storedCulpabilidades = getJSON<CatalogoItem[]>('fam_config_culpabilidades', defaultCulpabilidades);
         
-        // Handle migration/compatibility for causasRaiz (fam_config_causas)
         let storedCausasRaiz = defaultCausasRaiz;
-        if (typeof window !== 'undefined') {
+        if (dbConfigs['fam_config_causas'] !== undefined) {
+          storedCausasRaiz = dbConfigs['fam_config_causas'];
+        } else if (typeof window !== 'undefined') {
           const rawCausas = localStorage.getItem('fam_config_causas');
           if (rawCausas) {
             try {
@@ -236,7 +276,7 @@ export function useFormConfig() {
       }
     };
 
-    loadFromLocalStorage();
+    loadConfiguration();
   }, []);
 
   const saveConfig = (key: string, value: any) => {
@@ -260,6 +300,46 @@ export function useFormConfig() {
         else if (key === 'fam_config_campos') updated.campoConfig = value;
         return updated;
       });
+
+      // Background save to database if not in mock mode
+      const IS_MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+      if (!IS_MOCK_MODE) {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) {
+            // Read active profile to verify admin role
+            supabase
+              .from('perfiles')
+              .select('rol')
+              .eq('id', user.id)
+              .single()
+              .then(({ data: profile }) => {
+                if (profile && (profile as any).rol === 'admin') {
+                  // Delete old key and insert new config value
+                  supabase
+                    .from('catalogos')
+                    .delete()
+                    .eq('tipo', key)
+                    .then(() => {
+                      supabase
+                        .from('catalogos')
+                        .insert({
+                          tipo: key,
+                          valor: JSON.stringify(value),
+                          activo: true,
+                          orden: 0
+                        } as any)
+                        .then(({ error }) => {
+                          if (error) {
+                            console.error('Error writing config to database:', error);
+                          }
+                        });
+                    });
+                }
+              });
+          }
+        });
+      }
     } catch (err) {
       console.error('Error saving form configuration:', err);
     }

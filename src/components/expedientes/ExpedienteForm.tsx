@@ -743,12 +743,14 @@ export function ExpedienteForm({
       };
 
       let createdId = id;
+      let numeroExp = (defaultValues as any)?.numero_expediente || '';
       if (id) {
         await dbService.updateExpediente(id, finalData as any);
         toast.success('Expediente actualizado exitosamente');
       } else {
         const created = await dbService.createExpediente(finalData as any);
         createdId = created.id;
+        numeroExp = created.numero_expediente;
         toast.success(`Expediente creado exitosamente: ${created.numero_expediente}`);
       }
 
@@ -757,7 +759,7 @@ export function ExpedienteForm({
         // 1. Subir archivos generales de paso 1
         for (const item of archivosPaso1) {
           try {
-            await dbService.uploadDocumento(createdId, item.file, item.tipo);
+            await dbService.uploadDocumento(createdId, item.file, item.tipo, numeroExp);
           } catch (uploadError) {
             console.error('Error al subir documento adjunto paso 1:', uploadError);
             toast.error(`No se pudo cargar el archivo ${item.file.name}: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
@@ -772,7 +774,7 @@ export function ExpedienteForm({
           const file = cotizacionFiles[cot.id];
           if (file) {
             try {
-              const uploadedDoc = await dbService.uploadDocumento(createdId, file, 'Cotización');
+              const uploadedDoc = await dbService.uploadDocumento(createdId, file, 'Cotización', numeroExp);
               updatedCotizacionesFinal.push({
                 ...cot,
                 nombre_archivo: file.name,
@@ -799,7 +801,7 @@ export function ExpedienteForm({
         // 3. Subir archivo de memorando de pago de paso 4 (si se seleccionó uno nuevo)
         if (memorandoPagoFile) {
           try {
-            const uploadedDoc = await dbService.uploadDocumento(createdId, memorandoPagoFile, 'Memorando');
+            const uploadedDoc = await dbService.uploadDocumento(createdId, memorandoPagoFile, 'Memorando', numeroExp);
             await dbService.updateExpediente(createdId, {
               memorando_pago_archivo_nombre: memorandoPagoFile.name,
               memorando_pago_storage_path: uploadedDoc.storage_path,

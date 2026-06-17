@@ -149,7 +149,7 @@ export default function ExpedienteDetailPage() {
     if (!selectedFile || !expediente) return;
     setUploading(true);
     try {
-      const newDoc = await dbService.uploadDocumento(expediente.id, selectedFile, tipoDocumento);
+      const newDoc = await dbService.uploadDocumento(expediente.id, selectedFile, tipoDocumento, expediente.numero_expediente);
       setDocumentos((prev) => [newDoc, ...prev]);
       setSelectedFile(null);
       toast.success('Documento subido correctamente');
