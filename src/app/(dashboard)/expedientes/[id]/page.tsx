@@ -48,6 +48,17 @@ export default function ExpedienteDetailPage() {
   const [activeTab, setActiveTab] = useState<TabType>('resumen');
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando expediente...', { id: 'loading-expediente-detail' });
+    } else {
+      toast.dismiss('loading-expediente-detail');
+    }
+    return () => {
+      toast.dismiss('loading-expediente-detail');
+    };
+  }, [loading]);
   
   // Document Upload State
   const [uploading, setUploading] = useState(false);

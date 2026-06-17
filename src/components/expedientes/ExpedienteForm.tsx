@@ -160,38 +160,44 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
   return z.object({
     fecha_incidente: isRequired('fecha_incidente', true) 
       ? z.string().min(1, 'Requerido') 
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     placa: isRequired('placa', true) 
       ? z.string().min(1, 'Requerido').toUpperCase() 
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     numero_interno: isRequired('numero_interno', true) 
       ? z.string().min(1, 'Requerido') 
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     tipo_servicio: z.string().default('Intermunicipal'),
-    tipo_servicio_otro: z.string().optional(),
-    propietario: z.string().optional(),
-    propietarios: z.array(z.object({
-      nombre: z.string().min(1, 'Requerido'),
-      tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']),
-      numero_documento: z.string().min(1, 'Requerido'),
-    })).min(1, 'Debe registrar al menos un propietario'),
+    tipo_servicio_otro: z.string().optional().nullable(),
+    propietario: z.string().optional().nullable(),
+    propietarios: isRequired('propietarios', true)
+      ? z.array(z.object({
+          nombre: z.string().min(1, 'Requerido'),
+          tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']),
+          numero_documento: z.string().min(1, 'Requerido'),
+        })).min(1, 'Debe registrar al menos un propietario')
+      : z.array(z.object({
+          nombre: z.string().optional().nullable(),
+          tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
+          numero_documento: z.string().optional().nullable(),
+        })).optional().nullable(),
     tipo_reclamacion: z.string(),
-    tipo_reclamacion_otro: z.string().optional(),
+    tipo_reclamacion_otro: z.string().optional().nullable(),
     ciudad_origen: isRequired('ciudad_origen', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     ciudad_destino: isRequired('ciudad_destino', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     concepto: isRequired('concepto', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     valor_cotizacion: z.number().min(0).optional().nullable(),
     cotizaciones: z.array(z.object({
       id: z.string(),
       proveedor: isRequired('cotizaciones_proveedor', true)
         ? z.string().min(1, 'Requerido')
-        : z.string().optional(),
+        : z.string().optional().nullable(),
       tipo_documento: isRequired('cotizaciones_tipo_documento', false)
         ? z.enum(['CC', 'CE', 'TI', 'NIT', 'PP'], { errorMap: () => ({ message: 'Requerido' }) })
         : z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
@@ -199,7 +205,7 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
         ? z.string().min(1, 'Requerido')
         : z.string().optional().nullable(),
       concepto: z.string().min(1, 'Requerido'),
-      concepto_otro: z.string().optional(),
+      concepto_otro: z.string().optional().nullable(),
       valor_cotizacion: isRequired('valor_cotizacion', false)
         ? z.number({ invalid_type_error: 'Requerido' }).min(1, 'Monto debe ser positivo')
         : z.number().min(0).optional().nullable(),
@@ -231,21 +237,23 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
       : z.number().min(0).optional().nullable(),
     nombre_conductor: isRequired('nombre_conductor', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
-    tipo_documento_conductor: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
+      : z.string().optional().nullable(),
+    tipo_documento_conductor: isRequired('id_conductor', false)
+      ? z.enum(['CC', 'CE', 'TI', 'NIT', 'PP'], { errorMap: () => ({ message: 'Requerido' }) })
+      : z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
     id_conductor: isRequired('id_conductor', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     celular_conductor: isRequired('celular_conductor', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     culpabilidad: z.string().optional().nullable(),
     valor_descuento_conductor: isRequired('valor_descuento_conductor', false)
       ? z.number().min(0, 'Monto debe ser positivo')
       : z.number().min(0).optional().nullable(),
     memorando_descuento: isRequired('memorando_descuento', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     valor_recobro_vehiculo: isRequired('valor_recobro_vehiculo', false)
       ? z.number().min(0, 'Monto debe ser positivo')
       : z.number().min(0).optional().nullable(),
@@ -257,12 +265,12 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
       : z.number().min(0).optional().nullable(),
     fecha_comite: isRequired('fecha_comite', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
-    causa_raiz: z.string().optional(),
-    causa_raiz_otra: z.string().optional(),
+      : z.string().optional().nullable(),
+    causa_raiz: z.string().optional().nullable(),
+    causa_raiz_otra: z.string().optional().nullable(),
     observaciones_comite: isRequired('observaciones_comite', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     numero_acta: isRequired('numero_acta', false)
       ? z.string().min(1, 'Requerido').nullable().refine((val) => {
           if (!val) return false;
@@ -278,13 +286,13 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
         }),
     autorizado_por: isRequired('autorizado_por', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     cargo_autorizador: isRequired('cargo_autorizador', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     fecha_autorizacion: isRequired('fecha_autorizacion', false)
       ? z.string().min(1, 'Requerido')
-      : z.string().optional(),
+      : z.string().optional().nullable(),
     memorando_pago_nombre: isRequired('memorando_pago_nombre', false)
       ? z.string().min(1, 'Requerido').nullable()
       : z.string().optional().nullable(),
@@ -1571,17 +1579,17 @@ export function ExpedienteForm({
                 </FieldGroup>
 
                 {/* Recobros Section - only render if any recobro field is visible */}
-                {(formConfig.campoConfig.recobro_vehiculo?.visible || 
-                  formConfig.campoConfig.recobro_abogado?.visible || 
-                  formConfig.campoConfig.recobro_empresa?.visible) && (
+                {(formConfig.campoConfig.valor_recobro_vehiculo?.visible || 
+                  formConfig.campoConfig.valor_recobro_abogado?.visible || 
+                  formConfig.campoConfig.valor_recobro_empresa?.visible) && (
                   <>
                     <Separator />
                     <p className="text-sm font-semibold text-foreground">Recobros</p>
 
                     {[
-                      { label: formConfig.campoConfig.recobro_vehiculo?.label || 'Recobro Vehículo', field: 'valor_recobro_vehiculo' as const, pct: pctVehiculo, key: 'recobro_vehiculo' },
-                      { label: formConfig.campoConfig.recobro_abogado?.label || 'Recobro Abogado', field: 'valor_recobro_abogado' as const, pct: pctAbogado, key: 'recobro_abogado' },
-                      { label: formConfig.campoConfig.recobro_empresa?.label || 'Recobro Empresa', field: 'valor_recobro_empresa' as const, pct: pctEmpresa, key: 'recobro_empresa' },
+                      { label: formConfig.campoConfig.valor_recobro_vehiculo?.label || 'Recobro Vehículo', field: 'valor_recobro_vehiculo' as const, pct: pctVehiculo, key: 'valor_recobro_vehiculo' },
+                      { label: formConfig.campoConfig.valor_recobro_abogado?.label || 'Recobro Abogado', field: 'valor_recobro_abogado' as const, pct: pctAbogado, key: 'valor_recobro_abogado' },
+                      { label: formConfig.campoConfig.valor_recobro_empresa?.label || 'Recobro Empresa', field: 'valor_recobro_empresa' as const, pct: pctEmpresa, key: 'valor_recobro_empresa' },
                     ].map(({ label, field, pct, key }) => {
                       const fieldConfig = formConfig.campoConfig[key];
                       if (!fieldConfig?.visible) return null;

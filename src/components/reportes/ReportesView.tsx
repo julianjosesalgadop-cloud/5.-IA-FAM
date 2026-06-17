@@ -23,6 +23,17 @@ export function ReportesView() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando reportes...', { id: 'loading-reportes' });
+    } else {
+      toast.dismiss('loading-reportes');
+    }
+    return () => {
+      toast.dismiss('loading-reportes');
+    };
+  }, [loading]);
+
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState('');

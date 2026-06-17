@@ -32,6 +32,18 @@ export function ExpedientesList() {
   const router = useRouter();
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando expedientes...', { id: 'loading-expedientes-list' });
+    } else {
+      toast.dismiss('loading-expedientes-list');
+    }
+    return () => {
+      toast.dismiss('loading-expedientes-list');
+    };
+  }, [loading]);
+
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<string>('');
   const [tipoFilter, setTipoFilter] = useState<string>('');

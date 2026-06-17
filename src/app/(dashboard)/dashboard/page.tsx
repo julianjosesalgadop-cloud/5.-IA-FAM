@@ -14,6 +14,17 @@ export default function DashboardPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando datos del dashboard...', { id: 'loading-dashboard' });
+    } else {
+      toast.dismiss('loading-dashboard');
+    }
+    return () => {
+      toast.dismiss('loading-dashboard');
+    };
+  }, [loading]);
+
   // Filters State
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');

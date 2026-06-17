@@ -56,6 +56,17 @@ export function AuditoriaView() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando registros de auditoría...', { id: 'loading-auditoria' });
+    } else {
+      toast.dismiss('loading-auditoria');
+    }
+    return () => {
+      toast.dismiss('loading-auditoria');
+    };
+  }, [loading]);
+
   // --- Filtros ---
   const [search, setSearch] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);

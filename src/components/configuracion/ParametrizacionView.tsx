@@ -111,6 +111,8 @@ const DEFAULT_CATALOGS = {
     cotizaciones_numero_documento: { label: 'Número de Documento', placeholder: 'Número de doc', visible: true, requerido: false },
     valor_cotizacion: { label: 'Valor Cotización', placeholder: '$ 0', visible: true, requerido: false },
     valor_negociado: { label: 'Valor Negociado', placeholder: '$ 0', visible: true, requerido: false },
+    valor_deducible: { label: 'Valor Deducible', placeholder: '$ 0', visible: true, requerido: false },
+    valor_a_pagar: { label: 'Valor a Pagar', placeholder: '$ 0', visible: true, requerido: false },
     valor_salvamento: { label: 'Valor Salvamento', placeholder: '$ 0', visible: true, requerido: false },
     valor_final_aprobado: { label: 'Valor Final Aprobado', placeholder: '$ 0', visible: true, requerido: false },
 
@@ -121,9 +123,9 @@ const DEFAULT_CATALOGS = {
     culpabilidad: { label: 'Culpabilidad', placeholder: '', visible: true, requerido: false },
     valor_descuento_conductor: { label: 'Descuento Conductor', placeholder: '$ 0', visible: true, requerido: false },
     memorando_descuento: { label: 'N° Memorando Descuento', placeholder: 'Ej: MEMO-001', visible: true, requerido: false },
-    recobro_vehiculo: { label: 'Recobro Vehículo', placeholder: '$ 0', visible: true, requerido: false },
-    recobro_abogado: { label: 'Recobro Abogado', placeholder: '$ 0', visible: true, requerido: false },
-    recobro_empresa: { label: 'Recobro Empresa', placeholder: '$ 0', visible: true, requerido: false },
+    valor_recobro_vehiculo: { label: 'Recobro Vehículo', placeholder: '$ 0', visible: true, requerido: false },
+    valor_recobro_abogado: { label: 'Recobro Abogado', placeholder: '$ 0', visible: true, requerido: false },
+    valor_recobro_empresa: { label: 'Recobro Empresa', placeholder: '$ 0', visible: true, requerido: false },
 
     // Paso 4
     fecha_comite: { label: 'Fecha Comité', placeholder: '', visible: true, requerido: false },
@@ -416,8 +418,8 @@ export function ParametrizacionView() {
 
   // Define keys for each step to handle resets/saves grouped
   const step1Keys = ['fecha_incidente', 'placa', 'numero_interno', 'tipo_servicio', 'propietarios', 'tipo_reclamacion', 'ciudad_origen', 'ciudad_destino', 'concepto'];
-  const step2Keys = ['cotizaciones_proveedor', 'cotizaciones_tipo_documento', 'cotizaciones_numero_documento', 'valor_cotizacion', 'valor_negociado', 'valor_salvamento', 'valor_final_aprobado'];
-  const step3Keys = ['nombre_conductor', 'id_conductor', 'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 'memorando_descuento', 'recobro_vehiculo', 'recobro_abogado', 'recobro_empresa'];
+  const step2Keys = ['cotizaciones_proveedor', 'cotizaciones_tipo_documento', 'cotizaciones_numero_documento', 'valor_cotizacion', 'valor_negociado', 'valor_deducible', 'valor_a_pagar', 'valor_salvamento', 'valor_final_aprobado'];
+  const step3Keys = ['nombre_conductor', 'id_conductor', 'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 'memorando_descuento', 'valor_recobro_vehiculo', 'valor_recobro_abogado', 'valor_recobro_empresa'];
   const step4Keys = ['fecha_comite', 'numero_acta', 'causa_raiz', 'observaciones_comite', 'autorizado_por', 'cargo_autorizador', 'fecha_autorizacion', 'memorando_pago_nombre', 'memorando_pago_archivo'];
 
   return (

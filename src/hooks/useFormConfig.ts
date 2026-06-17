@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 export interface PasoConfig {
   id: number;
@@ -126,6 +127,8 @@ const defaultCamposConfig: Record<string, CampoConfig> = {
   cotizaciones_numero_documento: { label: 'Número de Documento', placeholder: 'Número de doc', visible: true, requerido: false },
   valor_cotizacion: { label: 'Valor Cotización', placeholder: '$ 0', visible: true, requerido: false },
   valor_negociado: { label: 'Valor Negociado', placeholder: '$ 0', visible: true, requerido: false },
+  valor_deducible: { label: 'Valor Deducible', placeholder: '$ 0', visible: true, requerido: false },
+  valor_a_pagar: { label: 'Valor a Pagar', placeholder: '$ 0', visible: true, requerido: false },
   valor_salvamento: { label: 'Valor Salvamento', placeholder: '$ 0', visible: true, requerido: false },
   valor_final_aprobado: { label: 'Valor Final Aprobado', placeholder: '$ 0', visible: true, requerido: false },
 
@@ -136,9 +139,9 @@ const defaultCamposConfig: Record<string, CampoConfig> = {
   culpabilidad: { label: 'Culpabilidad', placeholder: '', visible: true, requerido: false },
   valor_descuento_conductor: { label: 'Descuento Conductor', placeholder: '$ 0', visible: true, requerido: false },
   memorando_descuento: { label: 'N° Memorando Descuento', placeholder: 'Ej: MEMO-001', visible: true, requerido: false },
-  recobro_vehiculo: { label: 'Recobro Vehículo', placeholder: '$ 0', visible: true, requerido: false },
-  recobro_abogado: { label: 'Recobro Abogado', placeholder: '$ 0', visible: true, requerido: false },
-  recobro_empresa: { label: 'Recobro Empresa', placeholder: '$ 0', visible: true, requerido: false },
+  valor_recobro_vehiculo: { label: 'Recobro Vehículo', placeholder: '$ 0', visible: true, requerido: false },
+  valor_recobro_abogado: { label: 'Recobro Abogado', placeholder: '$ 0', visible: true, requerido: false },
+  valor_recobro_empresa: { label: 'Recobro Empresa', placeholder: '$ 0', visible: true, requerido: false },
 
   // Paso 4
   fecha_comite: { label: 'Fecha Comité', placeholder: '', visible: true, requerido: false },
@@ -170,6 +173,14 @@ export function useFormConfig() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando configuración...', { id: 'loading-form-config' });
+    } else {
+      toast.dismiss('loading-form-config');
+    }
+  }, [loading]);
+
+  useEffect(() => {
     const loadConfiguration = async () => {
       try {
         const IS_MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
@@ -178,39 +189,83 @@ export function useFormConfig() {
         if (!IS_MOCK_MODE) {
           try {
             const supabase = createClient();
-            const { data, error } = await supabase
-              .from('catalogos')
-              .select('tipo, valor')
-              .in('tipo', [
-                'fam_config_pasos_form',
-                'fam_config_tipos_reclamacion',
-                'fam_config_tipos_servicio',
-                'fam_config_tipos_doc_paso1',
-                'fam_config_conceptos_cot',
-                'fam_config_deducibles',
-                'fam_config_culpabilidades',
-                'fam_config_causas',
-                'fam_config_autorizados_por',
-                'fam_config_cargos',
-                'fam_config_campos'
-              ]);
             
-            if (!error && data) {
-              (data as any[]).forEach((row: any) => {
-                try {
-                  dbConfigs[row.tipo] = JSON.parse(row.valor);
-                } catch (e) {
-                  console.error('Error parsing config row', row.tipo, e);
-                }
+            // 1. Fetch catalogos list options
+            const { data: dbCatalogos, error: catError } = await supabase
+              .from('catalogos')
+              .select('*')
+              .order('orden', { ascending: true });
+            
+            if (!catError && dbCatalogos) {
+              const grouped: Record<string, any[]> = {};
+              (dbCatalogos as any[]).forEach(row => {
+                if (!grouped[row.tipo]) grouped[row.tipo] = [];
+                grouped[row.tipo].push(row);
               });
+
+              const mapCatalog = (dbType: string, isSimpleString = false) => {
+                const items = grouped[dbType] || [];
+                if (isSimpleString) {
+                  return items.filter(i => i.activo).map(i => i.valor);
+                }
+                return items.map(i => ({
+                  label: i.valor,
+                  activo: i.activo,
+                  orden: i.orden ?? 0,
+                  ...(dbType === 'OPCIONES_DEDUCIBLE' ? { value: parseFloat(i.valor) } : {})
+                }));
+              };
+
+              dbConfigs['fam_config_tipos_reclamacion'] = mapCatalog('TIPO_RECLAMACION');
+              dbConfigs['fam_config_tipos_servicio'] = mapCatalog('TIPO_SERVICIO');
+              dbConfigs['fam_config_tipos_doc_paso1'] = mapCatalog('TIPO_DOC_PASO1');
+              dbConfigs['fam_config_conceptos_cot'] = mapCatalog('CONCEPTO_COTIZACION');
+              dbConfigs['fam_config_deducibles'] = mapCatalog('OPCIONES_DEDUCIBLE');
+              dbConfigs['fam_config_culpabilidades'] = mapCatalog('CULPABILIDAD');
+              dbConfigs['fam_config_causas'] = mapCatalog('CAUSA_RAIZ', true);
+              dbConfigs['fam_config_autorizados_por'] = mapCatalog('AUTORIZADO_POR');
+              dbConfigs['fam_config_cargos'] = mapCatalog('CARGO_AUTORIZADOR');
+
+              if (grouped['PASO_FORMULARIO']) {
+                dbConfigs['fam_config_pasos_form'] = grouped['PASO_FORMULARIO'].map(i => {
+                  try {
+                    const parsed = JSON.parse(i.valor);
+                    return {
+                      id: i.orden ?? 0,
+                      label: parsed.label,
+                      description: parsed.description
+                    };
+                  } catch {
+                    return { id: i.orden ?? 0, label: i.valor, description: '' };
+                  }
+                });
+              }
+            }
+
+            // 2. Fetch campos_configuracion table
+            const { data: dbCampos, error: camposError } = await supabase
+              .from('campos_configuracion')
+              .select('*');
+            
+            if (!camposError && dbCampos) {
+              const loadedCampos: Record<string, CampoConfig> = {};
+              (dbCampos as any[]).forEach(row => {
+                loadedCampos[row.id] = {
+                  label: row.label,
+                  placeholder: row.placeholder || '',
+                  visible: row.visible,
+                  requerido: row.requerido
+                };
+              });
+              dbConfigs['fam_config_campos'] = loadedCampos;
             }
           } catch (dbErr) {
-            console.error('Error querying catalogos table from Supabase:', dbErr);
+            console.error('Error querying configuration from Supabase:', dbErr);
           }
         }
 
         const getJSON = <T>(key: string, fallback: T): T => {
-          if (dbConfigs[key] !== undefined) return dbConfigs[key] as T;
+          if (dbConfigs[key] !== undefined && dbConfigs[key] !== null && (!Array.isArray(dbConfigs[key]) || dbConfigs[key].length > 0)) return dbConfigs[key] as T;
           if (typeof window === 'undefined') return fallback;
           const stored = localStorage.getItem(key);
           if (!stored) return fallback;
@@ -230,7 +285,7 @@ export function useFormConfig() {
         const storedCulpabilidades = getJSON<CatalogoItem[]>('fam_config_culpabilidades', defaultCulpabilidades);
         
         let storedCausasRaiz = defaultCausasRaiz;
-        if (dbConfigs['fam_config_causas'] !== undefined) {
+        if (dbConfigs['fam_config_causas'] !== undefined && dbConfigs['fam_config_causas'] !== null && dbConfigs['fam_config_causas'].length > 0) {
           storedCausasRaiz = dbConfigs['fam_config_causas'];
         } else if (typeof window !== 'undefined') {
           const rawCausas = localStorage.getItem('fam_config_causas');
@@ -315,26 +370,95 @@ export function useFormConfig() {
               .single()
               .then(({ data: profile }) => {
                 if (profile && (profile as any).rol === 'admin') {
-                  // Delete old key and insert new config value
-                  supabase
-                    .from('catalogos')
-                    .delete()
-                    .eq('tipo', key)
-                    .then(() => {
+                  
+                  if (key === 'fam_config_campos') {
+                    // Save campos_configuracion
+                    const promises = Object.keys(value).map(fieldId => {
+                      const field = value[fieldId];
+                      return supabase
+                        .from('campos_configuracion')
+                        .upsert({
+                          id: fieldId,
+                          label: field.label,
+                          placeholder: field.placeholder || null,
+                          visible: field.visible === true,
+                          requerido: field.requerido === true
+                        } as any);
+                    });
+                    Promise.all(promises).then(results => {
+                      const errors = results.filter(r => r.error);
+                      if (errors.length > 0) console.error('Error saving campos_configuracion:', errors.map(e => e.error));
+                    });
+                  } else if (key === 'fam_config_pasos_form') {
+                    // Save steps
+                    supabase
+                      .from('catalogos')
+                      .delete()
+                      .eq('tipo', 'PASO_FORMULARIO')
+                      .then(() => {
+                        const insertData = (value as PasoConfig[]).map(step => ({
+                          tipo: 'PASO_FORMULARIO',
+                          valor: JSON.stringify({ label: step.label, description: step.description }),
+                          activo: true,
+                          orden: step.id
+                        }));
+                        supabase
+                          .from('catalogos')
+                          .insert(insertData as any)
+                          .then(({ error }) => {
+                            if (error) console.error('Error saving steps to database:', error);
+                          });
+                      });
+                  } else {
+                    // Map our config key to database catalog type
+                    const keyMap: Record<string, string> = {
+                      'fam_config_tipos_reclamacion': 'TIPO_RECLAMACION',
+                      'fam_config_tipos_servicio': 'TIPO_SERVICIO',
+                      'fam_config_tipos_doc_paso1': 'TIPO_DOC_PASO1',
+                      'fam_config_conceptos_cot': 'CONCEPTO_COTIZACION',
+                      'fam_config_deducibles': 'OPCIONES_DEDUCIBLE',
+                      'fam_config_culpabilidades': 'CULPABILIDAD',
+                      'fam_config_causas': 'CAUSA_RAIZ',
+                      'fam_config_autorizados_por': 'AUTORIZADO_POR',
+                      'fam_config_cargos': 'CARGO_AUTORIZADOR'
+                    };
+
+                    const dbType = keyMap[key];
+                    if (dbType) {
                       supabase
                         .from('catalogos')
-                        .insert({
-                          tipo: key,
-                          valor: JSON.stringify(value),
-                          activo: true,
-                          orden: 0
-                        } as any)
-                        .then(({ error }) => {
-                          if (error) {
-                            console.error('Error writing config to database:', error);
+                        .delete()
+                        .eq('tipo', dbType)
+                        .then(() => {
+                          let insertData: any[] = [];
+                          if (key === 'fam_config_causas') {
+                            insertData = (value as string[]).map((val, idx) => ({
+                              tipo: dbType,
+                              valor: val,
+                              activo: true,
+                              orden: idx
+                            }));
+                          } else {
+                            insertData = (value as any[]).map((item, idx) => ({
+                              tipo: dbType,
+                              valor: String(item.label || item.value || ''),
+                              activo: item.activo !== false,
+                              orden: item.orden ?? idx
+                            }));
+                          }
+
+                          if (insertData.length > 0) {
+                            supabase
+                              .from('catalogos')
+                              .insert(insertData as any)
+                              .then(({ error }) => {
+                                if (error) console.error('Error writing catalog to database:', error);
+                              });
                           }
                         });
-                    });
+                    }
+                  }
+
                 }
               });
           }
