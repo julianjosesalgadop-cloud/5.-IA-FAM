@@ -760,7 +760,7 @@ export function ExpedienteForm({
             await dbService.uploadDocumento(createdId, item.file, item.tipo);
           } catch (uploadError) {
             console.error('Error al subir documento adjunto paso 1:', uploadError);
-            toast.error(`No se pudo cargar el archivo ${item.file.name}`);
+            toast.error(`No se pudo cargar el archivo ${item.file.name}: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
           }
         }
 
@@ -781,7 +781,7 @@ export function ExpedienteForm({
               modifiedQuotes = true;
             } catch (uploadError) {
               console.error('Error al subir documento de cotización:', uploadError);
-              toast.error(`No se pudo cargar la cotización de ${cot.proveedor}`);
+              toast.error(`No se pudo cargar la cotización de ${cot.proveedor}: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
               updatedCotizacionesFinal.push(cot);
             }
           } else {
@@ -806,7 +806,7 @@ export function ExpedienteForm({
             } as any);
           } catch (uploadError) {
             console.error('Error al subir documento de memorando de pago:', uploadError);
-            toast.error(`No se pudo cargar el archivo del memorando de pago`);
+            toast.error(`No se pudo cargar el archivo del memorando de pago: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
           }
         }
       }
