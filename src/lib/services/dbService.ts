@@ -634,16 +634,23 @@ export const dbService = {
     }
 
     const { data: { user } } = await supabase.auth.getUser();
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const storagePath = `${expedienteId}/${fileName}`;
+    
+    // Upload file to OneDrive via API route
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('expedienteId', expedienteId);
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from('expedientes-documentos')
-      .upload(storagePath, file);
+    const uploadRes = await fetch('/api/onedrive/upload', {
+      method: 'POST',
+      body: formData,
+    });
 
-    if (uploadError) throw uploadError;
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      throw new Error(`Error al subir a OneDrive: ${errText}`);
+    }
+
+    const { storagePath } = await uploadRes.json();
 
     // Insert to DB Table
     const { data, error: dbError } = await supabase
@@ -666,7 +673,7 @@ export const dbService = {
       usuario_id: user?.id || null,
       usuario_email: user?.email || null,
       accion: 'DOCUMENTO',
-      valor_nuevo: `Documento subido: ${file.name} (${tipoDocumento})`,
+      valor_nuevo: `Documento subido a OneDrive: ${file.name} (${tipoDocumento})`,
     } as any);
 
     return data;
@@ -702,12 +709,24 @@ export const dbService = {
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Delete from Storage
-    const { error: storageError } = await supabase.storage
-      .from('expedientes-documentos')
-      .remove([storagePath]);
+    // Delete from OneDrive or Supabase Storage based on path type
+    if (storagePath.startsWith('onedrive:')) {
+      const itemId = storagePath.replace('onedrive:', '');
+      const deleteRes = await fetch(`/api/onedrive/delete?itemId=${itemId}`, {
+        method: 'POST',
+      });
+      if (!deleteRes.ok) {
+        const errText = await deleteRes.text();
+        console.warn(`No se pudo borrar el archivo de OneDrive: ${errText}`);
+      }
+    } else {
+      // Delete from Supabase Storage (backwards compatibility)
+      const { error: storageError } = await supabase.storage
+        .from('expedientes-documentos')
+        .remove([storagePath]);
 
-    if (storageError) throw storageError;
+      if (storageError) throw storageError;
+    }
 
     // Delete from DB Table
     const { error: dbError } = await supabase
@@ -730,6 +749,11 @@ export const dbService = {
     if (IS_MOCK_MODE) {
       // In mock mode, we just return a placeholder or create a simulated file download
       return `https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600&auto=format&fit=crop`;
+    }
+
+    if (storagePath.startsWith('onedrive:')) {
+      const itemId = storagePath.replace('onedrive:', '');
+      return `/api/onedrive/download?itemId=${itemId}`;
     }
 
     const supabase = createBrowserClient();
