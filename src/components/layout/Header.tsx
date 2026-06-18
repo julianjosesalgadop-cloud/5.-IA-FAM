@@ -193,6 +193,17 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
+                    router.push('/perfil');
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-left"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Mi Perfil</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
                     router.push('/configuracion');
                   }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-left"

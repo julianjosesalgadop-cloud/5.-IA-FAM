@@ -4,19 +4,32 @@ import { Sidebar } from '@/components/layout/Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const handleToggle = () => setMobileOpen(prev => !prev);
     window.addEventListener('toggle-sidebar', handleToggle);
-    return () => window.removeEventListener('toggle-sidebar', handleToggle);
+
+    const handleSetCollapsed = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setSidebarCollapsed(!!customEvent.detail);
+    };
+    window.addEventListener('set-sidebar-collapsed', handleSetCollapsed);
+
+    return () => {
+      window.removeEventListener('toggle-sidebar', handleToggle);
+      window.removeEventListener('set-sidebar-collapsed', handleSetCollapsed);
+    };
   }, []);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden relative">
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex h-full flex-shrink-0">
-        <Sidebar />
-      </div>
+      {!sidebarCollapsed && (
+        <div className="hidden md:flex h-full flex-shrink-0">
+          <Sidebar />
+        </div>
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {mobileOpen && (

@@ -13,6 +13,7 @@ const MOCK_STORAGE_KEYS = {
   DOCUMENTOS: 'fam_mock_documentos',
   AUDITORIA: 'fam_mock_auditoria',
   USER: 'fam_mock_user',
+  PERFILES: 'fam_mock_perfiles',
 };
 
 const INITIAL_EXPEDIENTES: Expediente[] = [
@@ -218,6 +219,68 @@ function logMockAudit(
   setLocalData(MOCK_STORAGE_KEYS.AUDITORIA, audits);
 }
 
+interface Perfil {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: RolUsuario;
+  activo: boolean;
+  created_at: string;
+}
+
+const INITIAL_PERFILES: Perfil[] = [
+  {
+    id: 'mock-user-id',
+    nombre: 'Administrador SIGFAM',
+    email: 'admin@flotasugamuxi.co',
+    rol: 'admin',
+    activo: true,
+    created_at: '2025-01-01T00:00:00Z',
+  },
+  {
+    id: 'mock-analista-id',
+    nombre: 'Analista de Casos',
+    email: 'analista@flotasugamuxi.co',
+    rol: 'analista',
+    activo: true,
+    created_at: '2025-01-02T00:00:00Z',
+  },
+  {
+    id: 'mock-consultor-id',
+    nombre: 'Consultor Invitado',
+    email: 'consultor@flotasugamuxi.co',
+    rol: 'consultor',
+    activo: true,
+    created_at: '2025-01-03T00:00:00Z',
+  },
+];
+
+function formatExpedienteUppercase(e: any) {
+  if (!e) return e;
+  const clone = { ...e };
+  if (typeof clone.placa === 'string') clone.placa = clone.placa.toUpperCase();
+  if (typeof clone.numero_interno === 'string') clone.numero_interno = clone.numero_interno.toUpperCase();
+  if (typeof clone.propietario === 'string') clone.propietario = clone.propietario.toUpperCase();
+  if (typeof clone.ciudad_origen === 'string') clone.ciudad_origen = clone.ciudad_origen.toUpperCase();
+  if (typeof clone.ciudad_destino === 'string') clone.ciudad_destino = clone.ciudad_destino.toUpperCase();
+  if (typeof clone.nombre_conductor === 'string') clone.nombre_conductor = clone.nombre_conductor.toUpperCase();
+  
+  if (Array.isArray(clone.cotizaciones)) {
+    clone.cotizaciones = clone.cotizaciones.map((cot: any) => ({
+      ...cot,
+      proveedor: typeof cot.proveedor === 'string' ? cot.proveedor.toUpperCase() : cot.proveedor,
+    }));
+  }
+  
+  if (Array.isArray(clone.propietarios)) {
+    clone.propietarios = clone.propietarios.map((prop: any) => ({
+      ...prop,
+      nombre: typeof prop.nombre === 'string' ? prop.nombre.toUpperCase() : prop.nombre,
+    }));
+  }
+  return clone;
+}
+
 // Mock active user profile
 export function getMockUser() {
   if (typeof window === 'undefined') {
@@ -278,7 +341,7 @@ export const dbService = {
   getExpedientes: async (): Promise<Expediente[]> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
-      return list.filter((e) => e.deleted_at === null);
+      return list.filter((e) => e.deleted_at === null).sort((a, b) => b.numero_expediente.localeCompare(a.numero_expediente));
     }
 
     const supabase = createBrowserClient();
@@ -286,7 +349,7 @@ export const dbService = {
       .from('expedientes')
       .select('*')
       .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .order('numero_expediente', { ascending: false });
 
     if (error) throw error;
     return data || [];
@@ -359,17 +422,18 @@ export const dbService = {
 
   createExpediente: async (payload: Omit<Expediente, 'id' | 'numero_expediente' | 'created_at' | 'updated_at' | 'created_by' | 'deleted_at'>): Promise<Expediente> => {
     await verifyRole(['admin', 'analista']);
-    await dbService.checkDuplicateExpediente(payload.placa, payload.fecha_incidente, payload.tipo_reclamacion);
+    const formattedPayload = formatExpedienteUppercase(payload);
+    await dbService.checkDuplicateExpediente(formattedPayload.placa, formattedPayload.fecha_incidente, formattedPayload.tipo_reclamacion);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const user = getMockUser();
 
-      const year = new Date(payload.fecha_incidente).getFullYear() || new Date().getFullYear();
+      const year = new Date(formattedPayload.fecha_incidente).getFullYear() || new Date().getFullYear();
       const countOfYear = list.filter((e) => new Date(e.fecha_incidente).getFullYear() === year).length + 1;
       const numero_expediente = `FAM-${year}-${String(countOfYear).padStart(3, '0')}`;
 
       const newExpediente: Expediente = {
-        ...(payload as any),
+        ...(formattedPayload as any),
         id: Math.random().toString(36).substring(2, 9),
         numero_expediente,
         created_at: new Date().toISOString(),
@@ -388,7 +452,7 @@ export const dbService = {
     const { data: { user } } = await supabase.auth.getUser();
 
     const payloadWithUser = {
-      ...payload,
+      ...formattedPayload,
       created_by: user?.id || null
     };
 
@@ -414,6 +478,7 @@ export const dbService = {
 
   updateExpediente: async (id: string, payload: Partial<Expediente>): Promise<Expediente> => {
     await verifyRole(['admin', 'analista']);
+    const formattedPayload = formatExpedienteUppercase(payload);
     if (IS_MOCK_MODE) {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const idx = list.findIndex((e) => e.id === id);
@@ -423,9 +488,9 @@ export const dbService = {
       const currentUser = getMockUser();
       const isAdmin = currentUser.rol === 'admin';
 
-      const newPlaca = payload.placa ?? old.placa;
-      const newFecha = payload.fecha_incidente ?? old.fecha_incidente;
-      const newTipo = payload.tipo_reclamacion ?? old.tipo_reclamacion;
+      const newPlaca = formattedPayload.placa ?? old.placa;
+      const newFecha = formattedPayload.fecha_incidente ?? old.fecha_incidente;
+      const newTipo = formattedPayload.tipo_reclamacion ?? old.tipo_reclamacion;
       await dbService.checkDuplicateExpediente(newPlaca, newFecha, newTipo, id);
 
       if (!isAdmin) {
@@ -433,7 +498,7 @@ export const dbService = {
           throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
         }
         if (old.estado === 'Revisado') {
-          const updatedKeys = Object.keys(payload).filter(k => k !== 'updated_at');
+          const updatedKeys = Object.keys(formattedPayload).filter(k => k !== 'updated_at');
           if (updatedKeys.length > 1 || (updatedKeys.length === 1 && updatedKeys[0] !== 'estado')) {
             throw new Error('En estado Revisado solo se permite cambiar el estado.');
           }
@@ -442,7 +507,7 @@ export const dbService = {
 
       const updated: Expediente = {
         ...old,
-        ...payload,
+        ...formattedPayload,
         updated_at: new Date().toISOString(),
       } as Expediente;
  
@@ -450,15 +515,15 @@ export const dbService = {
       setLocalData(MOCK_STORAGE_KEYS.EXPEDIENTES, list);
 
       // Simple audit logging for changed values
-      Object.keys(payload).forEach((key) => {
+      Object.keys(formattedPayload).forEach((key) => {
         const k = key as keyof Expediente;
-        if (old[k] !== payload[k] && key !== 'updated_at') {
+        if (old[k] !== formattedPayload[k] && key !== 'updated_at') {
           logMockAudit(
             id,
             k === 'estado' ? 'ESTADO' : 'EDITAR',
             key,
             String(old[k] ?? 'vacío'),
-            String(payload[k] ?? 'vacío')
+            String(formattedPayload[k] ?? 'vacío')
           );
         }
       });
@@ -482,9 +547,9 @@ export const dbService = {
     const { data: oldData } = await supabase.from('expedientes').select('*').eq('id', id).single();
  
     if (oldData) {
-      const newPlaca = payload.placa ?? oldData.placa;
-      const newFecha = payload.fecha_incidente ?? oldData.fecha_incidente;
-      const newTipo = payload.tipo_reclamacion ?? oldData.tipo_reclamacion;
+      const newPlaca = formattedPayload.placa ?? oldData.placa;
+      const newFecha = formattedPayload.fecha_incidente ?? oldData.fecha_incidente;
+      const newTipo = formattedPayload.tipo_reclamacion ?? oldData.tipo_reclamacion;
       await dbService.checkDuplicateExpediente(newPlaca, newFecha, newTipo, id);
     }
 
@@ -493,7 +558,7 @@ export const dbService = {
         throw new Error('No se pueden modificar expedientes en estado Aprobado o Rechazado.');
       }
       if (oldData.estado === 'Revisado') {
-        const updatedKeys = Object.keys(payload).filter(k => k !== 'updated_at');
+        const updatedKeys = Object.keys(formattedPayload).filter(k => k !== 'updated_at');
         if (updatedKeys.length > 1 || (updatedKeys.length === 1 && updatedKeys[0] !== 'estado')) {
           throw new Error('En estado Revisado solo se permite cambiar el estado.');
         }
@@ -502,7 +567,7 @@ export const dbService = {
 
     const { data, error } = await supabase
       .from('expedientes')
-      .update(payload as any)
+      .update(formattedPayload as any)
       .eq('id', id)
       .select()
       .single();
@@ -511,8 +576,8 @@ export const dbService = {
 
     if (oldData) {
       // Audit log insertions
-      const auditLogs = Object.keys(payload)
-        .filter((key) => payload[key as keyof typeof payload] !== oldData[key as keyof typeof oldData] && key !== 'updated_at')
+      const auditLogs = Object.keys(formattedPayload)
+        .filter((key) => formattedPayload[key as keyof typeof formattedPayload] !== oldData[key as keyof typeof oldData] && key !== 'updated_at')
         .map((key) => ({
           expediente_id: id,
           usuario_id: user?.id || null,
@@ -520,7 +585,7 @@ export const dbService = {
           accion: key === 'estado' ? 'ESTADO' : 'EDITAR',
           campo_modificado: key,
           valor_anterior: String(oldData[key as keyof typeof oldData] ?? ''),
-          valor_nuevo: String(payload[key as keyof typeof payload] ?? ''),
+          valor_nuevo: String(formattedPayload[key as keyof typeof formattedPayload] ?? ''),
         }));
 
       if (auditLogs.length > 0) {
@@ -790,5 +855,89 @@ export const dbService = {
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
+  },
+
+  // --- PERFILES ---
+  getPerfiles: async (): Promise<any[]> => {
+    if (IS_MOCK_MODE) {
+      return getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
+    }
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('perfiles')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  getPerfilById: async (id: string): Promise<any | null> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
+      return list.find((p) => p.id === id) || null;
+    }
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('perfiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data || null;
+  },
+
+  updatePerfil: async (id: string, payload: { nombre?: string; rol?: RolUsuario; activo?: boolean }): Promise<any> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
+      const idx = list.findIndex((p) => p.id === id);
+      if (idx === -1) throw new Error('Perfil no encontrado');
+      const updated = { ...list[idx], ...payload };
+      list[idx] = updated;
+      setLocalData(MOCK_STORAGE_KEYS.PERFILES, list);
+      
+      // If updating active user, sync mock user
+      const currentUser = getMockUser();
+      if (currentUser.id === id) {
+        const nextUser = {
+          ...currentUser,
+          nombre: updated.nombre,
+          rol: updated.rol,
+        };
+        localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(nextUser));
+        window.dispatchEvent(new Event('storage'));
+      }
+      return updated;
+    }
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('perfiles')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  createPerfil: async (payload: { nombre: string; email: string; rol: RolUsuario }): Promise<any> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
+      const newPerfil = {
+        ...payload,
+        id: Math.random().toString(36).substring(2, 9),
+        activo: true,
+        created_at: new Date().toISOString(),
+      };
+      list.push(newPerfil);
+      setLocalData(MOCK_STORAGE_KEYS.PERFILES, list);
+      return newPerfil;
+    }
+    throw new Error('La creación de usuarios reales en producción debe realizarse a través de la consola de Supabase Auth.');
+  },
+
+  togglePerfilActivo: async (id: string): Promise<any> => {
+    const perfil = await dbService.getPerfilById(id);
+    if (!perfil) throw new Error('Perfil no encontrado');
+    return dbService.updatePerfil(id, { activo: !perfil.activo });
   },
 };

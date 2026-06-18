@@ -47,7 +47,7 @@ export function ExpedientesList() {
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<string>('');
   const [tipoFilter, setTipoFilter] = useState<string>('');
-  const [sortField, setSortField] = useState<string>('fecha_incidente');
+  const [sortField, setSortField] = useState<string>('numero_expediente');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
@@ -161,8 +161,10 @@ export function ExpedientesList() {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
         } else {
           resolve('');
         }
@@ -183,30 +185,11 @@ export function ExpedientesList() {
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
+        compress: true,
       });
       const logoB64 = await loadLogoBase64();
 
-      if (logoB64) {
-        doc.addImage(logoB64, 'PNG', 12, 10, 20, 20);
-      }
-
-      // Title
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(27, 54, 93);
-      doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
-      doc.setFontSize(10);
-      doc.setFont('Helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
-      doc.text(`Reporte de Expedientes — Generado el ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 36, 26);
-
-      // Line
-      doc.setDrawColor(217, 91, 42);
-      doc.setLineWidth(0.8);
-      doc.line(12, 33, 285, 33);
-
-      // Metricas
+      // Metricas title (will be on page 1)
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -224,9 +207,10 @@ export function ExpedientesList() {
           ['Rango de fechas:', `${fechaInicio || 'Inicio'} a ${fechaFin || 'Fin'}`, '', ''],
         ],
         styles: { fontSize: 9 },
+        margin: { top: 38 },
       });
 
-      // Detalle de expedientes
+      // Detalle de expedientes title (will be on page 1)
       doc.setFont('Helvetica', 'bold');
       doc.text('DETALLE DE EXPEDIENTES REGISTRADOS', 12, (doc as any).lastAutoTable.finalY + 8);
 
@@ -249,12 +233,36 @@ export function ExpedientesList() {
         body: tableData,
         headStyles: { fillColor: [27, 54, 93], fontSize: 8.5 },
         bodyStyles: { fontSize: 7.5 },
+        margin: { top: 38 },
       });
 
-      // Pagination/Footer text
+      // Pagination/Footer text + Header repetition on all pages
       const pageCount = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+
+        // Header logo
+        if (logoB64) {
+          doc.addImage(logoB64, 'JPEG', 12, 10, 20, 20);
+        }
+
+        // Header titles
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(27, 54, 93);
+        doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
+        doc.setFontSize(10);
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
+        doc.text(`Reporte de Expedientes — Generado el ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 36, 26);
+
+        // Orange line separator
+        doc.setDrawColor(217, 91, 42);
+        doc.setLineWidth(0.8);
+        doc.line(12, 33, 285, 33);
+
+        // Footer
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
         doc.text(`Página ${i} de ${pageCount} — Reportes SIGFAM — Flota Sugamuxi S.A.`, 12, 200);

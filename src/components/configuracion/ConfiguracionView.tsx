@@ -11,8 +11,10 @@ import { toast } from 'sonner';
 import { ROLES_USUARIO } from '@/lib/constants';
 import type { RolUsuario } from '@/types/database';
 import { getMockUser, setMockUser } from '@/lib/services/dbService';
+import { useRouter } from 'next/navigation';
 
 export function ConfiguracionView() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState(getMockUser());
   const [catalogos, setCatalogos] = useState<string[]>([]);
   const [newCatalogo, setNewCatalogo] = useState('');
@@ -133,32 +135,21 @@ export function ConfiguracionView() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
               <Users className="w-5 h-5 text-primary" />
-              Gestión de Cuentas (Simulado)
+              Gestión de Cuentas de Usuario
             </CardTitle>
-            <CardDescription>Cuentas disponibles para pruebas del sistema</CardDescription>
+            <CardDescription>Administración de perfiles, permisos y acceso al sistema</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                { name: 'Administrador SIGFAM', email: 'admin@flotasugamuxi.co', rol: 'admin' as RolUsuario },
-                { name: 'Analista de Casos', email: 'analista@flotasugamuxi.co', rol: 'analista' as RolUsuario },
-                { name: 'Consultor Invitado', email: 'consultor@flotasugamuxi.co', rol: 'consultor' as RolUsuario },
-              ].map((user) => (
-                <div key={user.email} className="flex items-center gap-4 p-3 rounded-xl bg-secondary/35 border border-border/60">
-                  <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLES_USUARIO[user.rol].color}`}>
-                    {ROLES_USUARIO[user.rol].label}
-                  </span>
-                  <div className="w-2 h-2 rounded-full bg-green-400" />
-                </div>
-              ))}
-            </div>
+          <CardContent className="pt-2">
+            <p className="text-sm text-muted-foreground mb-4">
+              Para agregar nuevos usuarios, cambiar sus roles (Administrador, Analista, Consultor) o suspender/activar el acceso de cualquier perfil, ve al módulo dedicado de gestión de usuarios.
+            </p>
+            <Button
+              onClick={() => router.push('/usuarios')}
+              className="gradient-brand text-white shadow-glow-brand"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Ir a Gestión de Usuarios
+            </Button>
           </CardContent>
         </Card>
       </motion.div>

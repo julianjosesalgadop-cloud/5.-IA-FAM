@@ -18,6 +18,7 @@ import {
   LogOut,
   ShieldCheck,
   X,
+  Users,
 } from 'lucide-react';
 import { getMockUser } from '@/lib/services/dbService';
 import { useRouter } from 'next/navigation';
@@ -42,6 +43,7 @@ const NAV_GROUPS = [
   {
     title: 'Sistema',
     items: [
+      { href: '/usuarios', label: 'Usuarios', icon: 'Users', roles: ['admin'] },
       { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin'] },
       { href: '/parametrizacion', label: 'Parametrización', icon: 'SlidersHorizontal', roles: ['admin'] },
       { href: '/auditoria', label: 'Auditoría', icon: 'Shield', roles: ['admin'] },
@@ -57,6 +59,7 @@ const ICONS: Record<string, React.ElementType> = {
   Settings,
   SlidersHorizontal,
   Shield,
+  Users,
 };
 
 export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
@@ -66,7 +69,12 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
   const router = useRouter();
 
   useEffect(() => {
-    setRole(getMockUser().rol);
+    const updateRole = () => {
+      setRole(getMockUser().rol);
+    };
+    updateRole();
+    window.addEventListener('storage', updateRole);
+    return () => window.removeEventListener('storage', updateRole);
   }, []);
 
   const handleLogout = async () => {

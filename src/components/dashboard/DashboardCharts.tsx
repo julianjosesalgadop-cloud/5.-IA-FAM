@@ -212,6 +212,14 @@ export function DashboardCharts({
     render: (height: number) => React.ReactNode;
   } | null>(null);
 
+  const [showAllCausa, setShowAllCausa] = useState(false);
+  const [showAllPropietario, setShowAllPropietario] = useState(false);
+  const [showAllConductor, setShowAllConductor] = useState(false);
+  const [showAllVehiculoAfectacion, setShowAllVehiculoAfectacion] = useState(false);
+  const [showAllTopPlacas, setShowAllTopPlacas] = useState(false);
+  const [showAllTopConductores, setShowAllTopConductores] = useState(false);
+  const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
+
   // 1. Monthly trend calculations
   const totalFilteredCount = expedientes.length;
   const totalGeneralCount = unfilteredExpedientes.length;
@@ -311,23 +319,23 @@ export function DashboardCharts({
     const causa = e.causa_raiz || 'Sin definir';
     causaGroups[causa] = (causaGroups[causa] || 0) + 1;
   });
-  const causaData = Object.entries(causaGroups)
+  const allCausaData = Object.entries(causaGroups)
     .map(([name, value]) => ({ 
       name, 
       value,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
     }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value);
+  const causaData = allCausaData.slice(0, 5);
 
-  // 6. Afectación FAM por Propietario (Top 5)
+  // 6. Afectación FAM por Propietario (Top 5 / Todos)
   const propietarioGroups: Record<string, number> = {};
   ep.forEach((e) => {
     const prop = e.propietario ? e.propietario.trim() : 'Sin definir';
     propietarioGroups[prop] = (propietarioGroups[prop] || 0) + (e.valor_final_aprobado || 0);
   });
-  const propietarioData = Object.entries(propietarioGroups)
+  const allPropietarioData = Object.entries(propietarioGroups)
     .map(([name, value]) => ({ 
       name, 
       value,
@@ -335,16 +343,16 @@ export function DashboardCharts({
       totalGeneralApprovedSum: totalGeneralApproved,
     }))
     .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value);
+  const propietarioData = allPropietarioData.slice(0, 5);
 
-  // 7. Afectación FAM por Conductor (Top 5)
+  // 7. Afectación FAM por Conductor (Top 5 / Todos)
   const conductorGroups: Record<string, number> = {};
   expedientes.forEach((e) => {
     const cond = e.nombre_conductor ? e.nombre_conductor.trim() : 'Sin definir';
     conductorGroups[cond] = (conductorGroups[cond] || 0) + (e.valor_final_aprobado || 0);
   });
-  const conductorData = Object.entries(conductorGroups)
+  const allConductorData = Object.entries(conductorGroups)
     .map(([name, value]) => ({ 
       name, 
       value,
@@ -352,10 +360,10 @@ export function DashboardCharts({
       totalGeneralApprovedSum: totalGeneralApproved,
     }))
     .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value);
+  const conductorData = allConductorData.slice(0, 5);
 
-  // 7b. Afectación FAM por Vehículo (Top 5)
+  // 7b. Afectación FAM por Vehículo (Top 5 / Todos)
   const vehiculoAfectacionGroups: Record<string, { totalVal: number; placa: string; interno: string | null }> = {};
   ev.forEach((e) => {
     if (!e.placa) return;
@@ -367,7 +375,7 @@ export function DashboardCharts({
     }
     vehiculoAfectacionGroups[key].totalVal += e.valor_final_aprobado || 0;
   });
-  const vehiculoAfectacionData = Object.entries(vehiculoAfectacionGroups)
+  const allVehiculoAfectacionData = Object.entries(vehiculoAfectacionGroups)
     .map(([name, data]) => ({
       name,
       placa: data.placa,
@@ -376,8 +384,8 @@ export function DashboardCharts({
       totalGeneralApprovedSum: totalGeneralApproved,
     }))
     .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value);
+  const vehiculoAfectacionData = allVehiculoAfectacionData.slice(0, 5);
 
   // 8. Top 5 Vehículos por Reclamaciones
   const placaGroups: Record<string, { total: number; valor: number }> = {};
@@ -388,7 +396,7 @@ export function DashboardCharts({
     placaGroups[p].total += 1;
     placaGroups[p].valor += e.valor_final_aprobado || 0;
   });
-  const topPlacasData = Object.entries(placaGroups)
+  const allTopPlacasData = Object.entries(placaGroups)
     .map(([placa, data]) => ({ 
       name: placa, 
       placa,
@@ -397,8 +405,8 @@ export function DashboardCharts({
       totalFilteredCases: ev.length,
       totalGeneralCases: totalGeneralCount,
     }))
-    .sort((a, b) => b.value - a.value || b.valor - a.valor)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value || b.valor - a.valor);
+  const topPlacasData = allTopPlacasData.slice(0, 5);
 
   // 9. Top 5 Conductores por Reclamaciones
   const condGroups: Record<string, { total: number; valor: number }> = {};
@@ -409,7 +417,7 @@ export function DashboardCharts({
     condGroups[name].total += 1;
     condGroups[name].valor += e.valor_final_aprobado || 0;
   });
-  const topConductoresData = Object.entries(condGroups)
+  const allTopConductoresData = Object.entries(condGroups)
     .map(([nombre, data]) => ({ 
       name: nombre, 
       nombre,
@@ -418,8 +426,78 @@ export function DashboardCharts({
       totalFilteredCases: ed.length,
       totalGeneralCases: totalGeneralCount,
     }))
-    .sort((a, b) => b.value - a.value || b.valor - a.valor)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value || b.valor - a.valor);
+  const topConductoresData = allTopConductoresData.slice(0, 5);
+
+  // 10. Tipo de Servicio data
+  const serviceTypeMap: Record<string, { name: string; cantidad: number; monto: number }> = {};
+  expedientes.forEach((e) => {
+    const type = e.tipo_servicio || 'No especificado';
+    if (!serviceTypeMap[type]) {
+      serviceTypeMap[type] = { name: type, cantidad: 0, monto: 0 };
+    }
+    serviceTypeMap[type].cantidad += 1;
+    serviceTypeMap[type].monto += (e.valor_final_aprobado || 0);
+  });
+  const serviceTypeData = Object.values(serviceTypeMap).sort((a, b) => b.cantidad - a.cantidad);
+
+  // 11. Costos Ahorrados monthly data
+  const monthlySavingsData = MONTH_NAMES.map((name, index) => {
+    const cases = expedientes.filter((e) => {
+      if (!e.fecha_incidente) return false;
+      const d = new Date(e.fecha_incidente + 'T00:00:00');
+      return !isNaN(d.getTime()) && d.getMonth() === index;
+    });
+    
+    const totalCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+    const totalNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+    const totalAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+    
+    const ahorroNegociacion = Math.max(0, totalCotizado - totalNegociado);
+    const ahorroAprobado = Math.max(0, totalCotizado - totalAprobado);
+    
+    return {
+      mes: name,
+      monthIndex: index,
+      ahorroNegociacion,
+      ahorroAprobado,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    };
+  });
+
+  // 12. Internal Number prefixes categorization
+  const getInternalNumberCategory = (numStr: string | null | undefined): string => {
+    if (!numStr) return 'Otros';
+    const cleanNum = numStr.trim();
+    const prefixes = ['71', '80', '40', '60', '70', '10', '50', '90'];
+    for (const prefix of prefixes) {
+      if (cleanNum.startsWith(prefix)) {
+        return `Serie ${prefix}`;
+      }
+    }
+    return 'Otros';
+  };
+
+  const internalCategoriesMap: Record<string, { name: string; cantidad: number; monto: number }> = {
+    'Serie 71': { name: 'Serie 71', cantidad: 0, monto: 0 },
+    'Serie 80': { name: 'Serie 80', cantidad: 0, monto: 0 },
+    'Serie 40': { name: 'Serie 40', cantidad: 0, monto: 0 },
+    'Serie 60': { name: 'Serie 60', cantidad: 0, monto: 0 },
+    'Serie 70': { name: 'Serie 70', cantidad: 0, monto: 0 },
+    'Serie 10': { name: 'Serie 10', cantidad: 0, monto: 0 },
+    'Serie 50': { name: 'Serie 50', cantidad: 0, monto: 0 },
+    'Serie 90': { name: 'Serie 90', cantidad: 0, monto: 0 },
+    'Otros': { name: 'Otros', cantidad: 0, monto: 0 },
+  };
+
+  expedientes.forEach((e) => {
+    const cat = getInternalNumberCategory(e.numero_interno);
+    internalCategoriesMap[cat].cantidad += 1;
+    internalCategoriesMap[cat].monto += (e.valor_final_aprobado || 0);
+  });
+
+  const internalCategoriesData = Object.values(internalCategoriesMap);
 
   const hasData = expedientes.length > 0;
 
@@ -430,6 +508,176 @@ export function DashboardCharts({
       </Card>
     );
   }
+
+  const renderTipoServicio = (height: number) => {
+    const isMonto = serviceMetric === 'monto';
+    return (
+      <div style={{ height }} className="w-full flex flex-col">
+        <div className="flex justify-end mb-2 gap-2">
+          <Button
+            variant={serviceMetric === 'cantidad' ? 'default' : 'outline'}
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); setServiceMetric('cantidad'); }}
+            className="text-[10px] h-6 py-0 px-2 bg-background hover:bg-secondary/40"
+          >
+            Cantidad
+          </Button>
+          <Button
+            variant={serviceMetric === 'monto' ? 'default' : 'outline'}
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); setServiceMetric('monto'); }}
+            className="text-[10px] h-6 py-0 px-2 bg-background hover:bg-secondary/40"
+          >
+            Monto ($)
+          </Button>
+        </div>
+        <div className="flex-1 min-h-0">
+          {serviceTypeData.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de servicio</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={serviceTypeData}
+                margin={{ left: -10, right: 10, top: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                <YAxis
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                  tickFormatter={(v) => isMonto ? `${(v / 1000000).toFixed(0)}M` : v}
+                />
+                <Tooltip
+                  formatter={(value: any) => [
+                    isMonto ? formatCOP(value) : `${value} accidentes`,
+                    isMonto ? 'Monto Aprobado' : 'Cantidad de Accidentes'
+                  ]}
+                  labelClassName="font-bold text-foreground"
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                />
+                <Bar
+                  dataKey={isMonto ? 'monto' : 'cantidad'}
+                  fill={isMonto ? 'hsl(142, 71%, 45%)' : 'hsl(217, 91%, 60%)'}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCostosAhorrados = (height: number) => (
+    <div style={{ height }} className="w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart 
+          data={monthlySavingsData} 
+          margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="colorAhorroNegociacion" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(43, 96%, 52%)" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="hsl(43, 96%, 52%)" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorAhorroAprobado" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis 
+            dataKey="mes" 
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+            axisLine={false} 
+            tickLine={false} 
+          />
+          <YAxis
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+          />
+          <Tooltip 
+            formatter={(value: any, name: string) => [
+              formatCOP(value),
+              name === 'ahorroAprobado' ? 'Ahorro Aprobado (Total)' : 'Ahorro por Negociación'
+            ]}
+            labelClassName="font-bold text-foreground"
+            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+          />
+          <Legend
+            iconSize={8}
+            formatter={(value) => (
+              <span className="text-xs text-muted-foreground font-medium capitalize font-mono">
+                {value === 'ahorroAprobado' ? 'Ahorro Aprobado (Total)' : 'Ahorro por Negociación'}
+              </span>
+            )}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="ahorroNegociacion" 
+            stroke="hsl(43, 96%, 52%)" 
+            fillOpacity={1} 
+            fill="url(#colorAhorroNegociacion)" 
+          />
+          <Area 
+            type="monotone" 
+            dataKey="ahorroAprobado" 
+            stroke="hsl(142, 71%, 45%)" 
+            fillOpacity={1} 
+            fill="url(#colorAhorroAprobado)" 
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  const renderVehiculosInterno = (height: number) => (
+    <div style={{ height }} className="w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={internalCategoriesData}
+          margin={{ left: -10, right: 10, top: 10, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} />
+          <YAxis
+            yAxisId="left"
+            orientation="left"
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+          />
+          <Tooltip
+            formatter={(value: any, name: string) => [
+              name === 'monto' ? formatCOP(value) : `${value} accidentes`,
+              name === 'monto' ? 'Monto Aprobado' : 'Cantidad de Accidentes'
+            ]}
+            labelClassName="font-bold text-foreground"
+            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+          />
+          <Legend
+            iconSize={8}
+            formatter={(value) => (
+              <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                {value === 'monto' ? 'Monto Aprobado ($)' : 'Cantidad de Accidentes'}
+              </span>
+            )}
+          />
+          <Bar yAxisId="left" dataKey="cantidad" name="cantidad" fill="hsl(217, 91%, 60%)" radius={[2, 2, 0, 0]} />
+          <Bar yAxisId="right" dataKey="monto" name="monto" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
 
   // --- Chart Renderers (reused in normal cards and inside maximized modal) ---
 
@@ -921,534 +1169,576 @@ export function DashboardCharts({
     </div>
   );
 
-  const renderCausasRaiz = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {causaData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={causaData}
-            margin={{ left: 50, right: 20, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-            <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-            <YAxis 
-              dataKey="name" 
-              type="category" 
-              tick={(props: any) => {
-                const { x, y, payload } = props;
-                const value = payload?.value || '';
-                const isSelected = selectedCausaRaiz === value;
-                return (
-                  <g 
-                    style={{ pointerEvents: 'auto' }} 
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectCausaRaiz) {
-                        onSelectCausaRaiz(value);
-                      }
-                    }}
-                  >
-                    <text
-                      x={x}
-                      y={y}
-                      dx={-6}
-                      dy={4}
-                      textAnchor="end"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {value.length > 22 ? `${value.slice(0, 20)}...` : value}
-                    </text>
-                  </g>
-                );
-              }}
-              axisLine={false} 
-              tickLine={false} 
-              width={160} 
-            />
-            <Tooltip content={<CustomTooltipPercentages />} />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(43, 96%, 52%)" 
-              radius={[0, 3, 3, 0]} 
-              barSize={15}
-              onClick={(data) => {
-                const val = data?.name || data?.payload?.name;
-                if (val && onSelectCausaRaiz) {
-                  onSelectCausaRaiz(val);
-                }
-              }}
-              className="cursor-pointer"
-            >
-              {causaData.map((d, index) => (
-                <Cell 
-                  key={index} 
-                  fill={selectedCausaRaiz === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+  const renderCausasRaiz = (height: number) => {
+    const dataToUse = showAllCausa ? allCausaData : causaData;
+    const isModal = height > 350;
+    const finalHeight = showAllCausa && !isModal ? Math.max(height, dataToUse.length * 36) : height;
+    return (
+      <div style={{ height: showAllCausa && !isModal ? `${height}px` : 'auto', overflowY: showAllCausa && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 50, right: 20, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedCausaRaiz === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectCausaRaiz) {
+                            onSelectCausaRaiz(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value.length > 22 ? `${value.slice(0, 20)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false} 
+                  tickLine={false} 
+                  width={160} 
                 />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+                <Tooltip content={<CustomTooltipPercentages />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(43, 96%, 52%)" 
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectCausaRaiz) {
+                      onSelectCausaRaiz(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedCausaRaiz === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const renderAfectacionPropietario = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {propietarioData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={propietarioData}
-            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-            <XAxis
-              type="number"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
-            />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tick={(props: any) => {
-                const { x, y, payload } = props;
-                const value = payload?.value || '';
-                const isSelected = selectedProprietario === value;
-                return (
-                  <g 
-                    style={{ pointerEvents: 'auto' }} 
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectProprietario) {
-                        onSelectProprietario(value);
-                      }
-                    }}
-                  >
-                    <text
-                      x={x}
-                      y={y}
-                      dx={-6}
-                      dy={4}
-                      textAnchor="end"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {value.length > 18 ? `${value.slice(0, 16)}...` : value}
-                    </text>
-                  </g>
-                );
-              }}
-              axisLine={false}
-              tickLine={false}
-              width={130}
-            />
-            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(217, 91%, 55%)" 
-              radius={[0, 3, 3, 0]} 
-              barSize={15}
-              onClick={(data) => {
-                const val = data?.name || data?.payload?.name;
-                if (val && onSelectProprietario) {
-                  onSelectProprietario(val);
-                }
-              }}
-              className="cursor-pointer"
-            >
-              {propietarioData.map((d, index) => (
-                <Cell 
-                  key={index} 
-                  fill={selectedProprietario === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+  const renderAfectacionPropietario = (height: number) => {
+    const dataToUse = showAllPropietario ? allPropietarioData : propietarioData;
+    const isModal = height > 350;
+    const finalHeight = showAllPropietario && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllPropietario && !isModal ? `${height}px` : 'auto', overflowY: showAllPropietario && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
                 />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedProprietario === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectProprietario) {
+                            onSelectProprietario(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={130}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(217, 91%, 55%)" 
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectProprietario) {
+                      onSelectProprietario(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedProprietario === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const renderAfectacionConductor = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {conductorData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={conductorData}
-            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-            <XAxis
-              type="number"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
-            />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tick={(props: any) => {
-                const { x, y, payload } = props;
-                const value = payload?.value || '';
-                const isSelected = selectedConductor === value;
-                return (
-                  <g 
-                    style={{ pointerEvents: 'auto' }} 
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectConductor) {
-                        onSelectConductor(value);
-                      }
-                    }}
-                  >
-                    <text
-                      x={x}
-                      y={y}
-                      dx={-6}
-                      dy={4}
-                      textAnchor="end"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {value.length > 18 ? `${value.slice(0, 16)}...` : value}
-                    </text>
-                  </g>
-                );
-              }}
-              axisLine={false}
-              tickLine={false}
-              width={130}
-            />
-            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(43, 96%, 52%)" 
-              radius={[0, 3, 3, 0]} 
-              barSize={15}
-              onClick={(data) => {
-                const val = data?.name || data?.payload?.name;
-                if (val && onSelectConductor) {
-                  onSelectConductor(val);
-                }
-              }}
-              className="cursor-pointer"
-            >
-              {conductorData.map((d, index) => (
-                <Cell 
-                  key={index} 
-                  fill={selectedConductor === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+  const renderAfectacionConductor = (height: number) => {
+    const dataToUse = showAllConductor ? allConductorData : conductorData;
+    const isModal = height > 350;
+    const finalHeight = showAllConductor && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllConductor && !isModal ? `${height}px` : 'auto', overflowY: showAllConductor && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
                 />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedConductor === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectConductor) {
+                            onSelectConductor(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={130}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(43, 96%, 52%)" 
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectConductor) {
+                      onSelectConductor(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedConductor === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const renderAfectacionVehiculo = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {vehiculoAfectacionData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={vehiculoAfectacionData}
-            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-            <XAxis
-              type="number"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
-            />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tick={(props: any) => {
-                const { x, y, payload } = props;
-                const value = payload?.value || '';
-                const item = vehiculoAfectacionData.find(d => d.name === value);
-                const itemPlaca = item ? item.placa : '';
-                const isSelected = selectedPlaca === itemPlaca;
-                return (
-                  <g 
-                    style={{ pointerEvents: 'auto' }} 
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectPlaca && itemPlaca) {
-                        onSelectPlaca(itemPlaca);
-                      }
-                    }}
-                  >
-                    <text
-                      x={x}
-                      y={y}
-                      dx={-6}
-                      dy={4}
-                      textAnchor="end"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {value}
-                    </text>
-                  </g>
-                );
-              }}
-              axisLine={false}
-              tickLine={false}
-              width={130}
-            />
-            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(217, 91%, 55%)" 
-              radius={[0, 3, 3, 0]} 
-              barSize={15}
-              onClick={(data) => {
-                const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
-                const item = vehiculoAfectacionData.find(d => d.name === val || d.placa === val);
-                const itemPlaca = item ? item.placa : val;
-                if (itemPlaca && onSelectPlaca) {
-                  onSelectPlaca(itemPlaca);
-                }
-              }}
-              className="cursor-pointer"
-            >
-              {vehiculoAfectacionData.map((d, index) => (
-                <Cell 
-                  key={index} 
-                  fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+  const renderAfectacionVehiculo = (height: number) => {
+    const dataToUse = showAllVehiculoAfectacion ? allVehiculoAfectacionData : vehiculoAfectacionData;
+    const isModal = height > 350;
+    const finalHeight = showAllVehiculoAfectacion && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllVehiculoAfectacion && !isModal ? `${height}px` : 'auto', overflowY: showAllVehiculoAfectacion && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
                 />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const item = dataToUse.find(d => d.name === value);
+                    const itemPlaca = item ? item.placa : '';
+                    const isSelected = selectedPlaca === itemPlaca;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectPlaca && itemPlaca) {
+                            onSelectPlaca(itemPlaca);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={130}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(217, 91%, 55%)" 
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
+                    const item = dataToUse.find(d => d.name === val || d.placa === val);
+                    const itemPlaca = item ? item.placa : val;
+                    if (itemPlaca && onSelectPlaca) {
+                      onSelectPlaca(itemPlaca);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const renderTopPlacas = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {topPlacasData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de vehículos</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={topPlacasData}
-            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-            <XAxis
-              type="number"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tick={(props: any) => {
-                const { x, y, payload } = props;
-                const value = payload?.value || '';
-                const isSelected = selectedPlaca === value;
-                return (
-                  <g 
-                    style={{ pointerEvents: 'auto' }} 
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectPlaca) {
-                        onSelectPlaca(value);
-                      }
-                    }}
-                  >
-                    <text
-                      x={x}
-                      y={y}
-                      dx={-6}
-                      dy={4}
-                      textAnchor="end"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                      className="hover:fill-primary font-mono text-[11px] font-semibold transition-colors"
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {value}
-                    </text>
-                  </g>
-                );
-              }}
-              axisLine={false}
-              tickLine={false}
-              width={90}
-            />
-            <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(217, 91%, 55%)"
-              radius={[0, 3, 3, 0]} 
-              barSize={15}
-              onClick={(data) => {
-                const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
-                if (val && onSelectPlaca) {
-                  onSelectPlaca(val);
-                }
-              }}
-              className="cursor-pointer"
-            >
-              {topPlacasData.map((d, index) => (
-                <Cell 
-                  key={index} 
-                  fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+  const renderTopPlacas = (height: number) => {
+    const dataToUse = showAllTopPlacas ? allTopPlacasData : topPlacasData;
+    const isModal = height > 350;
+    const finalHeight = showAllTopPlacas && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllTopPlacas && !isModal ? `${height}px` : 'auto', overflowY: showAllTopPlacas && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de vehículos</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
                 />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedPlaca === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectPlaca) {
+                            onSelectPlaca(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-mono text-[11px] font-semibold transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={90}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(217, 91%, 55%)"
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
+                    if (val && onSelectPlaca) {
+                      onSelectPlaca(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const renderTopConductores = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {topConductoresData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de conductores</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={topConductoresData}
-            margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-            <XAxis
-              type="number"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tick={(props: any) => {
-                const { x, y, payload } = props;
-                const value = payload?.value || '';
-                const isSelected = selectedConductor === value;
-                return (
-                  <g 
-                    style={{ pointerEvents: 'auto' }} 
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectConductor) {
-                        onSelectConductor(value);
-                      }
-                    }}
-                  >
-                    <text
-                      x={x}
-                      y={y}
-                      dx={-6}
-                      dy={4}
-                      textAnchor="end"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                      style={{ pointerEvents: 'auto' }}
-                    >
-                      {value.length > 18 ? `${value.slice(0, 16)}...` : value}
-                    </text>
-                  </g>
-                );
-              }}
-              axisLine={false}
-              tickLine={false}
-              width={130}
-            />
-            <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
-            <Bar 
-              dataKey="value" 
-              fill="hsl(43, 96%, 52%)"
-              radius={[0, 3, 3, 0]} 
-              barSize={15}
-              onClick={(data) => {
-                const val = data?.nombre || data?.payload?.nombre || data?.name || data?.payload?.name;
-                if (val && onSelectConductor) {
-                  onSelectConductor(val);
-                }
-              }}
-              className="cursor-pointer"
-            >
-              {topConductoresData.map((d, index) => (
-                <Cell 
-                  key={index} 
-                  fill={selectedConductor === d.nombre ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+  const renderTopConductores = (height: number) => {
+    const dataToUse = showAllTopConductores ? allTopConductoresData : topConductoresData;
+    const isModal = height > 350;
+    const finalHeight = showAllTopConductores && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllTopConductores && !isModal ? `${height}px` : 'auto', overflowY: showAllTopConductores && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de conductores</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
                 />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="right"
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedConductor === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectConductor) {
+                            onSelectConductor(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={130}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(43, 96%, 52%)"
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.nombre || data?.payload?.nombre || data?.name || data?.payload?.name;
+                    if (val && onSelectConductor) {
+                      onSelectConductor(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedConductor === d.nombre ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1653,6 +1943,73 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
+      {/* Costos Ahorrados */}
+      <motion.div
+        className="lg:col-span-2"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Costos Ahorrados</CardTitle>
+              <CardDescription>Costos ahorrados: Cotizado vs Negociado y Cotizado vs Aprobado</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'costos-ahorrados',
+                title: 'Costos Ahorrados',
+                description: 'Costos ahorrados: Cotizado vs Negociado y Cotizado vs Aprobado',
+                render: renderCostosAhorrados
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderCostosAhorrados(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Tipo de Servicio */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Tipo de Servicio</CardTitle>
+              <CardDescription>Siniestralidad por tipo de servicio (Cantidad / Monto)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'tipo-servicio',
+                title: 'Tipo de Servicio',
+                description: 'Siniestralidad por tipo de servicio (Cantidad / Monto)',
+                render: renderTipoServicio
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderTipoServicio(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Top Root Causes */}
       <motion.div
         className="lg:col-span-3"
@@ -1664,7 +2021,51 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Causas Raíz Más Frecuentes</CardTitle>
-              <CardDescription>Principales detonantes de incidentes en la flota (Top 5)</CardDescription>
+              <CardDescription>{showAllCausa ? 'Detalle completo de todas las causas de incidentes' : 'Principales detonantes de incidentes en la flota (Top 5)'}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllCausa(!showAllCausa); }}
+              >
+                {showAllCausa ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'causas-raiz',
+                  title: 'Causas Raíz Más Frecuentes',
+                  description: 'Principales detonantes de incidentes en la flota',
+                  render: renderCausasRaiz
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderCausasRaiz(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Siniestralidad por Serie de Vehículo */}
+      <motion.div
+        className="lg:col-span-3"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.65, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Siniestralidad por Serie de Vehículo</CardTitle>
+              <CardDescription>Cantidad de reclamaciones y monto $ por prefijo de número interno</CardDescription>
             </div>
             <Button
               variant="ghost"
@@ -1672,17 +2073,17 @@ export function DashboardCharts({
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
               title="Expandir gráfico"
               onClick={() => setExpandedChart({
-                id: 'causas-raiz',
-                title: 'Causas Raíz Más Frecuentes',
-                description: 'Principales detonantes de incidentes en la flota (Top 5)',
-                render: renderCausasRaiz
+                id: 'serie-vehiculos',
+                title: 'Siniestralidad por Serie de Vehículo',
+                description: 'Cantidad de reclamaciones y monto $ por prefijo de número interno',
+                render: renderVehiculosInterno
               })}
             >
               <Maximize2 className="h-4 w-4" />
             </Button>
           </CardHeader>
           <CardContent>
-            {renderCausasRaiz(240)}
+            {renderVehiculosInterno(240)}
           </CardContent>
         </Card>
       </motion.div>
@@ -1698,22 +2099,32 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Afectación FAM por Propietario</CardTitle>
-              <CardDescription>Costo total acumulado de afectación al Fondo por propietario (Top 5)</CardDescription>
+              <CardDescription>{showAllPropietario ? 'Afectación acumulada de todos los propietarios' : 'Costo total acumulado de afectación al Fondo por propietario (Top 5)'}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'afectacion-propietario',
-                title: 'Afectación FAM por Propietario',
-                description: 'Costo total acumulado de afectación al Fondo por propietario (Top 5)',
-                render: renderAfectacionPropietario
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllPropietario(!showAllPropietario); }}
+              >
+                {showAllPropietario ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'afectacion-propietario',
+                  title: 'Afectación FAM por Propietario',
+                  description: 'Costo total acumulado de afectación al Fondo por propietario',
+                  render: renderAfectacionPropietario
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderAfectacionPropietario(240)}
@@ -1732,22 +2143,32 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Afectación FAM por Conductor</CardTitle>
-              <CardDescription>Costo total acumulado por conductor (Top 5)</CardDescription>
+              <CardDescription>{showAllConductor ? 'Afectación acumulada de todos los conductores' : 'Costo total acumulado por conductor (Top 5)'}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'afectacion-conductor',
-                title: 'Afectación FAM por Conductor',
-                description: 'Costo total acumulado por conductor (Top 5)',
-                render: renderAfectacionConductor
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllConductor(!showAllConductor); }}
+              >
+                {showAllConductor ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'afectacion-conductor',
+                  title: 'Afectación FAM por Conductor',
+                  description: 'Costo total acumulado por conductor',
+                  render: renderAfectacionConductor
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderAfectacionConductor(240)}
@@ -1766,22 +2187,32 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Afectación FAM por Vehículo</CardTitle>
-              <CardDescription>Costo total acumulado de afectación al Fondo por vehículo (Top 5)</CardDescription>
+              <CardDescription>{showAllVehiculoAfectacion ? 'Afectación acumulada de todos los vehículos' : 'Costo total acumulado de afectación al Fondo por vehículo (Top 5)'}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'afectacion-vehiculo',
-                title: 'Afectación FAM por Vehículo',
-                description: 'Costo total acumulado de afectación al Fondo por vehículo (Top 5)',
-                render: renderAfectacionVehiculo
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllVehiculoAfectacion(!showAllVehiculoAfectacion); }}
+              >
+                {showAllVehiculoAfectacion ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'afectacion-vehiculo',
+                  title: 'Afectación FAM por Vehículo',
+                  description: 'Costo total acumulado de afectación al Fondo por vehículo',
+                  render: renderAfectacionVehiculo
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderAfectacionVehiculo(240)}
@@ -1799,23 +2230,33 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Top 5 Vehículos por Reclamaciones</CardTitle>
-              <CardDescription>Vehículos con mayor frecuencia de incidentes</CardDescription>
+              <CardTitle>Top Vehículos por Reclamaciones</CardTitle>
+              <CardDescription>{showAllTopPlacas ? 'Frecuencia de incidentes en todos los vehículos' : 'Vehículos con mayor frecuencia de incidentes (Top 5)'}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'top-vehiculos',
-                title: 'Top 5 Vehículos por Reclamaciones',
-                description: 'Vehículos con mayor frecuencia de incidentes',
-                render: renderTopPlacas
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllTopPlacas(!showAllTopPlacas); }}
+              >
+                {showAllTopPlacas ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'top-vehiculos',
+                  title: 'Top Vehículos por Reclamaciones',
+                  description: 'Vehículos con mayor frecuencia de incidentes',
+                  render: renderTopPlacas
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderTopPlacas(240)}
@@ -1833,23 +2274,33 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Top 5 Conductores</CardTitle>
-              <CardDescription>Conductores con mayor recurrencia de reportes</CardDescription>
+              <CardTitle>Top Conductores</CardTitle>
+              <CardDescription>{showAllTopConductores ? 'Recurrencia de reportes de todos los conductores' : 'Conductores con mayor recurrencia de reportes (Top 5)'}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'top-conductores',
-                title: 'Top 5 Conductores',
-                description: 'Conductores con mayor recurrencia de reportes',
-                render: renderTopConductores
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllTopConductores(!showAllTopConductores); }}
+              >
+                {showAllTopConductores ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'top-conductores',
+                  title: 'Top Conductores',
+                  description: 'Conductores con mayor recurrencia de reportes',
+                  render: renderTopConductores
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderTopConductores(240)}

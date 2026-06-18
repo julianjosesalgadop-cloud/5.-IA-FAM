@@ -34,6 +34,7 @@ import type { Expediente, Documento, AuditoriaEntry } from '@/types/database';
 import { TIPOS_DOCUMENTO } from '@/lib/constants';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Header } from '@/components/layout/Header';
 
 type TabType = 'resumen' | 'financiero' | 'conductor' | 'comite' | 'documentos' | 'auditoria';
 
@@ -240,8 +241,10 @@ export default function ExpedienteDetailPage() {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
         } else {
           resolve('');
         }
@@ -262,33 +265,13 @@ export default function ExpedienteDetailPage() {
         orientation: 'p',
         unit: 'mm',
         format: 'a4',
+        compress: true,
       });
 
       // Try loading logo
       const logoB64 = await loadLogoBase64();
 
-      // Membrete / Letterhead
-      if (logoB64) {
-        doc.addImage(logoB64, 'PNG', 12, 10, 20, 20);
-      }
-
-      // Title
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(27, 54, 93); // Primary Corporate Blue
-      doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
-      doc.setFontSize(10);
-      doc.setFont('Helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
-      doc.text('Reporte Oficial de Expediente de Reclamación', 36, 26);
-
-      // Line separator
-      doc.setDrawColor(217, 91, 42); // Accent Amber/Gold
-      doc.setLineWidth(0.8);
-      doc.line(12, 33, 198, 33);
-
-      // Info General Block
+      // Info General Block title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -315,9 +298,10 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 35 },
           3: { cellWidth: 58 },
         },
+        margin: { top: 38 },
       });
 
-      // Financial Block
+      // Financial Block title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -342,6 +326,7 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 45 },
           3: { cellWidth: 50 },
         },
+        margin: { top: 38 },
       });
 
       // Detalle de Cotizaciones
@@ -378,10 +363,11 @@ export default function ExpedienteDetailPage() {
             5: { halign: 'right' },
             6: { halign: 'right' },
           },
+          margin: { top: 38 },
         });
       }
 
-      // Conductor & Recobros
+      // Conductor & Recobros title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -406,9 +392,10 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
+        margin: { top: 38 },
       });
 
-      // Committee
+      // Committee title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -433,13 +420,42 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
+        margin: { top: 38 },
       });
 
-      // Footer signature
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text('Generado automáticamente por el Sistema SIGFAM de Flota Sugamuxi S.A.', 12, 280);
-      doc.text(`Fecha y hora de generación: ${new Date().toLocaleString()}`, 12, 284);
+      // Pagination/Footer text + Header repetition on all pages
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+
+        // Header logo
+        if (logoB64) {
+          doc.addImage(logoB64, 'JPEG', 12, 10, 20, 20);
+        }
+
+        // Header titles
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(27, 54, 93);
+        doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
+        doc.setFontSize(10);
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
+        doc.text('Reporte Oficial de Expediente de Reclamación', 36, 26);
+
+        // Orange line separator
+        doc.setDrawColor(217, 91, 42);
+        doc.setLineWidth(0.8);
+        doc.line(12, 33, 198, 33);
+
+        // Footer signature & page numbers
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Generado automáticamente por el Sistema SIGFAM de Flota Sugamuxi S.A. | Página ${i} de ${pageCount}`, 12, 280);
+        doc.text(`Fecha y hora de generación: ${new Date().toLocaleString()}`, 12, 284);
+      }
 
       doc.save(`${expediente.numero_expediente}_SIGFAM_Reporte.pdf`);
       toast.success('Reporte PDF descargado');
@@ -451,17 +467,31 @@ export default function ExpedienteDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
-        <p>Cargando detalles del expediente...</p>
-      </div>
+      <>
+        <Header title="Expediente" subtitle="Cargando detalles..." />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+          <p>Cargando detalles del expediente...</p>
+        </div>
+      </>
     );
   }
 
-  if (!expediente) return null;
+  if (!expediente) {
+    return (
+      <>
+        <Header title="Expediente" subtitle="No encontrado" />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
+          <p>El expediente solicitado no existe o no tiene permisos para verlo.</p>
+        </div>
+      </>
+    );
+  }
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <>
+      <Header title="Expediente" subtitle={`SIGFAM — Detalle de expediente ${expediente.numero_expediente}`} />
+      <div className="flex-1 p-6 space-y-6">
       {/* Top action bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -1276,5 +1306,6 @@ export default function ExpedienteDetailPage() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }

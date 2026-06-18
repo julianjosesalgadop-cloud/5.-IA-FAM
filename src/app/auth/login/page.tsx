@@ -128,13 +128,6 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="px-8 pb-8 pt-6">
-          <div className="mb-6 rounded-lg bg-secondary/40 border border-border p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground">Credenciales de prueba disponibles:</p>
-            <p>• Admin: <span className="font-mono text-primary">admin@flotasugamuxi.co</span> / password</p>
-            <p>• Analista: <span className="font-mono text-primary">analista@flotasugamuxi.co</span> / password</p>
-            <p>• Consultor: <span className="font-mono text-primary">consultor@flotasugamuxi.co</span> / password</p>
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="login-email">Correo Electrónico</Label>

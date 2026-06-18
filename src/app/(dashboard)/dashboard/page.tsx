@@ -5,7 +5,7 @@ import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
-import { RefreshCw, X } from 'lucide-react';
+import { RefreshCw, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function DashboardPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    const nextVal = !sidebarCollapsed;
+    setSidebarCollapsed(nextVal);
+    window.dispatchEvent(new CustomEvent('set-sidebar-collapsed', { detail: nextVal }));
+  };
+
+  useEffect(() => {
+    return () => {
+      window.dispatchEvent(new CustomEvent('set-sidebar-collapsed', { detail: false }));
+    };
+  }, []);
 
   useEffect(() => {
     if (loading) {
@@ -143,10 +156,30 @@ export default function DashboardPage() {
         title="Dashboard Ejecutivo" 
         subtitle="SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo" 
         action={
-          <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Actualizar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSidebar}
+              className="text-xs h-9 py-1 px-3 border border-border bg-background hover:bg-secondary/40 text-foreground"
+            >
+              {sidebarCollapsed ? (
+                <>
+                  <Minimize2 className="w-4 h-4 mr-2" />
+                  Salir Pantalla Completa
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  Pantalla Completa
+                </>
+              )}
+            </Button>
+            <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </Button>
+          </div>
         }
       />
       <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-auto">
