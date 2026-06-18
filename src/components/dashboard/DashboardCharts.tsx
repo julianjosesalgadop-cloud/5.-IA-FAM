@@ -263,13 +263,13 @@ export function DashboardCharts({
   // 2. Claim Type Distribution
   const CLAIM_TYPES = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Afectación por orden público', 'Otro'] as const;
   const TIPO_COLORS = {
-    'Siniestro': 'hsl(0, 72%, 55%)',
-    'Carrocería': 'hsl(25, 92%, 50%)',
-    'Vidrios': 'hsl(197, 71%, 52%)',
-    'Repuestos': 'hsl(270, 60%, 60%)',
-    'Pérdida parcial': 'hsl(340, 75%, 55%)',
-    'Afectación por orden público': 'hsl(142, 71%, 45%)',
-    'Otro': 'hsl(215, 20%, 55%)',
+    'Siniestro': 'hsl(0, 72%, 55%)', // Red
+    'Carrocería': 'hsl(43, 96%, 52%)', // Gold
+    'Vidrios': 'hsl(217, 91%, 60%)', // Blue
+    'Repuestos': 'hsl(200, 95%, 60%)', // Light blue/cyan
+    'Pérdida parcial': 'hsl(0, 72%, 65%)', // Light red
+    'Afectación por orden público': 'hsl(142, 71%, 45%)', // Green
+    'Otro': 'hsl(215, 20%, 55%)', // Muted Grey
   };
   const tipoData = CLAIM_TYPES.map((type) => {
     const count = expedientes.filter((e) => e.tipo_reclamacion === type).length;
@@ -456,11 +456,16 @@ export function DashboardCharts({
     const ahorroNegociacion = Math.max(0, totalCotizado - totalNegociado);
     const ahorroAprobado = Math.max(0, totalCotizado - totalAprobado);
     
+    const pctAhorroNegociacion = totalCotizado > 0 ? (ahorroNegociacion / totalCotizado) * 100 : 0;
+    const pctAhorroAprobado = totalCotizado > 0 ? (ahorroAprobado / totalCotizado) * 100 : 0;
+    
     return {
       mes: name,
       monthIndex: index,
       ahorroNegociacion,
       ahorroAprobado,
+      pctAhorroNegociacion,
+      pctAhorroAprobado,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
     };
@@ -509,60 +514,68 @@ export function DashboardCharts({
     );
   }
 
-  const renderTipoServicio = (height: number) => {
-    const isMonto = serviceMetric === 'monto';
+  const renderTipoServicioCantidad = (height: number) => {
     return (
-      <div style={{ height }} className="w-full flex flex-col">
-        <div className="flex justify-end mb-2 gap-2">
-          <Button
-            variant={serviceMetric === 'cantidad' ? 'default' : 'outline'}
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setServiceMetric('cantidad'); }}
-            className="text-[10px] h-6 py-0 px-2 bg-background hover:bg-secondary/40"
-          >
-            Cantidad
-          </Button>
-          <Button
-            variant={serviceMetric === 'monto' ? 'default' : 'outline'}
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setServiceMetric('monto'); }}
-            className="text-[10px] h-6 py-0 px-2 bg-background hover:bg-secondary/40"
-          >
-            Monto ($)
-          </Button>
-        </div>
-        <div className="flex-1 min-h-0">
-          {serviceTypeData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de servicio</div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={serviceTypeData}
-                margin={{ left: -10, right: 10, top: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                <YAxis
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                  tickFormatter={(v) => isMonto ? `${(v / 1000000).toFixed(0)}M` : v}
+      <div style={{ height }} className="w-full">
+        {serviceTypeData.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de servicio</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={serviceTypeData}
+              margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+              <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} allowDecimals={false} />
+              <Tooltip
+                formatter={(value: any) => [`${value} accidentes`, 'Cantidad']}
+                labelClassName="font-bold text-foreground"
+                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+              />
+              <Bar dataKey="cantidad" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]}>
+                <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    );
+  };
+
+  const renderTipoServicioMonto = (height: number) => {
+    return (
+      <div style={{ height }} className="w-full">
+        {serviceTypeData.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de servicio</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={serviceTypeData}
+              margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+              <YAxis
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+              />
+              <Tooltip
+                formatter={(value: any) => [formatCOP(value), 'Monto Aprobado']}
+                labelClassName="font-bold text-foreground"
+                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+              />
+              <Bar dataKey="monto" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]}>
+                <LabelList
+                  dataKey="monto"
+                  position="top"
+                  formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
+                  style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                 />
-                <Tooltip
-                  formatter={(value: any) => [
-                    isMonto ? formatCOP(value) : `${value} accidentes`,
-                    isMonto ? 'Monto Aprobado' : 'Cantidad de Accidentes'
-                  ]}
-                  labelClassName="font-bold text-foreground"
-                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-                />
-                <Bar
-                  dataKey={isMonto ? 'monto' : 'cantidad'}
-                  fill={isMonto ? 'hsl(142, 71%, 45%)' : 'hsl(217, 91%, 60%)'}
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     );
   };
@@ -572,7 +585,7 @@ export function DashboardCharts({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart 
           data={monthlySavingsData} 
-          margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+          margin={{ left: -10, right: 10, top: 20, bottom: 0 }}
         >
           <defs>
             <linearGradient id="colorAhorroNegociacion" x1="0" y1="0" x2="0" y2="1">
@@ -598,10 +611,15 @@ export function DashboardCharts({
             tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
           />
           <Tooltip 
-            formatter={(value: any, name: string) => [
-              formatCOP(value),
-              name === 'ahorroAprobado' ? 'Ahorro Aprobado (Total)' : 'Ahorro por Negociación'
-            ]}
+            formatter={(value: any, name: string, props: any) => {
+              const data = props.payload;
+              const isAprobado = name === 'ahorroAprobado';
+              const pct = isAprobado ? data.pctAhorroAprobado : data.pctAhorroNegociacion;
+              return [
+                `${formatCOP(value)} (${pct.toFixed(1)}%)`,
+                isAprobado ? 'Ahorro Aprobado (Total)' : 'Ahorro por Negociación'
+              ];
+            }}
             labelClassName="font-bold text-foreground"
             contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
           />
@@ -626,7 +644,18 @@ export function DashboardCharts({
             stroke="hsl(142, 71%, 45%)" 
             fillOpacity={1} 
             fill="url(#colorAhorroAprobado)" 
-          />
+          >
+            <LabelList
+              dataKey="ahorroAprobado"
+              position="top"
+              formatter={(v: number, entry: any) => {
+                const data = entry?.payload || entry;
+                const pct = data?.pctAhorroAprobado || 0;
+                return v > 0 ? `$${(v / 1000000).toFixed(1)}M (${pct.toFixed(0)}%)` : '';
+              }}
+              style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
+            />
+          </Area>
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -637,7 +666,7 @@ export function DashboardCharts({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={internalCategoriesData}
-          margin={{ left: -10, right: 10, top: 10, bottom: 5 }}
+          margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} />
@@ -672,8 +701,17 @@ export function DashboardCharts({
               </span>
             )}
           />
-          <Bar yAxisId="left" dataKey="cantidad" name="cantidad" fill="hsl(217, 91%, 60%)" radius={[2, 2, 0, 0]} />
-          <Bar yAxisId="right" dataKey="monto" name="monto" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]} />
+          <Bar yAxisId="left" dataKey="cantidad" name="cantidad" fill="hsl(217, 91%, 60%)" radius={[2, 2, 0, 0]}>
+            <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
+          </Bar>
+          <Bar yAxisId="right" dataKey="monto" name="monto" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]}>
+            <LabelList
+              dataKey="monto"
+              position="top"
+              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
+              style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
+            />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -686,7 +724,7 @@ export function DashboardCharts({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart 
           data={monthlyData} 
-          margin={{ left: -20, right: 10, top: 10, bottom: 0 }}
+          margin={{ left: -20, right: 10, top: 20, bottom: 0 }}
           onClick={(data) => {
             const activeTooltipIndex = data?.activeTooltipIndex;
             if (activeTooltipIndex !== undefined && onSelectMonth) {
@@ -697,8 +735,8 @@ export function DashboardCharts({
         >
           <defs>
             <linearGradient id="colorExpedientes" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(217,91%,55%)" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="hsl(217,91%,55%)" stopOpacity={0} />
+              <stop offset="5%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -741,11 +779,11 @@ export function DashboardCharts({
           <Area
             type="monotone"
             dataKey="expedientes"
-            stroke="hsl(217,91%,55%)"
+            stroke="hsl(217, 91%, 60%)"
             strokeWidth={2}
             fill="url(#colorExpedientes)"
-            dot={{ fill: 'hsl(217,91%,55%)', strokeWidth: 0, r: 3 }}
-            activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(142,71%,45%)' : 'hsl(43,96%,52%)' }}
+            dot={{ fill: 'hsl(217, 91%, 60%)', strokeWidth: 0, r: 3 }}
+            activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(142, 71%, 45%)' : 'hsl(43, 96%, 52%)' }}
           >
             <LabelList
               dataKey="expedientes"
@@ -828,7 +866,7 @@ export function DashboardCharts({
         <BarChart 
           data={monthlyData} 
           barSize={height > 300 ? 35 : 20} 
-          margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+          margin={{ left: -10, right: 10, top: 20, bottom: 0 }}
           onClick={(data) => {
             const activeTooltipIndex = data?.activeTooltipIndex;
             if (activeTooltipIndex !== undefined && onSelectMonth) {
@@ -861,7 +899,7 @@ export function DashboardCharts({
                     y={y}
                     dy={12}
                     textAnchor="middle"
-                    fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                    fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                     className="hover:fill-primary font-semibold text-[11px] transition-colors"
                   >
                     {value}
@@ -882,7 +920,7 @@ export function DashboardCharts({
           <Bar 
             dataKey="valor" 
             name="valor" 
-            fill="hsl(217,91%,55%)" 
+            fill="hsl(142, 71%, 45%)" 
             radius={[3, 3, 0, 0]}
             onClick={(data) => {
               const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
@@ -895,7 +933,7 @@ export function DashboardCharts({
             <LabelList
               dataKey="valor"
               position="top"
-              formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
             />
             {monthlyData.map((entry, i) => {
@@ -903,7 +941,7 @@ export function DashboardCharts({
               return (
                 <Cell
                   key={i}
-                  fill={isSelected ? 'hsl(142, 71%, 45%)' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(59, 130, 246, 0.15)' : 'hsl(217, 91%, 55%)') : 'rgba(255,255,255,0.1)')}
+                  fill={isSelected ? 'hsl(43, 96%, 52%)' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(34, 197, 94, 0.15)' : 'hsl(142, 71%, 45%)') : 'rgba(255,255,255,0.1)')}
                 />
               );
             })}
@@ -1030,7 +1068,7 @@ export function DashboardCharts({
             <LabelList
               dataKey="cotizado"
               position="top"
-              formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
+              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(0)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
             {monthlyData.map((entry, i) => {
@@ -1059,7 +1097,7 @@ export function DashboardCharts({
             <LabelList
               dataKey="negociado"
               position="top"
-              formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
+              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(0)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
             {monthlyData.map((entry, i) => {
@@ -1088,7 +1126,7 @@ export function DashboardCharts({
             <LabelList
               dataKey="aprobado"
               position="top"
-              formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(0)}M` : ''}
+              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(0)}M` : ''}
               style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
             {monthlyData.map((entry, i) => {
@@ -1227,7 +1265,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(43, 96%, 52%)" 
+                  fill="hsl(217, 91%, 60%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -1241,7 +1279,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedCausaRaiz === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                      fill={selectedCausaRaiz === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
                     />
                   ))}
                   <LabelList
@@ -1322,7 +1360,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(217, 91%, 55%)" 
+                  fill="hsl(142, 71%, 45%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -1336,13 +1374,13 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedProprietario === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                      fill={selectedProprietario === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
                     />
                   ))}
                   <LabelList
                     dataKey="value"
                     position="right"
-                    formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                    formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
                     style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                   />
                 </Bar>
@@ -1418,7 +1456,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(43, 96%, 52%)" 
+                  fill="hsl(142, 71%, 45%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -1432,13 +1470,13 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.name ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                      fill={selectedConductor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
                     />
                   ))}
                   <LabelList
                     dataKey="value"
                     position="right"
-                    formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                    formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
                     style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                   />
                 </Bar>
@@ -1516,7 +1554,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(217, 91%, 55%)" 
+                  fill="hsl(142, 71%, 45%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -1532,13 +1570,13 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
                     />
                   ))}
                   <LabelList
                     dataKey="value"
                     position="right"
-                    formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''}
+                    formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
                     style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                   />
                 </Bar>
@@ -1614,7 +1652,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(217, 91%, 55%)"
+                  fill="hsl(217, 91%, 60%)"
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -1628,7 +1666,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedPlaca === d.placa ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 55%)')}
+                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
                     />
                   ))}
                   <LabelList
@@ -1709,7 +1747,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(43, 96%, 52%)"
+                  fill="hsl(217, 91%, 60%)"
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -1723,7 +1761,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.nombre ? 'hsl(142, 71%, 45%)' : (index === 0 ? 'hsl(217, 91%, 55%)' : 'hsl(43, 96%, 52%)')}
+                      fill={selectedConductor === d.nombre ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
                     />
                   ))}
                   <LabelList
@@ -1977,7 +2015,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Tipo de Servicio */}
+      {/* Tipo de Servicio Cantidad */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1986,8 +2024,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Tipo de Servicio</CardTitle>
-              <CardDescription>Siniestralidad por tipo de servicio (Cantidad / Monto)</CardDescription>
+              <CardTitle>Tipo de Servicio (Cantidad)</CardTitle>
+              <CardDescription>Siniestralidad por tipo de servicio (Cantidad de accidentes)</CardDescription>
             </div>
             <Button
               variant="ghost"
@@ -1995,24 +2033,24 @@ export function DashboardCharts({
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
               title="Expandir gráfico"
               onClick={() => setExpandedChart({
-                id: 'tipo-servicio',
-                title: 'Tipo de Servicio',
-                description: 'Siniestralidad por tipo de servicio (Cantidad / Monto)',
-                render: renderTipoServicio
+                id: 'tipo-servicio-cantidad',
+                title: 'Tipo de Servicio (Cantidad)',
+                description: 'Siniestralidad por tipo de servicio (Cantidad de accidentes)',
+                render: renderTipoServicioCantidad
               })}
             >
               <Maximize2 className="h-4 w-4" />
             </Button>
           </CardHeader>
           <CardContent>
-            {renderTipoServicio(260)}
+            {renderTipoServicioCantidad(260)}
           </CardContent>
         </Card>
       </motion.div>
 
       {/* Top Root Causes */}
       <motion.div
-        className="lg:col-span-3"
+        className="lg:col-span-2"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.4 }}
@@ -2050,6 +2088,39 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderCausasRaiz(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Tipo de Servicio Monto */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.62, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Tipo de Servicio (Monto)</CardTitle>
+              <CardDescription>Siniestralidad por tipo de servicio (Monto $ aprobado)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'tipo-servicio-monto',
+                title: 'Tipo de Servicio (Monto)',
+                description: 'Siniestralidad por tipo de servicio (Monto $ aprobado)',
+                render: renderTipoServicioMonto
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderTipoServicioMonto(260)}
           </CardContent>
         </Card>
       </motion.div>
