@@ -52,6 +52,14 @@ export default function DashboardPage() {
   const [selectedChartCulpabilidad, setSelectedChartCulpabilidad] = useState('');
   const [selectedChartCausaRaiz, setSelectedChartCausaRaiz] = useState('');
   const [selectedChartSerie, setSelectedChartSerie] = useState('');
+  const [selectedChartRoute, setSelectedChartRoute] = useState('');
+
+  const getRouteKey = (e: any): string => {
+    const origin = (e.ciudad_origen || '').trim().toUpperCase();
+    const dest = (e.ciudad_destino || '').trim().toUpperCase();
+    if (!origin && !dest) return 'SIN ESPECIFICAR';
+    return `${origin || '?' } - ${dest || '?'}`;
+  };
 
   const getInternalNumberCategory = (numStr: string | null | undefined): string => {
     if (!numStr) return 'Otros';
@@ -134,7 +142,7 @@ export default function DashboardPage() {
     return true;
   });
 
-  // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor & series filters (excludes vehicle filter to prevent self-collapsing)
+  // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor & series & route filters (excludes vehicle filter to prevent self-collapsing)
   const expedientesForVehicles = baseFilteredExpedientes.filter((e) => {
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -142,10 +150,11 @@ export default function DashboardPage() {
       const cat = getInternalNumberCategory(e.numero_interno);
       if (cat !== selectedChartSerie) return false;
     }
+    if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
     return true;
   });
 
-  // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor & series filters (excludes driver filter to prevent self-collapsing)
+  // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor & series & route filters (excludes driver filter to prevent self-collapsing)
   const expedientesForDrivers = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -153,10 +162,11 @@ export default function DashboardPage() {
       const cat = getInternalNumberCategory(e.numero_interno);
       if (cat !== selectedChartSerie) return false;
     }
+    if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
     return true;
   });
 
-  // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver & series filters (excludes proprietor filter to prevent self-collapsing)
+  // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver & series & route filters (excludes proprietor filter to prevent self-collapsing)
   const expedientesForPropietarios = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
@@ -164,14 +174,28 @@ export default function DashboardPage() {
       const cat = getInternalNumberCategory(e.numero_interno);
       if (cat !== selectedChartSerie) return false;
     }
+    if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
     return true;
   });
 
-  // 3c. Array for Series Chart: baseFiltered + vehicle & driver & proprietor filters (excludes series filter to prevent self-collapsing)
+  // 3c. Array for Series Chart: baseFiltered + vehicle & driver & proprietor & route filters (excludes series filter to prevent self-collapsing)
   const expedientesForSeries = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
+    if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
+    return true;
+  });
+
+  // 3d. Array for Routes Chart: baseFiltered + vehicle & driver & proprietor & series filters (excludes route filter to prevent self-collapsing)
+  const expedientesForRoutes = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
+    if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
+    if (selectedChartSerie) {
+      const cat = getInternalNumberCategory(e.numero_interno);
+      if (cat !== selectedChartSerie) return false;
+    }
     return true;
   });
 
@@ -184,6 +208,7 @@ export default function DashboardPage() {
       const cat = getInternalNumberCategory(e.numero_interno);
       if (cat !== selectedChartSerie) return false;
     }
+    if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
     return true;
   });
 
@@ -292,7 +317,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie) && (
+          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute) && (
             <Button
               variant="ghost"
               size="sm"
@@ -310,6 +335,7 @@ export default function DashboardPage() {
                 setSelectedChartCulpabilidad('');
                 setSelectedChartCausaRaiz('');
                 setSelectedChartSerie('');
+                setSelectedChartRoute('');
               }}
               className="w-full sm:w-auto text-xs text-red-400 hover:text-red-500 h-10 px-3"
             >
@@ -333,6 +359,7 @@ export default function DashboardPage() {
               expedientesForDrivers={expedientesForDrivers}
               expedientesForPropietarios={expedientesForPropietarios}
               expedientesForSeries={expedientesForSeries}
+              expedientesForRoutes={expedientesForRoutes}
               onSelectPlaca={(placa) => setSelectedChartPlaca(current => current === placa ? '' : placa)}
               onSelectConductor={(conductor) => setSelectedChartConductor(current => current === conductor ? '' : conductor)}
               onSelectProprietario={(prop) => setSelectedChartProprietario(current => current === prop ? '' : prop)}
@@ -342,6 +369,7 @@ export default function DashboardPage() {
               onSelectCulpabilidad={(culp) => setSelectedChartCulpabilidad(current => current === culp ? '' : culp)}
               onSelectCausaRaiz={(causa) => setSelectedChartCausaRaiz(current => current === causa ? '' : causa)}
               onSelectSerie={(serie) => setSelectedChartSerie(current => current === serie ? '' : serie)}
+              onSelectRoute={(route) => setSelectedChartRoute(current => current === route ? '' : route)}
               selectedPlaca={selectedChartPlaca}
               selectedConductor={selectedChartConductor}
               selectedProprietario={selectedChartProprietario}
@@ -351,6 +379,7 @@ export default function DashboardPage() {
               selectedCulpabilidad={selectedChartCulpabilidad}
               selectedCausaRaiz={selectedChartCausaRaiz}
               selectedSerie={selectedChartSerie}
+              selectedRoute={selectedChartRoute}
             />
           </>
         )}
@@ -358,7 +387,7 @@ export default function DashboardPage() {
 
       {/* Active Chart Filters Notification */}
       <AnimatePresence>
-        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || tipoReclamacion !== 'todos') && (
+        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos') && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -382,6 +411,7 @@ export default function DashboardPage() {
                   setSelectedChartCulpabilidad('');
                   setSelectedChartCausaRaiz('');
                   setSelectedChartSerie('');
+                  setSelectedChartRoute('');
                   setTipoReclamacion('todos');
                 }}
                 className="text-[10px] text-red-400 hover:text-red-500 font-semibold p-0 h-auto"
@@ -448,6 +478,22 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setSelectedChartSerie('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartRoute && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Ruta</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartRoute}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartRoute('')}
                     className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-3 w-3" />

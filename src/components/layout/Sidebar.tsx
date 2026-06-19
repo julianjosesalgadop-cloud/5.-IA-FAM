@@ -67,6 +67,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
   const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState<string>('admin');
   const router = useRouter();
+  const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
     const updateRole = () => {
@@ -75,6 +76,19 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
     updateRole();
     window.addEventListener('storage', updateRole);
     return () => window.removeEventListener('storage', updateRole);
+  }, []);
+
+  useEffect(() => {
+    // Generate particles on client side to avoid SSR/hydration mismatch
+    const generated = Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      size: Math.random() * 3 + 1.5, // 1.5px to 4.5px
+      duration: Math.random() * 10 + 8, // 8s to 18s
+      delay: Math.random() * -18,
+      opacity: Math.random() * 0.35 + 0.1,
+    }));
+    setParticles(generated);
   }, []);
 
   const handleLogout = async () => {
@@ -100,12 +114,42 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       initial={false}
       animate={{ width: collapsed ? 72 : 256 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="relative flex flex-col h-screen bg-card dark:bg-dark-800/80 border-r border-border z-30 overflow-hidden"
+      className="relative flex flex-col h-screen border-r border-white/10 z-30 overflow-hidden text-slate-300"
     >
+      {/* Background gradient and ambient glow matching Login */}
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-950 via-slate-950 to-[#0c1938] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-20%] w-[200px] h-[200px] rounded-full bg-brand-600/15 blur-[60px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-20%] w-[200px] h-[200px] rounded-full bg-brand-500/10 blur-[50px] pointer-events-none" />
+
+      {/* Floating Particles */}
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-brand-400 pointer-events-none"
+          style={{
+            left: `${p.x}%`,
+            width: p.size,
+            height: p.size,
+            opacity: p.opacity,
+            bottom: '-20px',
+            boxShadow: '0 0 6px hsla(217, 91%, 60%, 0.3)',
+          }}
+          animate={{
+            y: ['0vh', '-105vh'],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: 'linear',
+            delay: p.delay,
+          }}
+        />
+      ))}
+
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-5 border-b border-border w-full">
+      <div className="flex items-center justify-between px-4 py-5 border-b border-white/10 w-full relative z-10">
         <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center shadow-sm p-0.5 overflow-hidden">
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white border border-white/10 flex items-center justify-center shadow-sm p-0.5 overflow-hidden">
             <img src="/logo.png" alt="Logo Flota Sugamuxi" className="w-full h-full object-contain" />
           </div>
           <AnimatePresence mode="wait">
@@ -116,8 +160,8 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <p className="text-sm font-bold text-foreground leading-tight">SIGFAM</p>
-                <p className="text-xs text-muted-foreground leading-tight">Flota Sugamuxi S.A.</p>
+                <p className="text-sm font-bold text-slate-100 leading-tight">SIGFAM</p>
+                <p className="text-xs text-slate-400 leading-tight">Flota Sugamuxi S.A.</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -126,7 +170,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
           <button 
             type="button" 
             onClick={onNavClick} 
-            className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -134,11 +178,11 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto">
+      <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto relative z-10">
         {allowedGroups.map((group) => (
           <div key={group.title} className="space-y-2">
             {!collapsed && (
-              <p className="px-3 text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">
+              <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                 {group.title}
               </p>
             )}
@@ -155,10 +199,10 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
                     href={item.href}
                     onClick={onNavClick}
                     className={cn(
-                      'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group/item',
+                      'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group/item z-10',
                       isActive
                         ? 'gradient-brand text-white shadow-glow-brand'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
                     )}
                   >
                     {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
@@ -176,7 +220,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
                       )}
                     </AnimatePresence>
                     {collapsed && (
-                      <div className="absolute left-full ml-2 px-2 py-1 bg-popover border border-border rounded-md text-xs whitespace-nowrap opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity z-50">
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 border border-white/10 rounded-md text-xs text-slate-200 whitespace-nowrap opacity-0 group-hover/item:opacity-100 pointer-events-none transition-opacity z-50">
                         {item.label}
                       </div>
                     )}
@@ -189,10 +233,10 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       </nav>
 
       {/* Bottom: collapse + logout */}
-      <div className="border-t border-border px-2 py-3 space-y-1">
+      <div className="border-t border-white/10 px-2 py-3 space-y-1 relative z-10">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 z-10"
         >
           {collapsed ? (
             <ChevronRight className="w-5 h-5" />
@@ -213,7 +257,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
         </button>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 z-10"
         >
           <LogOut className="w-5 h-5" />
           <AnimatePresence mode="wait">

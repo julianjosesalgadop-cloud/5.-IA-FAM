@@ -30,6 +30,7 @@ interface DashboardChartsProps {
   expedientesForDrivers?: Expediente[];
   expedientesForPropietarios?: Expediente[];
   expedientesForSeries?: Expediente[];
+  expedientesForRoutes?: Expediente[];
   onSelectPlaca?: (placa: string) => void;
   onSelectConductor?: (conductor: string) => void;
   selectedPlaca?: string;
@@ -48,6 +49,8 @@ interface DashboardChartsProps {
   selectedCausaRaiz?: string;
   onSelectSerie?: (serie: string) => void;
   selectedSerie?: string;
+  onSelectRoute?: (route: string) => void;
+  selectedRoute?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -208,6 +211,7 @@ export function DashboardCharts({
   expedientesForDrivers,
   expedientesForPropietarios,
   expedientesForSeries,
+  expedientesForRoutes,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
@@ -226,12 +230,15 @@ export function DashboardCharts({
   selectedCausaRaiz,
   onSelectSerie,
   selectedSerie,
+  onSelectRoute,
+  selectedRoute,
 }: DashboardChartsProps) {
   // Use specialized arrays if passed, otherwise fallback to default filtered array
   const ev = expedientesForVehicles || expedientes;
   const ed = expedientesForDrivers || expedientes;
   const ep = expedientesForPropietarios || expedientes;
   const es = expedientesForSeries || expedientes;
+  const er = expedientesForRoutes || expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -245,6 +252,8 @@ export function DashboardCharts({
   const [showAllVehiculoAfectacion, setShowAllVehiculoAfectacion] = useState(false);
   const [showAllTopPlacas, setShowAllTopPlacas] = useState(false);
   const [showAllTopConductores, setShowAllTopConductores] = useState(false);
+  const [showAllRoutesCant, setShowAllRoutesCant] = useState(false);
+  const [showAllRoutesMonto, setShowAllRoutesMonto] = useState(false);
   const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
   const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
 
@@ -695,6 +704,50 @@ export function DashboardCharts({
     totalCantidad: esTotalQty,
     totalMonto: esTotalVal,
   }));
+
+  // Helper to extract route key
+  const getRouteKey = (e: Expediente): string => {
+    const origin = (e.ciudad_origen || '').trim().toUpperCase();
+    const dest = (e.ciudad_destino || '').trim().toUpperCase();
+    if (!origin && !dest) return 'SIN ESPECIFICAR';
+    return `${origin || '?' } - ${dest || '?'}`;
+  };
+
+  // 13. Origen-Destino (Rutas) Siniestralidad
+  const routeGroups: Record<string, { total: number; valor: number }> = {};
+  er.forEach((e) => {
+    const route = getRouteKey(e);
+    if (!routeGroups[route]) {
+      routeGroups[route] = { total: 0, valor: 0 };
+    }
+    routeGroups[route].total += 1;
+    routeGroups[route].valor += e.valor_final_aprobado || 0;
+  });
+
+  const allRoutesCantData = Object.entries(routeGroups)
+    .map(([name, data]) => ({
+      name,
+      value: data.total,
+      valor: data.valor,
+      totalFilteredCases: er.length,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .sort((a, b) => b.value - a.value || b.valor - a.valor);
+
+  const routesCantData = allRoutesCantData.slice(0, 5);
+
+  const allRoutesMontoData = Object.entries(routeGroups)
+    .map(([name, data]) => ({
+      name,
+      value: data.valor,
+      cantidad: data.total,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const routesMontoData = allRoutesMontoData.slice(0, 5);
 
   const hasData = expedientes.length > 0;
 
@@ -2095,6 +2148,193 @@ export function DashboardCharts({
     );
   };
 
+  const renderRoutesCant = (height: number) => {
+    const dataToUse = showAllRoutesCant ? allRoutesCantData : routesCantData;
+    const isModal = height > 350;
+    const finalHeight = showAllRoutesCant && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllRoutesCant && !isModal ? `${height}px` : 'auto', overflowY: showAllRoutesCant && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de rutas</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 10, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedRoute === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectRoute) {
+                            onSelectRoute(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[10px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value.length > 20 ? `${value.substring(0, 18)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={120}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(217, 91%, 60%)"
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectRoute) {
+                      onSelectRoute(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
+                    />
+                  ))}
+                  <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderRoutesMonto = (height: number) => {
+    const dataToUse = showAllRoutesMonto ? allRoutesMontoData : routesMontoData;
+    const isModal = height > 350;
+    const finalHeight = showAllRoutesMonto && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    return (
+      <div style={{ height: showAllRoutesMonto && !isModal ? `${height}px` : 'auto', overflowY: showAllRoutesMonto && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de afectación</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 10, right: 35, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedRoute === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectRoute) {
+                            onSelectRoute(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[10px] transition-colors"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {value.length > 20 ? `${value.substring(0, 18)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={120}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(142, 71%, 45%)"
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectRoute) {
+                      onSelectRoute(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    formatter={(v: any) => `${(v / 1000000).toFixed(1)}M`}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-w-0 overflow-hidden">
       {/* Monthly trend */}
@@ -2740,6 +2980,94 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderTopConductores(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Siniestralidad por Ruta (Cantidad) */}
+      <motion.div
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Siniestralidad por Ruta</CardTitle>
+              <CardDescription>{showAllRoutesCant ? 'Frecuencia de incidentes en todos los trayectos' : 'Rutas con mayor frecuencia de incidentes (Top 5)'}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllRoutesCant(!showAllRoutesCant); }}
+              >
+                {showAllRoutesCant ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'ruta-cantidad',
+                  title: 'Siniestralidad por Ruta (Cantidad)',
+                  description: 'Frecuencia de incidentes por trayecto origen - destino',
+                  render: renderRoutesCant
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderRoutesCant(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Afectación FAM por Ruta (Monto $) */}
+      <motion.div
+        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.3, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Afectación por Ruta</CardTitle>
+              <CardDescription>{showAllRoutesMonto ? 'Afectación acumulada de todos los trayectos' : 'Costo acumulado por trayecto (Top 5)'}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllRoutesMonto(!showAllRoutesMonto); }}
+              >
+                {showAllRoutesMonto ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'ruta-monto',
+                  title: 'Afectación FAM por Ruta (Monto $)',
+                  description: 'Costo total acumulado de afectación por trayecto',
+                  render: renderRoutesMonto
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderRoutesMonto(240)}
           </CardContent>
         </Card>
       </motion.div>
