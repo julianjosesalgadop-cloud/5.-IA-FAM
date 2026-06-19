@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Maximize2, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCOP } from '@/lib/utils';
+import { formatCOP, cn } from '@/lib/utils';
 import type { Expediente } from '@/types/database';
 
 interface DashboardChartsProps {
@@ -219,6 +219,7 @@ export function DashboardCharts({
   const [showAllTopPlacas, setShowAllTopPlacas] = useState(false);
   const [showAllTopConductores, setShowAllTopConductores] = useState(false);
   const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
+  const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
 
   // 1. Monthly trend calculations
   const totalFilteredCount = expedientes.length;
@@ -259,6 +260,150 @@ export function DashboardCharts({
       totalGeneralNegociadoSum: totalGeneralNegociado,
     };
   });
+
+  // Year, Month, Day dynamic data processing
+  const years = Array.from(
+    new Set(
+      expedientes
+        .map((e) => {
+          if (!e.fecha_incidente) return null;
+          const d = new Date(e.fecha_incidente + 'T00:00:00');
+          return isNaN(d.getTime()) ? null : d.getFullYear();
+        })
+        .filter((y): y is number => y !== null)
+    )
+  ).sort((a, b) => a - b);
+
+  const yearlyData = years.map((year) => {
+    const cases = expedientes.filter((e) => {
+      if (!e.fecha_incidente) return false;
+      const d = new Date(e.fecha_incidente + 'T00:00:00');
+      return !isNaN(d.getTime()) && d.getFullYear() === year;
+    });
+    const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+    const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+    const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+    return {
+      mes: `${year}`,
+      year,
+      expedientes: cases.length,
+      valor: sumAprobado,
+      cotizado: sumCotizado,
+      negociado: sumNegociado,
+      aprobado: sumAprobado,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+      totalFilteredCotizadoSum: totalFilteredCotizado,
+      totalGeneralCotizadoSum: totalGeneralCotizado,
+      totalFilteredNegociadoSum: totalFilteredNegociado,
+      totalGeneralNegociadoSum: totalGeneralNegociado,
+    };
+  });
+
+  const yearlyDataToUse = yearlyData.length > 0 
+    ? yearlyData 
+    : [{ 
+        mes: `${new Date().getFullYear()}`,
+        expedientes: 0,
+        valor: 0,
+        cotizado: 0,
+        negociado: 0,
+        aprobado: 0,
+        totalFilteredCases: totalFilteredCount,
+        totalGeneralCases: totalGeneralCount,
+        totalFilteredApprovedSum: totalFilteredApproved,
+        totalGeneralApprovedSum: totalGeneralApproved,
+        totalFilteredCotizadoSum: totalFilteredCotizado,
+        totalGeneralCotizadoSum: totalGeneralCotizado,
+        totalFilteredNegociadoSum: totalFilteredNegociado,
+        totalGeneralNegociadoSum: totalGeneralNegociado,
+      }];
+
+  const uniqueDates = Array.from(
+    new Set(
+      expedientes
+        .map((e) => e.fecha_incidente)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => new Date(a + 'T00:00:00').getTime() - new Date(b + 'T00:00:00').getTime());
+
+  const formatDateLabel = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return dateStr;
+    const monthsShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${d.getDate()} ${monthsShort[d.getMonth()]}`;
+  };
+
+  const dailyData = uniqueDates.map((dateStr) => {
+    const cases = expedientes.filter((e) => e.fecha_incidente === dateStr);
+    const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+    const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+    const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+    return {
+      mes: formatDateLabel(dateStr),
+      rawDate: dateStr,
+      expedientes: cases.length,
+      valor: sumAprobado,
+      cotizado: sumCotizado,
+      negociado: sumNegociado,
+      aprobado: sumAprobado,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+      totalFilteredCotizadoSum: totalFilteredCotizado,
+      totalGeneralCotizadoSum: totalGeneralCotizado,
+      totalFilteredNegociadoSum: totalFilteredNegociado,
+      totalGeneralNegociadoSum: totalGeneralNegociado,
+    };
+  });
+
+  const dailyDataToUse = dailyData.length > 0 
+    ? dailyData 
+    : [{ 
+        mes: formatDateLabel(new Date().toISOString().split('T')[0]),
+        expedientes: 0,
+        valor: 0,
+        cotizado: 0,
+        negociado: 0,
+        aprobado: 0,
+        totalFilteredCases: totalFilteredCount,
+        totalGeneralCases: totalGeneralCount,
+        totalFilteredApprovedSum: totalFilteredApproved,
+        totalGeneralApprovedSum: totalGeneralApproved,
+        totalFilteredCotizadoSum: totalFilteredCotizado,
+        totalGeneralCotizadoSum: totalGeneralCotizado,
+        totalFilteredNegociadoSum: totalFilteredNegociado,
+        totalGeneralNegociadoSum: totalGeneralNegociado,
+      }];
+
+  const currentChartData = timeUnit === 'year' 
+    ? yearlyDataToUse 
+    : timeUnit === 'day' 
+      ? dailyDataToUse 
+      : monthlyData;
+
+  const getExpandedTitle = () => {
+    if (!expandedChart) return '';
+    if (expandedChart.id === 'expedientes-mes') {
+      if (timeUnit === 'year') return 'Expedientes por Año';
+      if (timeUnit === 'day') return 'Expedientes por Día';
+      return 'Expedientes por Mes';
+    }
+    return expandedChart.title;
+  };
+
+  const getExpandedDescription = () => {
+    if (!expandedChart) return '';
+    if (expandedChart.id === 'expedientes-mes') {
+      if (timeUnit === 'year') return 'Incidencia de reclamaciones por año';
+      if (timeUnit === 'day') return 'Incidencia de reclamaciones por día';
+      return 'Incidencia de reclamaciones en el transcurso del año';
+    }
+    return expandedChart.description;
+  };
 
   // 2. Claim Type Distribution
   const CLAIM_TYPES = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Afectación por orden público', 'Otro'] as const;
@@ -787,9 +932,10 @@ export function DashboardCharts({
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart 
-          data={monthlyData} 
+          data={currentChartData} 
           margin={{ left: -20, right: 10, top: 20, bottom: 0 }}
           onClick={(data) => {
+            if (timeUnit !== 'month') return;
             const activeTooltipIndex = data?.activeTooltipIndex;
             if (activeTooltipIndex !== undefined && onSelectMonth) {
               onSelectMonth(activeTooltipIndex);
@@ -806,7 +952,7 @@ export function DashboardCharts({
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey="mes" 
-            tick={(props: any) => {
+            tick={timeUnit === 'month' ? (props: any) => {
               const { x, y, payload } = props;
               const value = payload?.value || '';
               const idx = MONTH_NAMES.indexOf(value);
@@ -834,7 +980,7 @@ export function DashboardCharts({
                   </text>
                 </g>
               );
-            }}
+            } : { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 600 }}
             axisLine={false} 
             tickLine={false} 
           />
@@ -1852,25 +1998,74 @@ export function DashboardCharts({
         transition={{ delay: 0.1, duration: 0.4 }}
       >
         <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-4 flex-wrap sm:flex-nowrap">
             <div>
-              <CardTitle>Expedientes por Mes</CardTitle>
-              <CardDescription>Incidencia de reclamaciones en el transcurso del año</CardDescription>
+              <CardTitle>
+                {timeUnit === 'year' ? 'Expedientes por Año' : timeUnit === 'day' ? 'Expedientes por Día' : 'Expedientes por Mes'}
+              </CardTitle>
+              <CardDescription>
+                {timeUnit === 'year' 
+                  ? 'Incidencia de reclamaciones por año' 
+                  : timeUnit === 'day' 
+                    ? 'Incidencia de reclamaciones por día' 
+                    : 'Incidencia de reclamaciones en el transcurso del año'}
+              </CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'expedientes-mes',
-                title: 'Expedientes por Mes',
-                description: 'Incidencia de reclamaciones en el transcurso del año',
-                render: renderExpedientesPorMes
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Selector de periodo */}
+              <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setTimeUnit('year')}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                    timeUnit === 'year'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Año
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeUnit('month')}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                    timeUnit === 'month'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Mes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeUnit('day')}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                    timeUnit === 'day'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Día
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'expedientes-mes',
+                  title: 'Expedientes por Mes',
+                  description: 'Incidencia de reclamaciones en el transcurso del año',
+                  render: renderExpedientesPorMes
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderExpedientesPorMes(260)}
@@ -2456,17 +2651,59 @@ export function DashboardCharts({
               {/* Modal Header */}
               <div className="flex items-center justify-between p-5 border-b border-border bg-secondary/10">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">{expandedChart.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{expandedChart.description}</p>
+                  <h3 className="text-lg font-bold text-foreground">{getExpandedTitle()}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{getExpandedDescription()}</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0 rounded-full hover:bg-secondary/80 text-foreground"
-                  onClick={() => setExpandedChart(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-4">
+                  {expandedChart.id === 'expedientes-mes' && (
+                    <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
+                      <button
+                        type="button"
+                        onClick={() => setTimeUnit('year')}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                          timeUnit === 'year'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Año
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTimeUnit('month')}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                          timeUnit === 'month'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Mes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTimeUnit('day')}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                          timeUnit === 'day'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Día
+                      </button>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full hover:bg-secondary/80 text-foreground"
+                    onClick={() => setExpandedChart(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Modal Content */}
