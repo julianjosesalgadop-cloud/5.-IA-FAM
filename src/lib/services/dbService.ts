@@ -225,6 +225,9 @@ interface Perfil {
   email: string;
   rol: RolUsuario;
   activo: boolean;
+  cargo?: string | null;
+  numero_documento?: string | null;
+  must_change_password?: boolean;
   created_at: string;
 }
 
@@ -235,6 +238,9 @@ const INITIAL_PERFILES: Perfil[] = [
     email: 'admin@flotasugamuxi.co',
     rol: 'admin',
     activo: true,
+    cargo: 'Administrador del Sistema',
+    numero_documento: '1234567890',
+    must_change_password: false,
     created_at: '2025-01-01T00:00:00Z',
   },
   {
@@ -243,6 +249,9 @@ const INITIAL_PERFILES: Perfil[] = [
     email: 'analista@flotasugamuxi.co',
     rol: 'analista',
     activo: true,
+    cargo: 'Analista FAM',
+    numero_documento: '9876543210',
+    must_change_password: false,
     created_at: '2025-01-02T00:00:00Z',
   },
   {
@@ -251,6 +260,9 @@ const INITIAL_PERFILES: Perfil[] = [
     email: 'consultor@flotasugamuxi.co',
     rol: 'consultor',
     activo: true,
+    cargo: null,
+    numero_documento: null,
+    must_change_password: false,
     created_at: '2025-01-03T00:00:00Z',
   },
 ];
@@ -919,20 +931,64 @@ export const dbService = {
     return data;
   },
 
-  createPerfil: async (payload: { nombre: string; email: string; rol: RolUsuario }): Promise<any> => {
+  createPerfil: async (payload: { nombre: string; email: string; rol: RolUsuario; cargo?: string; numero_documento?: string; password?: string; must_change_password?: boolean }): Promise<any> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
       const newPerfil = {
         ...payload,
         id: Math.random().toString(36).substring(2, 9),
         activo: true,
+        must_change_password: payload.must_change_password ?? false,
         created_at: new Date().toISOString(),
       };
       list.push(newPerfil);
       setLocalData(MOCK_STORAGE_KEYS.PERFILES, list);
       return newPerfil;
     }
-    throw new Error('La creación de usuarios reales en producción debe realizarse a través de la consola de Supabase Auth.');
+    // Production: call server-side API route which uses SUPABASE_SERVICE_ROLE_KEY
+    const res = await fetch('/api/admin/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al crear usuario.');
+    return json.perfil;
+  },
+
+  resetPasswordAdmin: async (userId: string, newPassword: string, mustChangePassword: boolean = false): Promise<void> => {
+    if (IS_MOCK_MODE) {
+      // In mock mode, simulate the operation (no real auth exists)
+      const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
+      const idx = list.findIndex((p: any) => p.id === userId);
+      if (idx !== -1) {
+        list[idx].must_change_password = mustChangePassword;
+        setLocalData(MOCK_STORAGE_KEYS.PERFILES, list);
+      }
+      return;
+    }
+    // Production: call server-side API route
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newPassword, mustChangePassword }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al cambiar la contraseña.');
+  },
+
+  markPasswordChanged: async (userId: string): Promise<void> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
+      const idx = list.findIndex((p: any) => p.id === userId);
+      if (idx !== -1) {
+        list[idx].must_change_password = false;
+        setLocalData(MOCK_STORAGE_KEYS.PERFILES, list);
+      }
+      return;
+    }
+    const supabase = createBrowserClient();
+    await supabase.from('perfiles').update({ must_change_password: false } as any).eq('id', userId);
   },
 
   togglePerfilActivo: async (id: string): Promise<any> => {

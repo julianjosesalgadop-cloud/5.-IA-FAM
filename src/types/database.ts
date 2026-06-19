@@ -120,6 +120,9 @@ export interface UsuarioPerfil {
   nombre: string | null;
   rol: RolUsuario;
   activo: boolean;
+  cargo?: string | null;
+  numero_documento?: string | null;
+  must_change_password?: boolean;
   created_at: string;
 }
 

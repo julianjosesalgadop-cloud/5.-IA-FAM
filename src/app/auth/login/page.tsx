@@ -67,7 +67,7 @@ export default function LoginPage() {
         // Obtener el perfil real desde la base de datos
         const { data: profile, error: profileError } = (await supabase
           .from('perfiles')
-          .select('rol, nombre')
+          .select('rol, nombre, must_change_password')
           .eq('id', authData.user.id)
           .single()) as any;
 
@@ -89,6 +89,15 @@ export default function LoginPage() {
         } else if (profile) {
           role = profile.rol as RolUsuario;
           name = profile.nombre || name;
+          
+          if (profile.must_change_password) {
+            setMockUser(role, name);
+            toast.info('Debes establecer una nueva contraseña antes de continuar.', {
+              description: 'El administrador requiere que cambies tu contraseña.',
+            });
+            router.push('/auth/change-password');
+            return;
+          }
         }
 
         // Sincronizar el estado de sesión local
