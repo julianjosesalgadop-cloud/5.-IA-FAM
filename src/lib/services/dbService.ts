@@ -19,7 +19,7 @@ const MOCK_STORAGE_KEYS = {
 const INITIAL_EXPEDIENTES: Expediente[] = [
   {
     id: '1',
-    numero_expediente: 'FAM-2025-001',
+    numero_expediente: 'FAMFS-2025-001',
     fecha_incidente: '2025-01-15',
     placa: 'ABC-123',
     numero_interno: '0042',
@@ -65,7 +65,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
   },
   {
     id: '2',
-    numero_expediente: 'FAM-2025-002',
+    numero_expediente: 'FAMFS-2025-002',
     fecha_incidente: '2025-01-22',
     placa: 'XYZ-789',
     numero_interno: '0108',
@@ -109,7 +109,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
   },
   {
     id: '3',
-    numero_expediente: 'FAM-2025-003',
+    numero_expediente: 'FAMFS-2025-003',
     fecha_incidente: '2025-02-03',
     placa: 'DEF-456',
     numero_interno: '0015',
@@ -185,7 +185,24 @@ function getLocalData<T>(key: string, initial: T[]): T[] {
     localStorage.setItem(key, JSON.stringify(initial));
     return initial;
   }
-  return JSON.parse(data);
+  let parsed = JSON.parse(data);
+  if (key === MOCK_STORAGE_KEYS.EXPEDIENTES && Array.isArray(parsed)) {
+    let migrated = false;
+    parsed = parsed.map((exp: any) => {
+      if (exp && typeof exp.numero_expediente === 'string' && exp.numero_expediente.startsWith('FAM-')) {
+        migrated = true;
+        return {
+          ...exp,
+          numero_expediente: exp.numero_expediente.replace('FAM-', 'FAMFS-')
+        };
+      }
+      return exp;
+    });
+    if (migrated) {
+      localStorage.setItem(key, JSON.stringify(parsed));
+    }
+  }
+  return parsed;
 }
 
 function setLocalData<T>(key: string, data: T[]): void {
@@ -445,7 +462,7 @@ export const dbService = {
 
       const year = new Date(formattedPayload.fecha_incidente).getFullYear() || new Date().getFullYear();
       const countOfYear = list.filter((e) => new Date(e.fecha_incidente).getFullYear() === year).length + 1;
-      const numero_expediente = `FAM-${year}-${String(countOfYear).padStart(3, '0')}`;
+      const numero_expediente = `FAMFS-${year}-${String(countOfYear).padStart(3, '0')}`;
 
       const newExpediente: Expediente = {
         ...(formattedPayload as any),
