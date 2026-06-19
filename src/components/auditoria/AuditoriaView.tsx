@@ -54,6 +54,7 @@ export function AuditoriaView() {
   const [currentUser] = useState(() => getMockUser());
   const [logs, setLogs] = useState<AuditoriaEntry[]>([]);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  const [perfiles, setPerfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,12 +98,14 @@ export function AuditoriaView() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [auditData, expData] = await Promise.all([
+      const [auditData, expData, perData] = await Promise.all([
         dbService.getAuditoria(),
         dbService.getExpedientes(),
+        dbService.getPerfiles(),
       ]);
       setLogs(auditData);
       setExpedientes(expData);
+      setPerfiles(perData);
     } catch (err) {
       console.error(err);
       toast.error('Error al cargar datos de auditoría');
@@ -122,12 +125,33 @@ export function AuditoriaView() {
     return map;
   }, [expedientes]);
 
+  // User profiles lookup map (id or email -> name)
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>();
+    perfiles.forEach((p) => {
+      if (p.id) map.set(p.id, p.nombre || p.email);
+      if (p.email) map.set(p.email.toLowerCase(), p.nombre || p.email);
+    });
+    return map;
+  }, [perfiles]);
+
+  const getUsuarioNombre = useCallback((emailOrId: string | null) => {
+    if (!emailOrId) return 'Sistema';
+    const clean = emailOrId.toLowerCase();
+    return userMap.get(clean) || userMap.get(emailOrId) || emailOrId;
+  }, [userMap]);
+
   // Extract unique values for dropdown filters
   const uniqueUsuarios = useMemo(() => {
-    const set = new Set<string>();
-    logs.forEach((l) => { if (l.usuario_email) set.add(l.usuario_email); });
-    return Array.from(set).sort();
-  }, [logs]);
+    const map = new Map<string, string>(); // email -> nombre
+    logs.forEach((l) => {
+      if (l.usuario_email) {
+        const nombre = getUsuarioNombre(l.usuario_email);
+        map.set(l.usuario_email, nombre);
+      }
+    });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [logs, getUsuarioNombre]);
 
   const uniqueCampos = useMemo(() => {
     const set = new Set<string>();
@@ -156,6 +180,7 @@ export function AuditoriaView() {
       // General search
       if (term) {
         const matchesGeneral =
+          getUsuarioNombre(entry.usuario_email)?.toLowerCase().includes(term) ||
           entry.usuario_email?.toLowerCase().includes(term) ||
           entry.accion?.toLowerCase().includes(term) ||
           entry.campo_modificado?.toLowerCase().includes(term) ||
@@ -264,7 +289,8 @@ export function AuditoriaView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             id="auditoria-search"
-            autoComplete="off"
+            autoComplete="one-time-code"
+            name="prevent_autofill"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -368,8 +394,8 @@ export function AuditoriaView() {
                       id="auditoria-filter-usuario"
                     >
                       <option value="">Todos los usuarios</option>
-                      {uniqueUsuarios.map((u) => (
-                        <option key={u} value={u}>{u}</option>
+                      {uniqueUsuarios.map(([email, nombre]) => (
+                        <option key={email} value={email}>{nombre}</option>
                       ))}
                     </select>
                   </div>
@@ -524,7 +550,7 @@ export function AuditoriaView() {
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <User className="w-3 h-3" />
-                              <span>{entry.usuario_email || 'Sistema'}</span>
+                              <span>{getUsuarioNombre(entry.usuario_email)}</span>
                             </div>
                             {/* Extra expediente context */}
                             {exp && (exp.placa || exp.nombre_conductor) && (

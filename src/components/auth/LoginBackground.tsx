@@ -19,7 +19,7 @@ export function LoginBackground() {
   }, []);
 
   return (
-    <div className="absolute inset-0 bg-gradient-to-br from-brand-950 via-slate-950 to-[#0c1938] overflow-hidden pointer-events-none">
+    <div className="absolute inset-0 bg-gradient-to-br from-brand-950 via-slate-950 to-[#00263e] overflow-hidden pointer-events-none">
       {/* Ambient corporate blue glows */}
       <div className="absolute top-[-20%] right-[-10%] w-[550px] h-[550px] rounded-full bg-brand-600/20 blur-[130px]" />
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-brand-500/15 blur-[120px]" />
@@ -36,7 +36,7 @@ export function LoginBackground() {
             height: p.size,
             opacity: p.opacity,
             bottom: '-20px',
-            boxShadow: '0 0 8px hsla(217, 91%, 60%, 0.4)',
+            boxShadow: '0 0 8px hsla(203, 100%, 55%, 0.4)',
           }}
           animate={{
             y: ['0vh', '-125vh'],

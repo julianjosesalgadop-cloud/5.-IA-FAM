@@ -279,6 +279,8 @@ export function UsuariosView() {
             className="pl-9 bg-background/50 border-border focus:ring-primary"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="one-time-code"
+            name="prevent_autofill"
           />
         </div>
         {currentUser?.rol === 'admin' && (

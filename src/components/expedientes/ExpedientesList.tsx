@@ -344,7 +344,8 @@ export function ExpedientesList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             id="expedientes-search"
-            autoComplete="off"
+            autoComplete="one-time-code"
+            name="prevent_autofill"
           />
         </div>
 

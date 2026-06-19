@@ -117,7 +117,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       className="relative flex flex-col h-screen border-r border-white/10 z-30 overflow-hidden text-slate-300"
     >
       {/* Background gradient and ambient glow matching Login */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-950 via-slate-950 to-[#0c1938] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-950 via-slate-950 to-[#00263e] pointer-events-none" />
       <div className="absolute top-[-10%] right-[-20%] w-[200px] h-[200px] rounded-full bg-brand-600/15 blur-[60px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-20%] w-[200px] h-[200px] rounded-full bg-brand-500/10 blur-[50px] pointer-events-none" />
 
@@ -132,7 +132,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
             height: p.size,
             opacity: p.opacity,
             bottom: '-20px',
-            boxShadow: '0 0 6px hsla(217, 91%, 60%, 0.3)',
+            boxShadow: '0 0 6px hsla(203, 100%, 55%, 0.3)',
           }}
           animate={{
             y: ['0vh', '-105vh'],
@@ -162,6 +162,9 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
               >
                 <p className="text-sm font-bold text-slate-100 leading-tight">SIGFAM</p>
                 <p className="text-xs text-slate-400 leading-tight">Flota Sugamuxi S.A.</p>
+                <p className="text-[8px] text-slate-500 leading-tight mt-0.5 max-w-[150px]">
+                  Sistema Integrado de Gestión del Fondo de Auxilio Mutuo
+                </p>
               </motion.div>
             )}
           </AnimatePresence>

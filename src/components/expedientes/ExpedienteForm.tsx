@@ -690,6 +690,11 @@ export function ExpedienteForm({
   const totalDeducible = activeCots.reduce((acc, c) => acc + Math.round(((c.valor_negociado || 0) * (c.porcentaje_deducible || 0)) / 100), 0);
   const totalAPagar = Math.max(0, totalNegociado - totalDeducible);
 
+  // Sincronizar valor_final_aprobado con el cálculo neto a pagar (totalAPagar)
+  React.useEffect(() => {
+    setValue('valor_final_aprobado', totalAPagar);
+  }, [totalAPagar, setValue]);
+
   const valorRecVehiculo = watch('valor_recobro_vehiculo') || 0;
   const valorRecAbogado = watch('valor_recobro_abogado') || 0;
   const valorRecEmpresa = watch('valor_recobro_empresa') || 0;

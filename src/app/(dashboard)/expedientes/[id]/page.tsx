@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -46,6 +46,7 @@ export default function ExpedienteDetailPage() {
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [auditorias, setAuditorias] = useState<AuditoriaEntry[]>([]);
+  const [perfiles, setPerfiles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('resumen');
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -74,17 +75,21 @@ export default function ExpedienteDetailPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const exp = await dbService.getExpedienteById(id);
+      const [exp, docs, audits, users] = await Promise.all([
+        dbService.getExpedienteById(id),
+        dbService.getDocumentos(id),
+        dbService.getAuditoria(id),
+        dbService.getPerfiles(),
+      ]);
       if (!exp) {
         toast.error('Expediente no encontrado');
         router.push('/expedientes');
         return;
       }
       setExpediente(exp);
-      const docs = await dbService.getDocumentos(id);
       setDocumentos(docs);
-      const audits = await dbService.getAuditoria(id);
       setAuditorias(audits);
+      setPerfiles(users);
     } catch (error) {
       console.error(error);
       toast.error('Error al cargar datos del expediente');
@@ -92,6 +97,22 @@ export default function ExpedienteDetailPage() {
       setLoading(false);
     }
   }, [id, router]);
+
+  // User profiles lookup map (id or email -> name)
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>();
+    perfiles.forEach((p) => {
+      if (p.id) map.set(p.id, p.nombre || p.email);
+      if (p.email) map.set(p.email.toLowerCase(), p.nombre || p.email);
+    });
+    return map;
+  }, [perfiles]);
+
+  const getUsuarioNombre = useCallback((emailOrId: string | null) => {
+    if (!emailOrId) return 'Sistema';
+    const clean = emailOrId.toLowerCase();
+    return userMap.get(clean) || userMap.get(emailOrId) || emailOrId;
+  }, [userMap]);
 
   useEffect(() => {
     loadData();
@@ -1189,7 +1210,7 @@ export default function ExpedienteDetailPage() {
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-bold text-foreground">
-                                    {audit.usuario_email || 'Sistema'}
+                                    {getUsuarioNombre(audit.usuario_email)}
                                   </span>
                                   <Badge className="text-[10px] py-0 px-1 font-mono uppercase" variant="secondary">
                                     {audit.accion}

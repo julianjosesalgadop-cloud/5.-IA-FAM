@@ -19,17 +19,17 @@ export function ConfiguracionView() {
   const [catalogos, setCatalogos] = useState<string[]>([]);
   const [newCatalogo, setNewCatalogo] = useState('');
 
-  if (currentUser.rol !== 'admin' && currentUser.rol !== 'consultor') {
+  if (currentUser.rol !== 'admin') {
     return (
-      <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center">
+      <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center mx-auto mt-8">
         <CardHeader>
           <CardTitle className="text-destructive font-bold text-xl">Acceso Denegado</CardTitle>
-          <CardDescription className="text-muted-foreground mt-2">
-            No tiene permisos para acceder al módulo de configuración.
+          <CardDescription className="text-muted-foreground mt-2 text-sm">
+            Solo los administradores tienen acceso al módulo de configuración del sistema.
           </CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
-          <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
+          <Button onClick={() => router.push('/dashboard')} variant="outline">
             Volver al Dashboard
           </Button>
         </CardContent>

@@ -48,17 +48,30 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
         brand: {
-          50: 'hsl(214, 100%, 97%)',
-          100: 'hsl(214, 95%, 93%)',
-          200: 'hsl(213, 97%, 87%)',
-          300: 'hsl(212, 96%, 78%)',
-          400: 'hsl(213, 94%, 68%)',
-          500: 'hsl(217, 91%, 60%)',
-          600: 'hsl(221, 83%, 53%)',
-          700: 'hsl(224, 76%, 48%)',
-          800: 'hsl(226, 71%, 40%)',
-          900: 'hsl(224, 64%, 33%)',
-          950: 'hsl(226, 55%, 20%)',
+          50: '#f0f7fc',
+          100: '#e1effa',
+          200: '#bcdff5',
+          300: '#82c4ee',
+          400: '#41a7e4',
+          500: '#0084D5', // Pantone 2173 C
+          600: '#006ab3',
+          700: '#005490',
+          800: '#00477a',
+          900: '#013861',
+          950: '#012169', // Pantone 280 C
+        },
+        coolgray: {
+          DEFAULT: '#D0D0CE', // Pantone Cool Gray 2 C
+          50: '#fafafa',
+          100: '#f4f4f4',
+          200: '#e5e5e5',
+          300: '#D0D0CE',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
         },
         gold: {
           400: 'hsl(43, 96%, 56%)',
@@ -75,7 +88,7 @@ const config: Config = {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-brand': 'linear-gradient(135deg, hsl(217,91%,42%) 0%, hsl(224,76%,48%) 100%)',
+        'gradient-brand': 'linear-gradient(135deg, #012169 0%, #0084D5 100%)',
         'gradient-dark': 'linear-gradient(180deg, hsl(222,47%,8%) 0%, hsl(222,47%,5%) 100%)',
       },
       animation: {
@@ -92,7 +105,7 @@ const config: Config = {
         countUp: { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
       },
       boxShadow: {
-        'glow-brand': '0 0 20px hsla(217,91%,42%,0.3)',
+        'glow-brand': '0 0 20px rgba(0, 132, 213, 0.3)',
         'glow-gold': '0 0 20px hsla(43,96%,52%,0.3)',
         'card-dark': '0 4px 24px rgba(0,0,0,0.4)',
         'card-light': '0 4px 24px rgba(0,0,0,0.08)',
