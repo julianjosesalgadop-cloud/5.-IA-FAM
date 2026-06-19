@@ -275,6 +275,18 @@ const INITIAL_PERFILES: Perfil[] = [
     created_at: '2025-01-02T00:00:00Z',
   },
   {
+    id: 'mock-sisflotas-id',
+    nombre: 'Administrador Flotas',
+    email: 'sisflotasugamuxi@gmail.com',
+    rol: 'admin',
+    activo: true,
+    cargo: 'Administrador de Flotas',
+    tipo_documento: 'CC',
+    numero_documento: '1098765432',
+    must_change_password: false,
+    created_at: '2025-01-01T00:00:00Z',
+  },
+  {
     id: 'mock-consultor-id',
     nombre: 'Consultor Invitado',
     email: 'consultor@flotasugamuxi.co',
@@ -319,7 +331,13 @@ export function getMockUser() {
     return { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador SIGFAM', rol: 'admin' as RolUsuario };
   }
   const userStr = localStorage.getItem(MOCK_STORAGE_KEYS.USER);
-  if (userStr) return JSON.parse(userStr);
+  if (userStr) {
+    const parsed = JSON.parse(userStr);
+    if (parsed.email?.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
+      parsed.rol = 'admin';
+    }
+    return parsed;
+  }
   
   const defaultUser = { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador SIGFAM', rol: 'admin' as RolUsuario };
   localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(defaultUser));

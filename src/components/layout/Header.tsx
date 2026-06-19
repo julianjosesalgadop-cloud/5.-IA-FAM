@@ -34,7 +34,7 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
         setUser({
           nombre: mockUser.nombre || 'Administrador',
           email: mockUser.email,
-          rol: mockUser.rol,
+          rol: (mockUser.email?.toLowerCase() === 'sisflotasugamuxi@gmail.com') ? 'admin' : mockUser.rol,
         });
       } else {
         try {
@@ -48,10 +48,14 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
               .single();
             const profile = data as any;
 
+            const userRole = (supabaseUser.email?.toLowerCase() === 'sisflotasugamuxi@gmail.com')
+              ? 'admin'
+              : ((profile?.rol || 'consultor') as RolUsuario);
+
             setUser({
               nombre: profile?.nombre || supabaseUser.email?.split('@')[0] || 'Usuario',
               email: supabaseUser.email || '',
-              rol: (profile?.rol || 'consultor') as RolUsuario,
+              rol: userRole,
             });
           }
         } catch (err) {

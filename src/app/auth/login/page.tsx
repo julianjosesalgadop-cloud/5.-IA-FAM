@@ -39,7 +39,7 @@ export default function LoginPage() {
       let name = 'Consultor Invitado';
 
       if (isMock) {
-        if (data.email.toLowerCase().includes('admin')) {
+        if (data.email.toLowerCase().includes('admin') || data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
           role = 'admin';
           name = 'Administrador SIGFAM';
         } else if (data.email.toLowerCase().includes('analista')) {
@@ -80,7 +80,7 @@ export default function LoginPage() {
           if (authData.user.user_metadata?.rol) {
             role = authData.user.user_metadata.rol as RolUsuario;
           } else {
-            if (data.email.toLowerCase().includes('admin')) {
+            if (data.email.toLowerCase().includes('admin') || data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
               role = 'admin';
             } else if (data.email.toLowerCase().includes('analista')) {
               role = 'analista';
@@ -89,6 +89,10 @@ export default function LoginPage() {
         } else if (profile) {
           role = profile.rol as RolUsuario;
           name = profile.nombre || name;
+
+          if (data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
+            role = 'admin';
+          }
           
           if (profile.must_change_password) {
             setMockUser(role, name);
