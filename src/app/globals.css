@@ -95,4 +95,17 @@
     font-family: var(--font-mono), monospace;
     font-feature-settings: 'tnum';
   }
+  .animate-float-particle {
+    animation: float-up var(--particle-duration, 20s) linear infinite;
+    will-change: transform;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-120vh);
+  }
 }

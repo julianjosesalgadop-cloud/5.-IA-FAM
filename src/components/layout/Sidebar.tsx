@@ -83,10 +83,10 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
     const generated = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
-      size: Math.random() * 3 + 1.5, // 1.5px to 4.5px
-      duration: Math.random() * 10 + 8, // 8s to 18s
-      delay: Math.random() * -18,
-      opacity: Math.random() * 0.35 + 0.1,
+      size: Math.random() * 2 + 1, // 1px to 3px (smaller size)
+      duration: Math.random() * 15 + 15, // 15s to 30s (slower/longer duration)
+      delay: Math.random() * -30,
+      opacity: Math.random() * 0.15 + 0.05, // 0.05 to 0.20 (lower opacity)
     }));
     setParticles(generated);
   }, []);
@@ -123,9 +123,9 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* Floating Particles */}
       {particles.map((p) => (
-        <motion.div
+        <div
           key={p.id}
-          className="absolute rounded-full bg-brand-400 pointer-events-none"
+          className="absolute rounded-full bg-brand-400 pointer-events-none animate-float-particle"
           style={{
             left: `${p.x}%`,
             width: p.size,
@@ -133,16 +133,9 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
             opacity: p.opacity,
             bottom: '-20px',
             boxShadow: '0 0 6px hsla(203, 100%, 55%, 0.3)',
-          }}
-          animate={{
-            y: ['0vh', '-105vh'],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: p.delay,
-          }}
+            '--particle-duration': `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+          } as any}
         />
       ))}
 

@@ -27,9 +27,9 @@ export function LoginBackground() {
 
       {/* Floating Particles (Dots moving from bottom to top) */}
       {particles.map((p) => (
-        <motion.div
+        <div
           key={p.id}
-          className="absolute rounded-full bg-brand-400"
+          className="absolute rounded-full bg-brand-400 pointer-events-none animate-float-particle"
           style={{
             left: `${p.x}%`,
             width: p.size,
@@ -37,16 +37,9 @@ export function LoginBackground() {
             opacity: p.opacity,
             bottom: '-20px',
             boxShadow: '0 0 8px hsla(203, 100%, 55%, 0.4)',
-          }}
-          animate={{
-            y: ['0vh', '-125vh'],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: p.delay,
-          }}
+            '--particle-duration': `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+          } as any}
         />
       ))}
     </div>

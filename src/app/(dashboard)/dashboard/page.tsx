@@ -219,7 +219,13 @@ export default function DashboardPage() {
         subtitle="SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo" 
         action={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={loadData} disabled={loading} className="h-9 px-2.5 sm:px-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadData} 
+              disabled={loading} 
+              className="h-9 px-2.5 sm:px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
+            >
               <RefreshCw className={`w-4 h-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Actualizar</span>
             </Button>
@@ -227,7 +233,7 @@ export default function DashboardPage() {
               variant="outline"
               size="sm"
               onClick={toggleSidebar}
-              className="hidden md:flex text-xs h-9 py-1 px-3 border border-border bg-background hover:bg-secondary/40 text-foreground"
+              className="hidden md:flex text-xs h-9 py-1 px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
             >
               {sidebarCollapsed ? (
                 <>
