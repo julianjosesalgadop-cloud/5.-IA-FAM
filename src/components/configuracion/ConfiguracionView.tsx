@@ -19,7 +19,7 @@ export function ConfiguracionView() {
   const [catalogos, setCatalogos] = useState<string[]>([]);
   const [newCatalogo, setNewCatalogo] = useState('');
 
-  if (currentUser.rol !== 'admin') {
+  if (currentUser.rol !== 'admin' && currentUser.rol !== 'consultor') {
     return (
       <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center">
         <CardHeader>

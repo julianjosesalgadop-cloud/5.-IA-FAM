@@ -269,13 +269,15 @@ export function UsuariosView() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="w-full sm:w-auto gradient-brand text-white shadow-glow-brand"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Agregar Usuario
-        </Button>
+        {currentUser?.rol === 'admin' && (
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="w-full sm:w-auto gradient-brand text-white shadow-glow-brand"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Agregar Usuario
+          </Button>
+        )}
       </div>
 
       {/* Main Table Card */}
@@ -353,54 +355,58 @@ export function UsuariosView() {
                         {perfil.created_at ? new Date(perfil.created_at).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Edit Role */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                            title="Editar rol"
-                            onClick={() => {
-                              setSelectedPerfil(perfil);
-                              setEditRol(perfil.rol);
-                              setShowEditModal(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          {/* Change Password */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-amber-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg"
-                            title="Cambiar contraseña"
-                            onClick={() => {
-                              setSelectedPerfil(perfil);
-                              setResetPassword('');
-                              setResetPasswordConfirm('');
-                              setResetMustChange(false);
-                              setShowResetPassword(false);
-                              setShowPasswordModal(true);
-                            }}
-                          >
-                            <KeyRound className="w-4 h-4" />
-                          </Button>
-                          {/* Toggle Active */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-8 w-8 rounded-lg ${
-                              perfil.activo
-                                ? 'text-red-400 hover:text-red-500 hover:bg-red-500/10'
-                                : 'text-green-400 hover:text-green-500 hover:bg-green-500/10'
-                            }`}
-                            title={perfil.activo ? 'Desactivar usuario' : 'Activar usuario'}
-                            disabled={currentUser?.id === perfil.id}
-                            onClick={() => handleToggleActivo(perfil)}
-                          >
-                            {perfil.activo ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                          </Button>
-                        </div>
+                        {currentUser?.rol === 'admin' ? (
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Edit Role */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                              title="Editar rol"
+                              onClick={() => {
+                                setSelectedPerfil(perfil);
+                                setEditRol(perfil.rol);
+                                setShowEditModal(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            {/* Change Password */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-amber-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg"
+                              title="Cambiar contraseña"
+                              onClick={() => {
+                                setSelectedPerfil(perfil);
+                                setResetPassword('');
+                                setResetPasswordConfirm('');
+                                setResetMustChange(false);
+                                setShowResetPassword(false);
+                                setShowPasswordModal(true);
+                              }}
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                            {/* Toggle Active */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-8 w-8 rounded-lg ${
+                                perfil.activo
+                                  ? 'text-red-400 hover:text-red-500 hover:bg-red-500/10'
+                                  : 'text-green-400 hover:text-green-500 hover:bg-green-500/10'
+                              }`}
+                              title={perfil.activo ? 'Desactivar usuario' : 'Activar usuario'}
+                              disabled={currentUser?.id === perfil.id}
+                              onClick={() => handleToggleActivo(perfil)}
+                            >
+                              {perfil.activo ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Sin permisos</span>
+                        )}
                       </td>
                     </tr>
                   ))}

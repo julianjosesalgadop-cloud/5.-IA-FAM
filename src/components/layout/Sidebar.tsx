@@ -43,10 +43,10 @@ const NAV_GROUPS = [
   {
     title: 'Sistema',
     items: [
-      { href: '/usuarios', label: 'Usuarios', icon: 'Users', roles: ['admin'] },
-      { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin'] },
-      { href: '/parametrizacion', label: 'Parametrización', icon: 'SlidersHorizontal', roles: ['admin'] },
-      { href: '/auditoria', label: 'Auditoría', icon: 'Shield', roles: ['admin'] },
+      { href: '/usuarios', label: 'Usuarios', icon: 'Users', roles: ['admin', 'consultor'] },
+      { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin', 'consultor'] },
+      { href: '/parametrizacion', label: 'Parametrización', icon: 'SlidersHorizontal', roles: ['admin', 'consultor'] },
+      { href: '/auditoria', label: 'Auditoría', icon: 'Shield', roles: ['admin', 'consultor'] },
     ],
   },
 ];

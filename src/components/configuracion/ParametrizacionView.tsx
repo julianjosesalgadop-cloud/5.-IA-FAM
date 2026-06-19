@@ -176,13 +176,13 @@ export function ParametrizacionView() {
     }
   }, [config.loading, config.pasos, config.campoConfig, config.tiposReclamacion, config.tiposServicio, config.tiposDocPaso1, config.conceptosCotizacion, config.opcionesDeducible, config.culpabilidades, config.causasRaiz, config.autorizadosPor, config.cargos]);
 
-  if (currentUser.rol !== 'admin') {
+  if (currentUser.rol !== 'admin' && currentUser.rol !== 'consultor') {
     return (
       <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center mx-auto">
         <CardHeader>
           <CardTitle className="text-destructive font-bold text-xl">Acceso Denegado</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">
-            No tiene permisos de administrador para parametrizar el formulario de expedientes.
+            No tiene permisos para parametrizar el formulario de expedientes.
           </CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
@@ -193,6 +193,8 @@ export function ParametrizacionView() {
       </Card>
     );
   }
+
+  const isReadOnly = currentUser.rol !== 'admin';
 
   const handleSavePasos = () => {
     config.saveConfig('fam_config_pasos_form', localPasos);
@@ -360,6 +362,7 @@ export function ParametrizacionView() {
               <Input
                 value={field.label}
                 onChange={(e) => handleFieldChange(key, 'label', e.target.value)}
+                disabled={isReadOnly}
                 className="h-8 text-xs bg-background"
               />
             </div>
@@ -368,7 +371,7 @@ export function ParametrizacionView() {
               <Input
                 value={field.placeholder || ''}
                 onChange={(e) => handleFieldChange(key, 'placeholder', e.target.value)}
-                disabled={['fecha_incidente', 'fecha_comite', 'fecha_autorizacion', 'tipo_servicio', 'tipo_reclamacion', 'culpabilidad', 'causa_raiz', 'autorizado_por', 'cargo_autorizador'].includes(key)}
+                disabled={isReadOnly || ['fecha_incidente', 'fecha_comite', 'fecha_autorizacion', 'tipo_servicio', 'tipo_reclamacion', 'culpabilidad', 'causa_raiz', 'autorizado_por', 'cargo_autorizador'].includes(key)}
                 className="h-8 text-xs bg-background"
                 placeholder="N/A"
               />
@@ -380,6 +383,7 @@ export function ParametrizacionView() {
               <div className="flex items-center gap-1.5">
                 <Switch
                   checked={field.visible}
+                  disabled={isReadOnly}
                   onCheckedChange={(val: boolean) => {
                     handleFieldChange(key, 'visible', val);
                     if (!val) {
@@ -394,7 +398,7 @@ export function ParametrizacionView() {
               <div className="flex items-center gap-1.5">
                 <Switch
                   checked={field.requerido}
-                  disabled={!field.visible}
+                  disabled={isReadOnly || !field.visible}
                   onCheckedChange={(val: boolean) => handleFieldChange(key, 'requerido', val)}
                   id={`req-${key}`}
                 />
@@ -424,6 +428,20 @@ export function ParametrizacionView() {
 
   return (
     <div className="w-full max-w-6xl space-y-6 mx-auto pb-12">
+      {isReadOnly && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-500 text-sm flex items-center gap-3 shadow-sm"
+        >
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold">Modo de solo lectura</p>
+            <p className="text-xs text-muted-foreground">Como Consultor, puedes visualizar la parametrización de los campos y fases, pero no tienes permisos para guardar cambios ni restaurar valores predeterminados.</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="flex flex-wrap border-b border-border/80 gap-1 overflow-x-auto">
         {(['pasos', 'paso1', 'paso2', 'paso3', 'paso4'] as const).map((tab) => {
@@ -471,10 +489,10 @@ export function ParametrizacionView() {
                   <CardDescription>Configure los títulos y las descripciones explicativas de cada una de las 4 fases del formulario.</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={handleResetPasos} variant="outline" size="sm" className="gap-1">
+                  <Button onClick={handleResetPasos} disabled={isReadOnly} variant="outline" size="sm" className="gap-1">
                     <RotateCcw className="w-3.5 h-3.5" /> Predeterminados
                   </Button>
-                  <Button onClick={handleSavePasos} size="sm" className="gap-1 shadow-glow-brand">
+                  <Button onClick={handleSavePasos} disabled={isReadOnly} size="sm" className="gap-1 shadow-glow-brand">
                     <Save className="w-3.5 h-3.5" /> Guardar Cambios
                   </Button>
                 </div>
@@ -541,10 +559,10 @@ export function ParametrizacionView() {
                   <CardDescription>Personalice etiquetas, placeholders y reglas de validación para los campos del primer paso.</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleResetCamposByStep(step1Keys)} variant="outline" size="sm">
+                  <Button onClick={() => handleResetCamposByStep(step1Keys)} disabled={isReadOnly} variant="outline" size="sm">
                     <RotateCcw className="w-3.5 h-3.5" /> Predeterminados
                   </Button>
-                  <Button onClick={() => handleSaveCampos(step1Keys)} size="sm" className="shadow-glow-brand">
+                  <Button onClick={() => handleSaveCampos(step1Keys)} disabled={isReadOnly} size="sm" className="shadow-glow-brand">
                     <Save className="w-3.5 h-3.5" /> Guardar Campos
                   </Button>
                 </div>
@@ -572,6 +590,7 @@ export function ParametrizacionView() {
                   setLocalTiposReclamacion(DEFAULT_CATALOGS.tiposReclamacion);
                   saveCatalog('fam_config_tipos_reclamacion', DEFAULT_CATALOGS.tiposReclamacion, 'Lista de reclamación restablecida.');
                 }}
+                isReadOnly={isReadOnly}
               />
 
               {/* Tipos de Servicio */}
@@ -588,6 +607,7 @@ export function ParametrizacionView() {
                   setLocalTiposServicio(DEFAULT_CATALOGS.tiposServicio);
                   saveCatalog('fam_config_tipos_servicio', DEFAULT_CATALOGS.tiposServicio, 'Lista de servicios restablecida.');
                 }}
+                isReadOnly={isReadOnly}
               />
 
               {/* Documentos paso 1 */}
@@ -603,6 +623,7 @@ export function ParametrizacionView() {
                   setLocalTiposDocPaso1(DEFAULT_CATALOGS.tiposDocPaso1);
                   saveCatalog('fam_config_tipos_doc_paso1', DEFAULT_CATALOGS.tiposDocPaso1, 'Tipos de documento restablecidos.');
                 }}
+                isReadOnly={isReadOnly}
               />
             </div>
           </motion.div>
@@ -627,10 +648,10 @@ export function ParametrizacionView() {
                   <CardDescription>Personalice etiquetas y visualización para los campos de montos de cotizaciones y salvamentos.</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleResetCamposByStep(step2Keys)} variant="outline" size="sm">
+                  <Button onClick={() => handleResetCamposByStep(step2Keys)} disabled={isReadOnly} variant="outline" size="sm">
                     <RotateCcw className="w-3.5 h-3.5" /> Predeterminados
                   </Button>
-                  <Button onClick={() => handleSaveCampos(step2Keys)} size="sm" className="shadow-glow-brand">
+                  <Button onClick={() => handleSaveCampos(step2Keys)} disabled={isReadOnly} size="sm" className="shadow-glow-brand">
                     <Save className="w-3.5 h-3.5" /> Guardar Campos
                   </Button>
                 </div>
@@ -658,6 +679,7 @@ export function ParametrizacionView() {
                   setLocalConceptosCot(DEFAULT_CATALOGS.conceptosCotizacion);
                   saveCatalog('fam_config_conceptos_cot', DEFAULT_CATALOGS.conceptosCotizacion, 'Conceptos restablecidos.');
                 }}
+                isReadOnly={isReadOnly}
               />
 
               {/* Porcentajes de Deducibles */}
@@ -678,6 +700,7 @@ export function ParametrizacionView() {
                   setLocalDeducibles(DEFAULT_CATALOGS.opcionesDeducible);
                   saveCatalog('fam_config_deducibles', DEFAULT_CATALOGS.opcionesDeducible, 'Deducibles restablecidos.');
                 }}
+                isReadOnly={isReadOnly}
               />
             </div>
           </motion.div>
@@ -702,10 +725,10 @@ export function ParametrizacionView() {
                   <CardDescription>Configure etiquetas y visibilidad para los datos del conductor, descuentos y recobros a terceros.</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleResetCamposByStep(step3Keys)} variant="outline" size="sm">
+                  <Button onClick={() => handleResetCamposByStep(step3Keys)} disabled={isReadOnly} variant="outline" size="sm">
                     <RotateCcw className="w-3.5 h-3.5" /> Predeterminados
                   </Button>
-                  <Button onClick={() => handleSaveCampos(step3Keys)} size="sm" className="shadow-glow-brand">
+                  <Button onClick={() => handleSaveCampos(step3Keys)} disabled={isReadOnly} size="sm" className="shadow-glow-brand">
                     <Save className="w-3.5 h-3.5" /> Guardar Campos
                   </Button>
                 </div>
@@ -733,6 +756,7 @@ export function ParametrizacionView() {
                   setLocalCulpabilidades(DEFAULT_CATALOGS.culpabilidades);
                   saveCatalog('fam_config_culpabilidades', DEFAULT_CATALOGS.culpabilidades, 'Opciones de culpabilidad restablecidas.');
                 }}
+                isReadOnly={isReadOnly}
               />
             </div>
           </motion.div>
@@ -757,10 +781,10 @@ export function ParametrizacionView() {
                   <CardDescription>Gestione los campos de actas, observaciones, resoluciones y subida del soporte de pago.</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleResetCamposByStep(step4Keys)} variant="outline" size="sm">
+                  <Button onClick={() => handleResetCamposByStep(step4Keys)} disabled={isReadOnly} variant="outline" size="sm">
                     <RotateCcw className="w-3.5 h-3.5" /> Predeterminados
                   </Button>
-                  <Button onClick={() => handleSaveCampos(step4Keys)} size="sm" className="shadow-glow-brand">
+                  <Button onClick={() => handleSaveCampos(step4Keys)} disabled={isReadOnly} size="sm" className="shadow-glow-brand">
                     <Save className="w-3.5 h-3.5" /> Guardar Campos
                   </Button>
                 </div>
@@ -805,6 +829,7 @@ export function ParametrizacionView() {
                   setLocalCausasRaiz(DEFAULT_CATALOGS.causasRaiz);
                   saveCatalog('fam_config_causas', DEFAULT_CATALOGS.causasRaiz, 'Causas raíz restablecidas.');
                 }}
+                isReadOnly={isReadOnly}
               />
 
               {/* Autorizado Por */}
@@ -820,6 +845,7 @@ export function ParametrizacionView() {
                   setLocalAutorizadosPor(DEFAULT_CATALOGS.autorizadosPor);
                   saveCatalog('fam_config_autorizados_por', DEFAULT_CATALOGS.autorizadosPor, 'Autorizadores restablecidos.');
                 }}
+                isReadOnly={isReadOnly}
               />
 
               {/* Cargos */}
@@ -835,6 +861,7 @@ export function ParametrizacionView() {
                   setLocalCargos(DEFAULT_CATALOGS.cargos);
                   saveCatalog('fam_config_cargos', DEFAULT_CATALOGS.cargos, 'Cargos directivos restablecidos.');
                 }}
+                isReadOnly={isReadOnly}
               />
             </div>
           </motion.div>
@@ -855,6 +882,7 @@ interface CatalogoEditorCardProps {
   onMove?: (idx: number, dir: 'up' | 'down') => void;
   onSave: () => void;
   onReset: () => void;
+  isReadOnly?: boolean;
 }
 
 function CatalogoEditorCard({
@@ -867,6 +895,7 @@ function CatalogoEditorCard({
   onMove,
   onSave,
   onReset,
+  isReadOnly = false,
 }: CatalogoEditorCardProps) {
   const [newItem, setNewItem] = useState('');
 
@@ -910,14 +939,14 @@ function CatalogoEditorCard({
                     <>
                       <button
                         onClick={() => onMove(idx, 'up')}
-                        disabled={idx === 0}
+                        disabled={isReadOnly || idx === 0}
                         className="w-6 h-6 rounded bg-background hover:bg-secondary border border-border flex items-center justify-center disabled:opacity-40"
                       >
                         <ArrowUp className="w-3 h-3 text-foreground" />
                       </button>
                       <button
                         onClick={() => onMove(idx, 'down')}
-                        disabled={idx === list.length - 1}
+                        disabled={isReadOnly || idx === list.length - 1}
                         className="w-6 h-6 rounded bg-background hover:bg-secondary border border-border flex items-center justify-center disabled:opacity-40"
                       >
                         <ArrowDown className="w-3 h-3 text-foreground" />
@@ -927,6 +956,7 @@ function CatalogoEditorCard({
                   
                   <button
                     onClick={() => onToggleActive(idx, !item.activo)}
+                    disabled={isReadOnly}
                     className={`w-6 h-6 rounded flex items-center justify-center border ${
                       item.activo 
                         ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/25' 
@@ -939,7 +969,8 @@ function CatalogoEditorCard({
 
                   <button
                     onClick={() => onDelete(idx)}
-                    className="w-6 h-6 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center"
+                    disabled={isReadOnly}
+                    className="w-6 h-6 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center disabled:opacity-40"
                     title="Eliminar"
                   >
                     <Trash2 className="w-3 h-3 text-red-400" />
@@ -959,17 +990,18 @@ function CatalogoEditorCard({
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            disabled={isReadOnly}
             className="h-8 text-xs bg-background"
           />
-          <Button onClick={handleAdd} size="sm" className="h-8 px-2 flex-shrink-0">
+          <Button onClick={handleAdd} disabled={isReadOnly} size="sm" className="h-8 px-2 flex-shrink-0">
             <Plus className="w-3.5 h-3.5" />
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onReset} variant="outline" size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1">
+          <Button onClick={onReset} disabled={isReadOnly} variant="outline" size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1">
             <RotateCcw className="w-3 h-3" /> Predeterminados
           </Button>
-          <Button onClick={onSave} size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1 shadow-glow-brand">
+          <Button onClick={onSave} disabled={isReadOnly} size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1 shadow-glow-brand">
             <Save className="w-3 h-3" /> Guardar
           </Button>
         </div>
@@ -986,6 +1018,7 @@ interface DeduciblesEditorCardProps {
   onToggleActive: (idx: number, val: boolean) => void;
   onSave: () => void;
   onReset: () => void;
+  isReadOnly?: boolean;
 }
 
 function DeduciblesEditorCard({
@@ -995,6 +1028,7 @@ function DeduciblesEditorCard({
   onToggleActive,
   onSave,
   onReset,
+  isReadOnly = false,
 }: DeduciblesEditorCardProps) {
   const [newValue, setNewValue] = useState<number | ''>('');
 
@@ -1036,6 +1070,7 @@ function DeduciblesEditorCard({
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => onToggleActive(idx, !item.activo)}
+                    disabled={isReadOnly}
                     className={`w-6 h-6 rounded flex items-center justify-center border ${
                       item.activo 
                         ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/25' 
@@ -1048,7 +1083,8 @@ function DeduciblesEditorCard({
 
                   <button
                     onClick={() => onDelete(idx)}
-                    className="w-6 h-6 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center"
+                    disabled={isReadOnly}
+                    className="w-6 h-6 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center disabled:opacity-40"
                   >
                     <Trash2 className="w-3 h-3 text-red-400" />
                   </button>
@@ -1067,19 +1103,20 @@ function DeduciblesEditorCard({
             value={newValue}
             onChange={(e) => setNewValue(e.target.value === '' ? '' : Number(e.target.value))}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            disabled={isReadOnly}
             className="h-8 text-xs bg-background"
             min={0}
             max={100}
           />
-          <Button onClick={handleAdd} size="sm" className="h-8 px-2 flex-shrink-0">
+          <Button onClick={handleAdd} disabled={isReadOnly} size="sm" className="h-8 px-2 flex-shrink-0">
             <Plus className="w-3.5 h-3.5" />
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onReset} variant="outline" size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1">
+          <Button onClick={onReset} disabled={isReadOnly} variant="outline" size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1">
             <RotateCcw className="w-3 h-3" /> Predeterminados
           </Button>
-          <Button onClick={onSave} size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1 shadow-glow-brand">
+          <Button onClick={onSave} disabled={isReadOnly} size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1 shadow-glow-brand">
             <Save className="w-3 h-3" /> Guardar
           </Button>
         </div>
