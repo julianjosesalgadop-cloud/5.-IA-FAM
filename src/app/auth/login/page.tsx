@@ -131,8 +131,8 @@ export default function LoginPage() {
         <CardHeader className="text-center pb-2 pt-8">
           {/* Logo */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center shadow-glow-brand">
-              <ShieldCheck className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center shadow-md p-1.5 overflow-hidden">
+              <img src="/logo.png" alt="Logo Flota Sugamuxi" className="w-full h-full object-contain" />
             </div>
           </div>
            <h1 className="text-2xl font-bold text-foreground">SIGFAM</h1>
@@ -184,7 +184,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full mt-2"
+              className="w-full mt-2 gradient-brand text-white shadow-glow-brand hover:opacity-95 transition-opacity border-0"
               disabled={isLoading}
               id="login-submit-btn"
             >

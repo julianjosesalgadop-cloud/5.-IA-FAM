@@ -98,7 +98,7 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-border glass dark:bg-dark-800/60">
+    <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-border bg-card/85 backdrop-blur-md dark:bg-dark-800/60">
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Hamburger menu for mobile */}
         <Button

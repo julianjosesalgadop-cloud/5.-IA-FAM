@@ -100,13 +100,13 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       initial={false}
       animate={{ width: collapsed ? 72 : 256 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="relative flex flex-col h-screen glass dark:bg-dark-800/80 border-r border-border z-30 overflow-hidden"
+      className="relative flex flex-col h-screen bg-card dark:bg-dark-800/80 border-r border-border z-30 overflow-hidden"
     >
       {/* Logo */}
       <div className="flex items-center justify-between px-4 py-5 border-b border-border w-full">
         <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl gradient-brand flex items-center justify-center shadow-glow-brand">
-            <ShieldCheck className="w-5 h-5 text-white" />
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center shadow-sm p-0.5 overflow-hidden">
+            <img src="/logo.png" alt="Logo Flota Sugamuxi" className="w-full h-full object-contain" />
           </div>
           <AnimatePresence mode="wait">
             {!collapsed && (
