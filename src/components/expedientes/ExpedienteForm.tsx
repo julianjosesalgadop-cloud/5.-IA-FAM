@@ -680,15 +680,15 @@ export function ExpedienteForm({
   });
   const watchCausaRaiz = watch('causa_raiz');
 
-  // Calcular totales financieros de cotizaciones en tiempo de renderizado
-  const selectedCotIndex = cotizaciones.findIndex((c) => c.seleccionada);
-  const selectedCot = cotizaciones[selectedCotIndex !== -1 ? selectedCotIndex : 0];
-  const selectedValorCotizacion = selectedCot ? (selectedCot.valor_cotizacion || 0) : 0;
+  // Calcular totales financieros de cotizaciones en tiempo de renderizado (Suma de cotizaciones seleccionadas)
+  const selectedCots = cotizaciones.filter((c) => c.seleccionada);
+  const activeCots = selectedCots.length > 0 ? selectedCots : (cotizaciones[0] ? [cotizaciones[0]] : []);
 
+  const selectedValorCotizacion = activeCots.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
   const totalCotizacion = cotizaciones.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
-  const totalNegociado = selectedCot ? (selectedCot.valor_negociado || 0) : 0;
-  const totalDeducible = selectedCot ? Math.round((totalNegociado * (selectedCot.porcentaje_deducible || 0)) / 100) : 0;
-  const totalAPagar = selectedCot ? Math.max(0, totalNegociado - totalDeducible) : 0;
+  const totalNegociado = activeCots.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+  const totalDeducible = activeCots.reduce((acc, c) => acc + Math.round(((c.valor_negociado || 0) * (c.porcentaje_deducible || 0)) / 100), 0);
+  const totalAPagar = Math.max(0, totalNegociado - totalDeducible);
 
   const valorRecVehiculo = watch('valor_recobro_vehiculo') || 0;
   const valorRecAbogado = watch('valor_recobro_abogado') || 0;
@@ -714,14 +714,16 @@ export function ExpedienteForm({
         };
       });
 
-      // Encontrar la cotización seleccionada para guardar sus datos consolidados
-      const selIndex = data.cotizaciones?.findIndex((c) => c.seleccionada);
-      const activeCot = updatedCotizaciones[selIndex !== undefined && selIndex !== -1 ? selIndex : 0];
+      // Sumar valores de todas las cotizaciones seleccionadas para guardar datos consolidados
+      const selectedCotsData = updatedCotizaciones.filter((c) => c.seleccionada);
+      const activeCotsData = selectedCotsData.length > 0 ? selectedCotsData : (updatedCotizaciones[0] ? [updatedCotizaciones[0]] : []);
 
-      const finalValorCotizacion = activeCot ? (activeCot.valor_cotizacion || 0) : 0;
-      const finalNegociado = activeCot ? (activeCot.valor_negociado || 0) : 0;
-      const finalDeducible = activeCot ? (activeCot.valor_deducible || 0) : 0;
-      const finalAPagar = activeCot ? (activeCot.valor_a_pagar || 0) : 0;
+      const finalValorCotizacion = activeCotsData.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+      const finalNegociado = activeCotsData.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+      const finalDeducible = activeCotsData.reduce((acc, c) => acc + (c.valor_deducible || 0), 0);
+      const finalAPagar = Math.max(0, finalNegociado - finalDeducible);
+
+      const firstActiveCot = activeCotsData[0];
 
       const { causa_raiz_otra, tipo_reclamacion_otro, tipo_servicio_otro, ...restData } = data;
       const finalCausaRaiz = data.causa_raiz === 'Otro' ? (causa_raiz_otra || 'Otro') : data.causa_raiz;
@@ -743,8 +745,8 @@ export function ExpedienteForm({
         valor_negociado: finalNegociado,
         valor_deducible: finalDeducible,
         valor_a_pagar: finalAPagar,
-        // porcentaje_deducible se guarda como el de la cotización seleccionada
-        porcentaje_deducible: activeCot?.porcentaje_deducible || null,
+        // porcentaje_deducible se guarda como el de la primera cotización activa
+        porcentaje_deducible: firstActiveCot?.porcentaje_deducible || null,
         porcentaje_recobro_vehiculo: pctVehiculo,
         porcentaje_recobro_abogado: pctAbogado,
         porcentaje_recobro_empresa: pctEmpresa,
@@ -1213,9 +1215,7 @@ export function ExpedienteForm({
                                     id={`cotizaciones-sel-${idx}`}
                                     checked={isSelected}
                                     onChange={() => {
-                                      fields.forEach((_, i) => {
-                                        setValue(`cotizaciones.${i}.seleccionada`, i === idx);
-                                      });
+                                      setValue(`cotizaciones.${idx}.seleccionada`, !isSelected);
                                     }}
                                     className="w-4 h-4 rounded border-gray-300 text-green-500 focus:ring-green-500 bg-background cursor-pointer"
                                   />

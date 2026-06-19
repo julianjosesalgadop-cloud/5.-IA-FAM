@@ -1133,6 +1133,7 @@ interface CausasRaizEditorCardProps {
   onMove: (idx: number, dir: 'up' | 'down') => void;
   onSave: () => void;
   onReset: () => void;
+  isReadOnly?: boolean;
 }
 
 function CausasRaizEditorCard({
@@ -1142,10 +1143,12 @@ function CausasRaizEditorCard({
   onMove,
   onSave,
   onReset,
+  isReadOnly = false,
 }: CausasRaizEditorCardProps) {
   const [newItem, setNewItem] = useState('');
 
   const handleAdd = () => {
+    if (isReadOnly) return;
     if (onAdd(newItem)) {
       setNewItem('');
     }
@@ -1177,14 +1180,14 @@ function CausasRaizEditorCard({
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => onMove(idx, 'up')}
-                    disabled={idx === 0}
+                    disabled={isReadOnly || idx === 0}
                     className="w-6 h-6 rounded bg-background hover:bg-secondary border border-border flex items-center justify-center disabled:opacity-40"
                   >
                     <ArrowUp className="w-3 h-3 text-foreground" />
                   </button>
                   <button
                     onClick={() => onMove(idx, 'down')}
-                    disabled={idx === list.length - 1}
+                    disabled={isReadOnly || idx === list.length - 1}
                     className="w-6 h-6 rounded bg-background hover:bg-secondary border border-border flex items-center justify-center disabled:opacity-40"
                   >
                     <ArrowDown className="w-3 h-3 text-foreground" />
@@ -1192,7 +1195,8 @@ function CausasRaizEditorCard({
 
                   <button
                     onClick={() => onDelete(idx)}
-                    className="w-6 h-6 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center"
+                    disabled={isReadOnly}
+                    className="w-6 h-6 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center disabled:opacity-40"
                   >
                     <Trash2 className="w-3 h-3 text-red-400" />
                   </button>
@@ -1210,17 +1214,18 @@ function CausasRaizEditorCard({
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            disabled={isReadOnly}
             className="h-8 text-xs bg-background"
           />
-          <Button onClick={handleAdd} size="sm" className="h-8 px-2 flex-shrink-0">
+          <Button onClick={handleAdd} disabled={isReadOnly} size="sm" className="h-8 px-2 flex-shrink-0">
             <Plus className="w-3.5 h-3.5" />
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onReset} variant="outline" size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1">
+          <Button onClick={onReset} disabled={isReadOnly} variant="outline" size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1">
             <RotateCcw className="w-3 h-3" /> Predeterminados
           </Button>
-          <Button onClick={onSave} size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1 shadow-glow-brand">
+          <Button onClick={onSave} disabled={isReadOnly} size="sm" className="flex-1 h-8 text-[11px] px-0 gap-1 shadow-glow-brand">
             <Save className="w-3 h-3" /> Guardar
           </Button>
         </div>
