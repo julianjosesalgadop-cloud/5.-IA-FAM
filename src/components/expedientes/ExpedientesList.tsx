@@ -423,21 +423,24 @@ export function ExpedientesList() {
           </Button>
         )}
 
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" onClick={fetchExpedientes} title="Refrescar">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto justify-end">
+          <Button variant="outline" size="sm" onClick={fetchExpedientes} title="Refrescar" className="h-9 px-2 sm:px-3">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportExcel} id="expedientes-export-btn">
-            <Download className="w-4 h-4 mr-1.5 text-green-500" />
-            Exportar Excel
+          <Button variant="outline" size="sm" onClick={handleExportExcel} id="expedientes-export-btn" className="h-9 px-2 sm:px-3 text-xs">
+            <Download className="w-4 h-4 sm:mr-1.5 text-green-500" />
+            <span className="hidden sm:inline">Exportar Excel</span>
+            <span className="sm:hidden">Excel</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPDF} id="expedientes-export-pdf-btn">
-            <FileText className="w-4 h-4 mr-1.5 text-red-500" />
-            Exportar PDF
+          <Button variant="outline" size="sm" onClick={handleExportPDF} id="expedientes-export-pdf-btn" className="h-9 px-2 sm:px-3 text-xs">
+            <FileText className="w-4 h-4 sm:mr-1.5 text-red-500" />
+            <span className="hidden sm:inline">Exportar PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/expedientes/nuevo')} id="expedientes-nuevo-btn">
-            <Plus className="w-4 h-4 mr-1.5" />
-            Nuevo Expediente
+          <Button size="sm" onClick={() => router.push('/expedientes/nuevo')} id="expedientes-nuevo-btn" className="h-9 px-2 sm:px-3 text-xs">
+            <Plus className="w-4 h-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">Nuevo Expediente</span>
+            <span className="sm:hidden">Nuevo</span>
           </Button>
         </div>
       </div>

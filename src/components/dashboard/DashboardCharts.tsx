@@ -2096,10 +2096,10 @@ export function DashboardCharts({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-w-0 overflow-hidden">
       {/* Monthly trend */}
       <motion.div
-        className="lg:col-span-2"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
@@ -2215,7 +2215,7 @@ export function DashboardCharts({
 
       {/* Financial by month */}
       <motion.div
-        className="lg:col-span-2"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
@@ -2282,7 +2282,7 @@ export function DashboardCharts({
 
       {/* Financial Cost Comparison (Quoted vs Negotiated vs Approved) */}
       <motion.div
-        className="lg:col-span-2"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.4 }}
@@ -2349,7 +2349,7 @@ export function DashboardCharts({
 
       {/* Costos Ahorrados */}
       <motion.div
-        className="lg:col-span-3"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.55, duration: 0.4 }}
@@ -2383,7 +2383,7 @@ export function DashboardCharts({
 
       {/* Tipo de Servicio — Cantidad y Monto en la misma fila */}
       <motion.div
-        className="lg:col-span-3"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.55, duration: 0.4 }}
@@ -2447,7 +2447,7 @@ export function DashboardCharts({
 
       {/* Top Root Causes */}
       <motion.div
-        className="lg:col-span-3"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.4 }}
@@ -2492,7 +2492,7 @@ export function DashboardCharts({
 
       {/* Siniestralidad por Serie de Vehículo */}
       <motion.div
-        className="lg:col-span-3"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.65, duration: 0.4 }}
@@ -2526,7 +2526,7 @@ export function DashboardCharts({
 
       {/* Afectación FAM por Propietario */}
       <motion.div
-        className="lg:col-span-2"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7, duration: 0.4 }}
@@ -2570,7 +2570,7 @@ export function DashboardCharts({
 
       {/* Afectación FAM por Conductor */}
       <motion.div
-        className="lg:col-span-1"
+        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 0.4 }}
@@ -2614,7 +2614,7 @@ export function DashboardCharts({
 
       {/* Afectación FAM por Vehículo */}
       <motion.div
-        className="lg:col-span-3"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.4 }}
@@ -2658,7 +2658,7 @@ export function DashboardCharts({
 
       {/* Top 5 Vehículos por Reclamaciones */}
       <motion.div
-        className="lg:col-span-2"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.0, duration: 0.4 }}
@@ -2702,7 +2702,7 @@ export function DashboardCharts({
 
       {/* Top 5 Conductores por Reclamaciones */}
       <motion.div
-        className="lg:col-span-1"
+        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.1, duration: 0.4 }}

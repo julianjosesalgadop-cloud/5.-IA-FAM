@@ -101,32 +101,32 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-border bg-card/85 backdrop-blur-md dark:bg-dark-800/60">
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         {/* Hamburger menu for mobile */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => window.dispatchEvent(new Event('toggle-sidebar'))}
-          className="md:hidden text-muted-foreground hover:text-foreground h-9 w-9"
+          className="md:hidden text-muted-foreground hover:text-foreground h-9 w-9 flex-shrink-0"
           id="header-mobile-toggle"
         >
           <Menu className="w-5 h-5" />
         </Button>
-        <div>
-          <h1 className="text-base sm:text-lg font-semibold text-foreground truncate max-w-[160px] sm:max-w-none" title={title}>
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-base md:text-lg font-semibold text-foreground truncate max-w-[110px] xs:max-w-[160px] sm:max-w-none" title={title}>
             {title}
           </h1>
-          {subtitle && <p className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[140px] sm:max-w-none">{subtitle}</p>}
+          {subtitle && <p className="hidden sm:block text-[10px] sm:text-xs text-muted-foreground truncate">{subtitle}</p>}
         </div>
-        {action && <div className="ml-1 sm:ml-2">{action}</div>}
+        {action && <div className="ml-1 sm:ml-2 flex-shrink-0">{action}</div>}
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Search */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Search - hidden on mobile */}
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground hover:text-foreground"
+          className="hidden sm:flex text-muted-foreground hover:text-foreground h-9 w-9"
           id="header-search-btn"
         >
           <Search className="w-4 h-4" />
@@ -136,7 +136,7 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground hover:text-foreground relative"
+          className="text-muted-foreground hover:text-foreground relative h-9 w-9"
           id="header-notifications-btn"
         >
           <Bell className="w-4 h-4" />
@@ -148,7 +148,7 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-9 w-9"
           id="header-theme-toggle"
         >
           <motion.div
@@ -166,7 +166,7 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
         </Button>
 
         {/* User avatar and dropdown */}
-        <div className="relative flex items-center gap-2 pl-2 border-l border-border" ref={dropdownRef}>
+        <div className="relative flex items-center gap-1.5 pl-1.5 border-l border-border" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center hover:opacity-90 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-ring"

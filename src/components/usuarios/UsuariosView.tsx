@@ -256,6 +256,18 @@ export function UsuariosView() {
   const inputWithIcon = 'pl-9 bg-background border-border';
   const iconClass = 'absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground';
 
+  if (currentUser && currentUser.rol !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-card border border-border rounded-xl">
+        <AlertTriangle className="w-12 h-12 text-red-500 mb-4 animate-bounce" />
+        <h3 className="text-lg font-bold text-foreground mb-2">Acceso Denegado</h3>
+        <p className="text-sm text-muted-foreground max-w-md">
+          No tienes permisos para visualizar ni ingresar al módulo de Gestión de Usuarios. Solo los administradores tienen acceso.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Controls Bar */}

@@ -176,13 +176,13 @@ export function ParametrizacionView() {
     }
   }, [config.loading, config.pasos, config.campoConfig, config.tiposReclamacion, config.tiposServicio, config.tiposDocPaso1, config.conceptosCotizacion, config.opcionesDeducible, config.culpabilidades, config.causasRaiz, config.autorizadosPor, config.cargos]);
 
-  if (currentUser.rol !== 'admin' && currentUser.rol !== 'consultor') {
+  if (currentUser.rol !== 'admin') {
     return (
       <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center mx-auto">
         <CardHeader>
           <CardTitle className="text-destructive font-bold text-xl">Acceso Denegado</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">
-            No tiene permisos para parametrizar el formulario de expedientes.
+            No tienes permisos para visualizar ni ingresar al módulo de Parametrización. Solo los administradores tienen acceso.
           </CardDescription>
         </CardHeader>
         <CardContent className="mt-4">

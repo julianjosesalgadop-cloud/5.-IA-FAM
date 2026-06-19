@@ -310,18 +310,21 @@ export function ReportesView() {
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={loadData} variant="outline" disabled={loading} size="sm">
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Actualizar Datos
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={loadData} variant="outline" disabled={loading} size="sm" className="h-9 text-xs">
+              <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar Datos</span>
+              <span className="sm:hidden">Actualizar</span>
             </Button>
-            <Button onClick={handleExportExcel} variant="outline" id="reporte-export-excel" size="sm">
-              <FileSpreadsheet className="w-4 h-4 text-green-400 mr-2" />
-              Exportar Excel
+            <Button onClick={handleExportExcel} variant="outline" id="reporte-export-excel" size="sm" className="h-9 text-xs">
+              <FileSpreadsheet className="w-4 h-4 text-green-400 mr-1.5" />
+              <span className="hidden sm:inline">Exportar Excel</span>
+              <span className="sm:hidden">Excel</span>
             </Button>
-            <Button onClick={handleExportPDF} variant="outline" id="reporte-export-pdf" size="sm">
-              <FileText className="w-4 h-4 text-red-400 mr-2" />
-              Exportar PDF Consolidado
+            <Button onClick={handleExportPDF} variant="outline" id="reporte-export-pdf" size="sm" className="h-9 text-xs">
+              <FileText className="w-4 h-4 text-red-400 mr-1.5" />
+              <span className="hidden sm:inline">Exportar PDF Consolidado</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
           </div>
         </CardContent>
