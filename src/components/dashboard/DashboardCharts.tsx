@@ -439,7 +439,12 @@ export function DashboardCharts({
     serviceTypeMap[type].cantidad += 1;
     serviceTypeMap[type].monto += (e.valor_final_aprobado || 0);
   });
-  const serviceTypeData = Object.values(serviceTypeMap).sort((a, b) => b.cantidad - a.cantidad);
+  const _serviceValues = Object.values(serviceTypeMap);
+  const totalServiceCantidad = _serviceValues.reduce((acc, d) => acc + d.cantidad, 0);
+  const totalServiceMonto = _serviceValues.reduce((acc, d) => acc + d.monto, 0);
+  const serviceTypeData = _serviceValues
+    .sort((a, b) => b.cantidad - a.cantidad)
+    .map((d) => ({ ...d, totalCantidad: totalServiceCantidad, totalMonto: totalServiceMonto }));
 
   // 11. Costos Ahorrados monthly data
   const monthlySavingsData = MONTH_NAMES.map((name, index) => {
@@ -529,12 +534,29 @@ export function DashboardCharts({
               <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
               <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} allowDecimals={false} />
               <Tooltip
-                formatter={(value: any) => [`${value} accidentes`, 'Cantidad']}
-                labelClassName="font-bold text-foreground"
-                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                content={(props: any) => {
+                  if (!props.active || !props.payload?.length) return null;
+                  const p = props.payload[0];
+                  const d = p.payload;
+                  const pct = d.totalCantidad > 0 ? ((d.cantidad / d.totalCantidad) * 100).toFixed(1) : '0.0';
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
+                      <p className="font-semibold text-foreground mb-1">{d.name}</p>
+                      <div className="flex items-center gap-2 text-foreground">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.fill || p.color }} />
+                        <span className="font-semibold">{d.cantidad} {d.cantidad === 1 ? 'expediente' : 'expedientes'}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                        <span>Porcentaje del total: <strong>{pct}%</strong></span>
+                      </div>
+                    </div>
+                  );
+                }}
               />
               <Bar dataKey="cantidad" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
+                <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                  formatter={(v: number) => v > 0 ? `${v}` : ''}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -561,9 +583,24 @@ export function DashboardCharts({
                 tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
               />
               <Tooltip
-                formatter={(value: any) => [formatCOP(value), 'Monto Aprobado']}
-                labelClassName="font-bold text-foreground"
-                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                content={(props: any) => {
+                  if (!props.active || !props.payload?.length) return null;
+                  const p = props.payload[0];
+                  const d = p.payload;
+                  const pct = d.totalMonto > 0 ? ((d.monto / d.totalMonto) * 100).toFixed(1) : '0.0';
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
+                      <p className="font-semibold text-foreground mb-1">{d.name}</p>
+                      <div className="flex items-center gap-2 text-foreground">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.fill || p.color }} />
+                        <span className="font-semibold">{formatCOP(d.monto)}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                        <span>Porcentaje del total: <strong>{pct}%</strong></span>
+                      </div>
+                    </div>
+                  );
+                }}
               />
               <Bar dataKey="monto" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]}>
                 <LabelList
@@ -585,7 +622,7 @@ export function DashboardCharts({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart 
           data={monthlySavingsData} 
-          margin={{ left: -10, right: 10, top: 20, bottom: 0 }}
+          margin={{ left: -10, right: 10, top: 24, bottom: 0 }}
         >
           <defs>
             <linearGradient id="colorAhorroNegociacion" x1="0" y1="0" x2="0" y2="1">
@@ -611,23 +648,38 @@ export function DashboardCharts({
             tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
           />
           <Tooltip 
-            formatter={(value: any, name: string, props: any) => {
-              const data = props.payload;
-              const isAprobado = name === 'ahorroAprobado';
-              const pct = isAprobado ? data.pctAhorroAprobado : data.pctAhorroNegociacion;
-              return [
-                `${formatCOP(value)} (${pct.toFixed(1)}%)`,
-                isAprobado ? 'Ahorro Aprobado (Total)' : 'Ahorro por Negociación'
-              ];
+            content={(props: any) => {
+              if (!props.active || !props.payload?.length) return null;
+              const label = props.label;
+              return (
+                <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
+                  <p className="font-semibold text-foreground mb-1">{label}</p>
+                  {props.payload.map((p: any) => {
+                    const d = p.payload;
+                    const isAprobado = p.dataKey === 'ahorroAprobado';
+                    const pct = isAprobado ? d.pctAhorroAprobado : d.pctAhorroNegociacion;
+                    return (
+                      <div key={p.dataKey} className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2 text-foreground">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                          <span className="font-medium">{isAprobado ? 'Ahorro vs Aprobado' : 'Ahorro por Negociación'}:</span>
+                          <span className="font-semibold">{formatCOP(p.value)}</span>
+                        </div>
+                        <div className="pl-4 text-[10px] text-muted-foreground">
+                          Ahorro: <strong>{pct != null ? pct.toFixed(1) : '0.0'}%</strong> sobre cotizado
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
             }}
-            labelClassName="font-bold text-foreground"
-            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
           />
           <Legend
             iconSize={8}
             formatter={(value) => (
               <span className="text-xs text-muted-foreground font-medium capitalize font-mono">
-                {value === 'ahorroAprobado' ? 'Ahorro Aprobado (Total)' : 'Ahorro por Negociación'}
+                {value === 'ahorroAprobado' ? 'Ahorro vs Aprobado' : 'Ahorro por Negociación'}
               </span>
             )}
           />
@@ -648,12 +700,24 @@ export function DashboardCharts({
             <LabelList
               dataKey="ahorroAprobado"
               position="top"
-              formatter={(v: number, entry: any) => {
-                const data = entry?.payload || entry;
-                const pct = data?.pctAhorroAprobado || 0;
-                return v > 0 ? `$${(v / 1000000).toFixed(1)}M (${pct.toFixed(0)}%)` : '';
+              content={(props: any) => {
+                const { x, y, value, index } = props;
+                if (!value || value === 0) return null;
+                const data = monthlySavingsData[index];
+                const pct = data?.pctAhorroAprobado ?? 0;
+                return (
+                  <text
+                    x={x}
+                    y={(y ?? 0) - 4}
+                    textAnchor="middle"
+                    fill="hsl(var(--foreground))"
+                    fontSize={8}
+                    fontWeight={600}
+                  >
+                    {`$${(value / 1000000).toFixed(1)}M (${pct.toFixed(0)}%)`}
+                  </text>
+                );
               }}
-              style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
             />
           </Area>
         </AreaChart>
@@ -687,8 +751,8 @@ export function DashboardCharts({
           />
           <Tooltip
             formatter={(value: any, name: string) => [
-              name === 'monto' ? formatCOP(value) : `${value} accidentes`,
-              name === 'monto' ? 'Monto Aprobado' : 'Cantidad de Accidentes'
+              name === 'monto' ? formatCOP(value) : `${value} expedientes`,
+              name === 'monto' ? 'Monto Aprobado' : 'Cantidad de Expedientes'
             ]}
             labelClassName="font-bold text-foreground"
             contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
@@ -697,7 +761,7 @@ export function DashboardCharts({
             iconSize={8}
             formatter={(value) => (
               <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                {value === 'monto' ? 'Monto Aprobado ($)' : 'Cantidad de Accidentes'}
+                {value === 'monto' ? 'Monto Aprobado ($)' : 'Cantidad de Expedientes'}
               </span>
             )}
           />
@@ -2015,37 +2079,68 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Tipo de Servicio Cantidad */}
+      {/* Tipo de Servicio — Cantidad y Monto en la misma fila */}
       <motion.div
+        className="lg:col-span-3"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.55, duration: 0.4 }}
       >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Tipo de Servicio (Cantidad)</CardTitle>
-              <CardDescription>Siniestralidad por tipo de servicio (Cantidad de accidentes)</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'tipo-servicio-cantidad',
-                title: 'Tipo de Servicio (Cantidad)',
-                description: 'Siniestralidad por tipo de servicio (Cantidad de accidentes)',
-                render: renderTipoServicioCantidad
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {renderTipoServicioCantidad(260)}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Cantidad */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Tipo de Servicio (Cantidad)</CardTitle>
+                <CardDescription>Expedientes por tipo de servicio</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'tipo-servicio-cantidad',
+                  title: 'Tipo de Servicio (Cantidad)',
+                  description: 'Expedientes por tipo de servicio',
+                  render: renderTipoServicioCantidad
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {renderTipoServicioCantidad(260)}
+            </CardContent>
+          </Card>
+
+          {/* Monto */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Tipo de Servicio (Monto $)</CardTitle>
+                <CardDescription>Monto aprobado por tipo de servicio</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'tipo-servicio-monto',
+                  title: 'Tipo de Servicio (Monto $)',
+                  description: 'Monto aprobado por tipo de servicio',
+                  render: renderTipoServicioMonto
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {renderTipoServicioMonto(260)}
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
 
       {/* Top Root Causes */}
@@ -2092,38 +2187,6 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Tipo de Servicio Monto */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.62, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Tipo de Servicio (Monto)</CardTitle>
-              <CardDescription>Siniestralidad por tipo de servicio (Monto $ aprobado)</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'tipo-servicio-monto',
-                title: 'Tipo de Servicio (Monto)',
-                description: 'Siniestralidad por tipo de servicio (Monto $ aprobado)',
-                render: renderTipoServicioMonto
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {renderTipoServicioMonto(260)}
-          </CardContent>
-        </Card>
-      </motion.div>
 
       {/* Siniestralidad por Serie de Vehículo */}
       <motion.div

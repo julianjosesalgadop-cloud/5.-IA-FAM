@@ -157,6 +157,10 @@ export default function DashboardPage() {
         subtitle="SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo" 
         action={
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -174,10 +178,6 @@ export default function DashboardPage() {
                   Pantalla Completa
                 </>
               )}
-            </Button>
-            <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Actualizar
             </Button>
           </div>
         }

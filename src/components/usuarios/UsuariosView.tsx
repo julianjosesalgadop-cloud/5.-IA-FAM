@@ -35,6 +35,7 @@ interface Perfil {
   rol: RolUsuario;
   activo: boolean;
   cargo?: string | null;
+  tipo_documento?: string | null;
   numero_documento?: string | null;
   must_change_password?: boolean;
   created_at: string;
@@ -59,6 +60,7 @@ export function UsuariosView() {
   const [newEmail, setNewEmail] = useState('');
   const [newRol, setNewRol] = useState<RolUsuario>('consultor');
   const [newCargo, setNewCargo] = useState('');
+  const [newTipoDoc, setNewTipoDoc] = useState('CC');
   const [newNumDoc, setNewNumDoc] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
@@ -98,6 +100,7 @@ export function UsuariosView() {
     setNewEmail('');
     setNewRol('consultor');
     setNewCargo('');
+    setNewTipoDoc('CC');
     setNewNumDoc('');
     setNewPassword('');
     setNewPasswordConfirm('');
@@ -133,6 +136,7 @@ export function UsuariosView() {
         email: newEmail.trim().toLowerCase(),
         rol: newRol,
         cargo: newCargo.trim() || undefined,
+        tipo_documento: newTipoDoc || undefined,
         numero_documento: newNumDoc.trim() || undefined,
         password: newPassword || undefined,
         must_change_password: newMustChange,
@@ -324,7 +328,9 @@ export function UsuariosView() {
                           <div>
                             <p className="font-semibold text-foreground">{perfil.nombre || '—'}</p>
                             {perfil.numero_documento && (
-                              <p className="text-xs text-muted-foreground">{perfil.numero_documento}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {perfil.tipo_documento ? `${perfil.tipo_documento}: ` : ''}{perfil.numero_documento}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -444,13 +450,33 @@ export function UsuariosView() {
                   </div>
                 </div>
 
-                {/* Número Documento */}
+                {/* Documento — Tipo + Número en la misma fila */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="user-doc">Número de Documento</Label>
-                  <div className="relative">
-                    <CreditCard className={iconClass} />
-                    <Input id="user-doc" placeholder="Ej: 1234567890" className={inputWithIcon}
-                      value={newNumDoc} onChange={(e) => setNewNumDoc(e.target.value)} />
+                  <Label>Documento de Identidad</Label>
+                  <div className="flex gap-2">
+                    <select
+                      id="user-tipo-doc"
+                      className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground flex-shrink-0 w-[120px]"
+                      value={newTipoDoc}
+                      onChange={(e) => setNewTipoDoc(e.target.value)}
+                    >
+                      <option value="CC">CC</option>
+                      <option value="TI">TI</option>
+                      <option value="CE">CE</option>
+                      <option value="Pasaporte">Pasaporte</option>
+                      <option value="NIT">NIT</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <CreditCard className={iconClass} />
+                      <Input
+                        id="user-doc"
+                        placeholder="Número de documento"
+                        className={inputWithIcon}
+                        value={newNumDoc}
+                        onChange={(e) => setNewNumDoc(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
 

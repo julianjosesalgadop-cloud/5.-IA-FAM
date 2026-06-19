@@ -3,6 +3,10 @@
 -- Campos: cargo, numero_documento, must_change_password
 -- =============================================
 
+-- Agregar campo: tipo de documento de identidad
+ALTER TABLE public.perfiles
+  ADD COLUMN IF NOT EXISTS tipo_documento TEXT CHECK (tipo_documento IN ('CC', 'TI', 'CE', 'Pasaporte', 'NIT', 'Otro'));
+
 -- Agregar campo: cargo del usuario
 ALTER TABLE public.perfiles
   ADD COLUMN IF NOT EXISTS cargo TEXT;

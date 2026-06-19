@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Parse payload
     const body = await request.json();
-    const { email, password, nombre, rol, cargo, numero_documento, must_change_password } = body;
+    const { email, password, nombre, rol, cargo, tipo_documento, numero_documento, must_change_password } = body;
 
     if (!email || !password || !nombre || !rol) {
       return NextResponse.json({ error: 'Campos requeridos: email, password, nombre, rol.' }, { status: 400 });
@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
         nombre,
         rol,
         cargo: cargo || null,
+        tipo_documento: tipo_documento || null,
         numero_documento: numero_documento || null,
         activo: true,
         must_change_password: must_change_password ?? false,

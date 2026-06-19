@@ -226,6 +226,7 @@ interface Perfil {
   rol: RolUsuario;
   activo: boolean;
   cargo?: string | null;
+  tipo_documento?: string | null;
   numero_documento?: string | null;
   must_change_password?: boolean;
   created_at: string;
@@ -239,6 +240,7 @@ const INITIAL_PERFILES: Perfil[] = [
     rol: 'admin',
     activo: true,
     cargo: 'Administrador del Sistema',
+    tipo_documento: 'CC',
     numero_documento: '1234567890',
     must_change_password: false,
     created_at: '2025-01-01T00:00:00Z',
@@ -250,6 +252,7 @@ const INITIAL_PERFILES: Perfil[] = [
     rol: 'analista',
     activo: true,
     cargo: 'Analista FAM',
+    tipo_documento: 'CC',
     numero_documento: '9876543210',
     must_change_password: false,
     created_at: '2025-01-02T00:00:00Z',
@@ -931,7 +934,7 @@ export const dbService = {
     return data;
   },
 
-  createPerfil: async (payload: { nombre: string; email: string; rol: RolUsuario; cargo?: string; numero_documento?: string; password?: string; must_change_password?: boolean }): Promise<any> => {
+  createPerfil: async (payload: { nombre: string; email: string; rol: RolUsuario; cargo?: string; tipo_documento?: string; numero_documento?: string; password?: string; must_change_password?: boolean }): Promise<any> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
       const newPerfil = {
