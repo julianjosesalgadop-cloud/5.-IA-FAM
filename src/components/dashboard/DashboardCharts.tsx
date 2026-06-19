@@ -533,23 +533,31 @@ export function DashboardCharts({
   const vehiculoAfectacionData = allVehiculoAfectacionData.slice(0, 5);
 
   // 8. Top 5 Vehículos por Reclamaciones
-  const placaGroups: Record<string, { total: number; valor: number }> = {};
+  const placaGroups: Record<string, { total: number; valor: number; interno: string | null }> = {};
   ev.forEach((e) => {
     if (!e.placa) return;
     const p = e.placa.trim().toUpperCase();
-    if (!placaGroups[p]) placaGroups[p] = { total: 0, valor: 0 };
+    if (!placaGroups[p]) {
+      placaGroups[p] = { total: 0, valor: 0, interno: null };
+    }
     placaGroups[p].total += 1;
     placaGroups[p].valor += e.valor_final_aprobado || 0;
+    if (!placaGroups[p].interno && e.numero_interno) {
+      placaGroups[p].interno = e.numero_interno.trim();
+    }
   });
   const allTopPlacasData = Object.entries(placaGroups)
-    .map(([placa, data]) => ({ 
-      name: placa, 
-      placa,
-      value: data.total, 
-      valor: data.valor,
-      totalFilteredCases: ev.length,
-      totalGeneralCases: totalGeneralCount,
-    }))
+    .map(([placa, data]) => {
+      const displayName = data.interno ? `${data.interno} (${placa})` : placa;
+      return { 
+        name: displayName, 
+        placa,
+        value: data.total, 
+        valor: data.valor,
+        totalFilteredCases: ev.length,
+        totalGeneralCases: totalGeneralCount,
+      };
+    })
     .sort((a, b) => b.value - a.value || b.valor - a.valor);
   const topPlacasData = allTopPlacasData.slice(0, 5);
 
@@ -1828,15 +1836,17 @@ export function DashboardCharts({
                   tick={(props: any) => {
                     const { x, y, payload } = props;
                     const value = payload?.value || '';
-                    const isSelected = selectedPlaca === value;
+                    const item = dataToUse.find((d) => d.name === value);
+                    const itemPlaca = item ? item.placa : value;
+                    const isSelected = selectedPlaca === itemPlaca;
                     return (
                       <g 
                         style={{ pointerEvents: 'auto' }} 
                         className="cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (onSelectPlaca) {
-                            onSelectPlaca(value);
+                          if (onSelectPlaca && itemPlaca) {
+                            onSelectPlaca(itemPlaca);
                           }
                         }}
                       >
@@ -1847,7 +1857,7 @@ export function DashboardCharts({
                           dy={4}
                           textAnchor="end"
                           fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
-                          className="hover:fill-primary font-mono text-[11px] font-semibold transition-colors"
+                          className="hover:fill-primary font-semibold text-[11px] transition-colors"
                           style={{ pointerEvents: 'auto' }}
                         >
                           {value}
@@ -1857,7 +1867,7 @@ export function DashboardCharts({
                   }}
                   axisLine={false}
                   tickLine={false}
-                  width={90}
+                  width={110}
                 />
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
                 <Bar 
@@ -1867,8 +1877,10 @@ export function DashboardCharts({
                   barSize={15}
                   onClick={(data) => {
                     const val = data?.placa || data?.payload?.placa || data?.name || data?.payload?.name;
-                    if (val && onSelectPlaca) {
-                      onSelectPlaca(val);
+                    const item = dataToUse.find((d) => d.name === val || d.placa === val);
+                    const itemPlaca = item ? item.placa : val;
+                    if (itemPlaca && onSelectPlaca) {
+                      onSelectPlaca(itemPlaca);
                     }
                   }}
                   className="cursor-pointer"
