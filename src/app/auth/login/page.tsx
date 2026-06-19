@@ -38,16 +38,21 @@ export default function LoginPage() {
       let role: RolUsuario = 'consultor';
       let name = 'Consultor Invitado';
 
+      let cargo = '';
       if (isMock) {
         if (data.email.toLowerCase().includes('admin') || data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
           role = 'admin';
           name = 'Administrador SIGFAM';
+          cargo = 'Administrador de Sistema';
         } else if (data.email.toLowerCase().includes('analista')) {
           role = 'analista';
           name = 'Analista de Casos';
+          cargo = 'Analista de Siniestros';
+        } else {
+          cargo = 'Consultor';
         }
         await new Promise((r) => setTimeout(r, 1000));
-        setMockUser(role, name);
+        setMockUser(role, name, cargo);
       } else {
         // Autenticación real de Supabase
         const supabase = createClient();
@@ -67,7 +72,7 @@ export default function LoginPage() {
         // Obtener el perfil real desde la base de datos
         const { data: profile, error: profileError } = (await supabase
           .from('perfiles')
-          .select('rol, nombre, must_change_password')
+          .select('rol, nombre, must_change_password, cargo')
           .eq('id', authData.user.id)
           .single()) as any;
 
@@ -89,13 +94,14 @@ export default function LoginPage() {
         } else if (profile) {
           role = profile.rol as RolUsuario;
           name = profile.nombre || name;
+          cargo = profile.cargo || '';
 
           if (data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
             role = 'admin';
           }
           
           if (profile.must_change_password) {
-            setMockUser(role, name);
+            setMockUser(role, name, cargo);
             toast.info('Debes establecer una nueva contraseña antes de continuar.', {
               description: 'El administrador requiere que cambies tu contraseña.',
             });
@@ -105,11 +111,15 @@ export default function LoginPage() {
         }
 
         // Sincronizar el estado de sesión local
-        setMockUser(role, name);
+        setMockUser(role, name, cargo);
       }
 
+      const userCargo = isMock 
+        ? cargo 
+        : (cargo || (role === 'admin' ? 'Administrador' : role === 'analista' ? 'Analista' : 'Consultor'));
+
       toast.success('Bienvenido a SIGFAM', {
-        description: `Ingresaste como ${name} (${role})`,
+        description: `Ingresaste como ${name} (${userCargo})`,
       });
 
       router.push('/dashboard');

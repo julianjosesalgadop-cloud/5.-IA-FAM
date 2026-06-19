@@ -24,21 +24,50 @@ export function PerfilView() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [rol, setRol] = useState('');
+  const [cargo, setCargo] = useState('');
   const [createdAt, setCreatedAt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const isMock = dbService.isMockMode();
 
   useEffect(() => {
-    const user = getMockUser();
-    if (user) {
-      setUserId(user.id || 'mock-user-id');
-      setNombre(user.nombre || 'Administrador SIGFAM');
-      setEmail(user.email || 'admin@flotasugamuxi.co');
-      setRol(user.rol || 'admin');
-      setCreatedAt(user.created_at || new Date('2025-01-01').toISOString());
+    async function loadData() {
+      const user = getMockUser();
+      if (user) {
+        setUserId(user.id || 'mock-user-id');
+        setNombre(user.nombre || 'Administrador SIGFAM');
+        setEmail(user.email || 'admin@flotasugamuxi.co');
+        setRol(user.rol || 'admin');
+        setCargo(user.cargo || '');
+        setCreatedAt(user.created_at || new Date('2025-01-01').toISOString());
+
+        // In real mode, fetch updated details directly from Supabase
+        if (!isMock) {
+          try {
+            const { createClient } = await import('@/lib/supabase/client');
+            const supabase = createClient();
+            const { data } = (await supabase
+              .from('perfiles')
+              .select('nombre, cargo, created_at')
+              .eq('id', user.id)
+              .single()) as any;
+            if (data) {
+              setNombre(data.nombre || user.nombre);
+              setCargo(data.cargo || '');
+              if (data.created_at) setCreatedAt(data.created_at);
+
+              // Update localStorage with fresh data
+              const updatedUser = { ...user, nombre: data.nombre || user.nombre, cargo: data.cargo || '' };
+              localStorage.setItem('fam_mock_user', JSON.stringify(updatedUser));
+            }
+          } catch (err) {
+            console.error('Error fetching profile in PerfilView:', err);
+          }
+        }
+      }
     }
-  }, []);
+    loadData();
+  }, [isMock]);
 
   const handleUpdatePerfil = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +80,17 @@ export function PerfilView() {
     try {
       await dbService.updatePerfil(userId, {
         nombre: nombre.trim(),
+        cargo: cargo.trim(),
         ...(isMock ? { email: email.trim().toLowerCase() } : {}),
       });
+
+      // Synchronize changes to local session state
+      const user = getMockUser();
+      user.nombre = nombre.trim();
+      user.cargo = cargo.trim();
+      localStorage.setItem('fam_mock_user', JSON.stringify(user));
+      window.dispatchEvent(new Event('storage'));
+
       toast.success('Perfil actualizado correctamente');
     } catch (err: any) {
       toast.error(err.message || 'Error al actualizar el perfil');
@@ -102,6 +140,7 @@ export function PerfilView() {
             </div>
 
             <h2 className="text-xl font-bold text-foreground mb-1">{nombre}</h2>
+            {cargo && <p className="text-xs text-muted-foreground font-semibold mb-2 uppercase tracking-wide">{cargo}</p>}
             <p className="text-sm font-mono text-muted-foreground mb-4">{email}</p>
             
             <div className="mb-6">{getRoleBadge(rol)}</div>
@@ -156,6 +195,22 @@ export function PerfilView() {
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="profile-cargo">Cargo / Puesto de Trabajo</Label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-muted-foreground text-sm">
+                    💼
+                  </div>
+                  <Input
+                    id="profile-cargo"
+                    className="pl-9 bg-background border-border text-foreground"
+                    value={cargo}
+                    onChange={(e) => setCargo(e.target.value)}
+                    placeholder="Ej: Gerente Administrativo"
                   />
                 </div>
               </div>

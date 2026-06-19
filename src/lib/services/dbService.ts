@@ -344,10 +344,11 @@ export function getMockUser() {
   return defaultUser;
 }
 
-export function setMockUser(rol: RolUsuario, nombre: string = '') {
+export function setMockUser(rol: RolUsuario, nombre: string = '', cargo: string = '') {
   const email = `${rol}@flotasugamuxi.co`;
   const name = nombre || (rol === 'admin' ? 'Administrador SIGFAM' : rol === 'analista' ? 'Analista de Casos' : 'Consultor Invitado');
-  const user = { id: 'mock-user-id', email, nombre: name, rol };
+  const defaultCargo = cargo || (rol === 'admin' ? 'Administrador de Sistema' : rol === 'analista' ? 'Analista de Casos' : 'Consultor');
+  const user = { id: 'mock-user-id', email, nombre: name, rol, cargo: defaultCargo };
   localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(user));
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('storage'));
@@ -936,7 +937,7 @@ export const dbService = {
     return data || null;
   },
 
-  updatePerfil: async (id: string, payload: { nombre?: string; rol?: RolUsuario; activo?: boolean }): Promise<any> => {
+  updatePerfil: async (id: string, payload: { nombre?: string; rol?: RolUsuario; activo?: boolean; cargo?: string }): Promise<any> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
       const idx = list.findIndex((p) => p.id === id);
@@ -952,6 +953,7 @@ export const dbService = {
           ...currentUser,
           nombre: updated.nombre,
           rol: updated.rol,
+          cargo: updated.cargo,
         };
         localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(nextUser));
         window.dispatchEvent(new Event('storage'));

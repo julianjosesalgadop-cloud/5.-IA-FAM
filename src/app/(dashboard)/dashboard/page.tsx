@@ -51,6 +51,19 @@ export default function DashboardPage() {
   const [selectedChartStatus, setSelectedChartStatus] = useState('');
   const [selectedChartCulpabilidad, setSelectedChartCulpabilidad] = useState('');
   const [selectedChartCausaRaiz, setSelectedChartCausaRaiz] = useState('');
+  const [selectedChartSerie, setSelectedChartSerie] = useState('');
+
+  const getInternalNumberCategory = (numStr: string | null | undefined): string => {
+    if (!numStr) return 'Otros';
+    const cleanNum = numStr.trim();
+    const prefixes = ['71', '80', '40', '60', '70', '10', '50', '90'];
+    for (const prefix of prefixes) {
+      if (cleanNum.startsWith(prefix)) {
+        return `Serie ${prefix}`;
+      }
+    }
+    return 'Otros';
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -121,32 +134,56 @@ export default function DashboardPage() {
     return true;
   });
 
-  // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor filters (excludes vehicle filter to prevent self-collapsing)
+  // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor & series filters (excludes vehicle filter to prevent self-collapsing)
   const expedientesForVehicles = baseFilteredExpedientes.filter((e) => {
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
+    if (selectedChartSerie) {
+      const cat = getInternalNumberCategory(e.numero_interno);
+      if (cat !== selectedChartSerie) return false;
+    }
     return true;
   });
 
-  // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor filters (excludes driver filter to prevent self-collapsing)
+  // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor & series filters (excludes driver filter to prevent self-collapsing)
   const expedientesForDrivers = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
+    if (selectedChartSerie) {
+      const cat = getInternalNumberCategory(e.numero_interno);
+      if (cat !== selectedChartSerie) return false;
+    }
+    return true;
+  });
+
+  // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver & series filters (excludes proprietor filter to prevent self-collapsing)
+  const expedientesForPropietarios = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
+    if (selectedChartSerie) {
+      const cat = getInternalNumberCategory(e.numero_interno);
+      if (cat !== selectedChartSerie) return false;
+    }
+    return true;
+  });
+
+  // 3c. Array for Series Chart: baseFiltered + vehicle & driver & proprietor filters (excludes series filter to prevent self-collapsing)
+  const expedientesForSeries = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
     return true;
   });
 
-  // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver filters (excludes proprietor filter to prevent self-collapsing)
-  const expedientesForPropietarios = baseFilteredExpedientes.filter((e) => {
-    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
-    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
-    return true;
-  });
-
-  // 4. Final Filtered Array for KPIs and general charts (includes both selected charts filters)
+  // 4. Final Filtered Array for KPIs and general charts (includes all selected charts filters)
   const filteredExpedientes = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
+    if (selectedChartSerie) {
+      const cat = getInternalNumberCategory(e.numero_interno);
+      if (cat !== selectedChartSerie) return false;
+    }
     return true;
   });
 
@@ -157,15 +194,15 @@ export default function DashboardPage() {
         subtitle="SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo" 
         action={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Actualizar
+            <Button variant="outline" size="sm" onClick={loadData} disabled={loading} className="h-9 px-2.5 sm:px-3">
+              <RefreshCw className={`w-4 h-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={toggleSidebar}
-              className="text-xs h-9 py-1 px-3 border border-border bg-background hover:bg-secondary/40 text-foreground"
+              className="hidden md:flex text-xs h-9 py-1 px-3 border border-border bg-background hover:bg-secondary/40 text-foreground"
             >
               {sidebarCollapsed ? (
                 <>
@@ -184,8 +221,8 @@ export default function DashboardPage() {
       />
       <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-auto">
         {/* Filters Toolbar */}
-        <div className="bg-card border border-border p-4 rounded-xl flex flex-wrap items-end gap-3 sm:gap-4 shadow-sm">
-          <div className="flex-1 min-w-[150px] space-y-1.5">
+        <div className="bg-card border border-border p-4 rounded-xl flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-3 sm:gap-4 shadow-sm">
+          <div className="w-full sm:flex-1 sm:min-w-[150px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Rango Rápido</span>
             <select
               value={presetRange}
@@ -200,7 +237,7 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="w-[140px] space-y-1.5">
+          <div className="w-full sm:w-[140px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Desde</span>
             <input
               type="date"
@@ -213,7 +250,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="w-[140px] space-y-1.5">
+          <div className="w-full sm:w-[140px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Hasta</span>
             <input
               type="date"
@@ -226,7 +263,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="flex-1 min-w-[160px] space-y-1.5">
+          <div className="w-full sm:flex-1 sm:min-w-[160px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Tipo Reclamación</span>
             <select
               value={tipoReclamacion}
@@ -243,7 +280,7 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="flex-1 min-w-[140px] space-y-1.5">
+          <div className="w-full sm:flex-1 sm:min-w-[140px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Buscar por Placa / Interno</span>
             <input
               type="text"
@@ -255,7 +292,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz) && (
+          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie) && (
             <Button
               variant="ghost"
               size="sm"
@@ -272,8 +309,9 @@ export default function DashboardPage() {
                 setSelectedChartStatus('');
                 setSelectedChartCulpabilidad('');
                 setSelectedChartCausaRaiz('');
+                setSelectedChartSerie('');
               }}
-              className="text-xs text-red-400 hover:text-red-500 h-10 px-3"
+              className="w-full sm:w-auto text-xs text-red-400 hover:text-red-500 h-10 px-3"
             >
               Limpiar
             </Button>
@@ -294,6 +332,7 @@ export default function DashboardPage() {
               expedientesForVehicles={expedientesForVehicles}
               expedientesForDrivers={expedientesForDrivers}
               expedientesForPropietarios={expedientesForPropietarios}
+              expedientesForSeries={expedientesForSeries}
               onSelectPlaca={(placa) => setSelectedChartPlaca(current => current === placa ? '' : placa)}
               onSelectConductor={(conductor) => setSelectedChartConductor(current => current === conductor ? '' : conductor)}
               onSelectProprietario={(prop) => setSelectedChartProprietario(current => current === prop ? '' : prop)}
@@ -302,6 +341,7 @@ export default function DashboardPage() {
               onSelectStatus={(status) => setSelectedChartStatus(current => current === status ? '' : status)}
               onSelectCulpabilidad={(culp) => setSelectedChartCulpabilidad(current => current === culp ? '' : culp)}
               onSelectCausaRaiz={(causa) => setSelectedChartCausaRaiz(current => current === causa ? '' : causa)}
+              onSelectSerie={(serie) => setSelectedChartSerie(current => current === serie ? '' : serie)}
               selectedPlaca={selectedChartPlaca}
               selectedConductor={selectedChartConductor}
               selectedProprietario={selectedChartProprietario}
@@ -310,6 +350,7 @@ export default function DashboardPage() {
               selectedStatus={selectedChartStatus}
               selectedCulpabilidad={selectedChartCulpabilidad}
               selectedCausaRaiz={selectedChartCausaRaiz}
+              selectedSerie={selectedChartSerie}
             />
           </>
         )}
@@ -317,7 +358,7 @@ export default function DashboardPage() {
 
       {/* Active Chart Filters Notification */}
       <AnimatePresence>
-        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || tipoReclamacion !== 'todos') && (
+        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || tipoReclamacion !== 'todos') && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -340,6 +381,7 @@ export default function DashboardPage() {
                   setSelectedChartStatus('');
                   setSelectedChartCulpabilidad('');
                   setSelectedChartCausaRaiz('');
+                  setSelectedChartSerie('');
                   setTipoReclamacion('todos');
                 }}
                 className="text-[10px] text-red-400 hover:text-red-500 font-semibold p-0 h-auto"
@@ -390,6 +432,22 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setSelectedChartProprietario('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartSerie && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Serie Vehículo</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartSerie}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartSerie('')}
                     className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-3 w-3" />

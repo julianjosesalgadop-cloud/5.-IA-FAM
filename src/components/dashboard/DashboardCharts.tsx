@@ -29,6 +29,7 @@ interface DashboardChartsProps {
   expedientesForVehicles?: Expediente[];
   expedientesForDrivers?: Expediente[];
   expedientesForPropietarios?: Expediente[];
+  expedientesForSeries?: Expediente[];
   onSelectPlaca?: (placa: string) => void;
   onSelectConductor?: (conductor: string) => void;
   selectedPlaca?: string;
@@ -45,6 +46,8 @@ interface DashboardChartsProps {
   selectedCulpabilidad?: string;
   onSelectCausaRaiz?: (causa: string) => void;
   selectedCausaRaiz?: string;
+  onSelectSerie?: (serie: string) => void;
+  selectedSerie?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -178,12 +181,33 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
   return null;
 }
 
+function CustomTooltipSeries({ active, payload }: any) {
+  if (active && payload && payload.length) {
+    const d = payload[0].payload;
+    const totalQty = d.totalCantidad || 1;
+    const totalVal = d.totalMonto || 1;
+    const pctQty = ((d.cantidad / totalQty) * 100).toFixed(1);
+    const pctVal = ((d.monto / totalVal) * 100).toFixed(1);
+    return (
+      <div style={{ backgroundColor: 'hsla(var(--card), 0.85)', backdropFilter: 'blur(8px)', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} className="p-2 text-[10px] space-y-1 shadow-lg max-w-[200px]">
+        <p className="font-bold text-foreground mb-0.5">{d.name}</p>
+        <div className="space-y-0.5 text-foreground">
+          <div>Casos: <span className="font-bold">{d.cantidad}</span> ({pctQty}%)</div>
+          <div>Monto: <span className="font-bold">{formatCOP(d.monto)}</span> ({pctVal}%)</div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function DashboardCharts({
   expedientes,
   unfilteredExpedientes,
   expedientesForVehicles,
   expedientesForDrivers,
   expedientesForPropietarios,
+  expedientesForSeries,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
@@ -200,11 +224,14 @@ export function DashboardCharts({
   selectedCulpabilidad,
   onSelectCausaRaiz,
   selectedCausaRaiz,
+  onSelectSerie,
+  selectedSerie,
 }: DashboardChartsProps) {
   // Use specialized arrays if passed, otherwise fallback to default filtered array
   const ev = expedientesForVehicles || expedientes;
   const ed = expedientesForDrivers || expedientes;
   const ep = expedientesForPropietarios || expedientes;
+  const es = expedientesForSeries || expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -654,13 +681,20 @@ export function DashboardCharts({
     'Otros': { name: 'Otros', cantidad: 0, monto: 0 },
   };
 
-  expedientes.forEach((e) => {
+  es.forEach((e) => {
     const cat = getInternalNumberCategory(e.numero_interno);
     internalCategoriesMap[cat].cantidad += 1;
     internalCategoriesMap[cat].monto += (e.valor_final_aprobado || 0);
   });
 
-  const internalCategoriesData = Object.values(internalCategoriesMap);
+  const esTotalQty = es.length;
+  const esTotalVal = es.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
+
+  const internalCategoriesData = Object.values(internalCategoriesMap).map(item => ({
+    ...item,
+    totalCantidad: esTotalQty,
+    totalMonto: esTotalVal,
+  }));
 
   const hasData = expedientes.length > 0;
 
@@ -886,7 +920,37 @@ export function DashboardCharts({
           margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} />
+          <XAxis 
+            dataKey="name" 
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const value = payload?.value || '';
+              const isSelected = selectedSerie === value;
+              return (
+                <g 
+                  style={{ pointerEvents: 'auto' }} 
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectSerie) {
+                      onSelectSerie(value);
+                    }
+                  }}
+                >
+                  <text
+                    x={x}
+                    y={y}
+                    dy={12}
+                    textAnchor="middle"
+                    fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                    className="hover:fill-primary font-semibold text-[9px] transition-colors"
+                  >
+                    {value}
+                  </text>
+                </g>
+              );
+            }}
+          />
           <YAxis
             yAxisId="left"
             orientation="left"
@@ -902,14 +966,7 @@ export function DashboardCharts({
             tickLine={false}
             tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
           />
-          <Tooltip
-            formatter={(value: any, name: string) => [
-              name === 'monto' ? formatCOP(value) : `${value} expedientes`,
-              name === 'monto' ? 'Monto Aprobado' : 'Cantidad de Expedientes'
-            ]}
-            labelClassName="font-bold text-foreground"
-            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-          />
+          <Tooltip content={<CustomTooltipSeries />} />
           <Legend
             iconSize={8}
             formatter={(value) => (
@@ -918,10 +975,48 @@ export function DashboardCharts({
               </span>
             )}
           />
-          <Bar yAxisId="left" dataKey="cantidad" name="cantidad" fill="hsl(217, 91%, 60%)" radius={[2, 2, 0, 0]}>
+          <Bar 
+            yAxisId="left" 
+            dataKey="cantidad" 
+            name="cantidad" 
+            fill="hsl(217, 91%, 60%)" 
+            radius={[2, 2, 0, 0]}
+            onClick={(data) => {
+              const val = data?.name || data?.payload?.name;
+              if (val && onSelectSerie) {
+                onSelectSerie(val);
+              }
+            }}
+            className="cursor-pointer"
+          >
+            {internalCategoriesData.map((d, index) => (
+              <Cell 
+                key={index} 
+                fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
+              />
+            ))}
             <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
           </Bar>
-          <Bar yAxisId="right" dataKey="monto" name="monto" fill="hsl(142, 71%, 45%)" radius={[2, 2, 0, 0]}>
+          <Bar 
+            yAxisId="right" 
+            dataKey="monto" 
+            name="monto" 
+            fill="hsl(142, 71%, 45%)" 
+            radius={[2, 2, 0, 0]}
+            onClick={(data) => {
+              const val = data?.name || data?.payload?.name;
+              if (val && onSelectSerie) {
+                onSelectSerie(val);
+              }
+            }}
+            className="cursor-pointer"
+          >
+            {internalCategoriesData.map((d, index) => (
+              <Cell 
+                key={index} 
+                fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+              />
+            ))}
             <LabelList
               dataKey="monto"
               position="top"

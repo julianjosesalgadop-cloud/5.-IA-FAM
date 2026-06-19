@@ -32,10 +32,11 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
       if (isMock) {
         const mockUser = getMockUser();
         setUser({
-          nombre: mockUser.nombre || 'Administrador',
+          nombre: mockUser.nombre || 'Administrador SIGFAM',
           email: mockUser.email,
           rol: (mockUser.email?.toLowerCase() === 'sisflotasugamuxi@gmail.com') ? 'admin' : mockUser.rol,
-        });
+          cargo: mockUser.cargo || '',
+        } as any);
       } else {
         try {
           const supabase = createClient();
@@ -43,7 +44,7 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
           if (supabaseUser) {
             const { data } = await supabase
               .from('perfiles')
-              .select('nombre, rol')
+              .select('nombre, rol, cargo')
               .eq('id', supabaseUser.id)
               .single();
             const profile = data as any;
@@ -56,7 +57,8 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
               nombre: profile?.nombre || supabaseUser.email?.split('@')[0] || 'Usuario',
               email: supabaseUser.email || '',
               rol: userRole,
-            });
+              cargo: profile?.cargo || '',
+            } as any);
           }
         } catch (err) {
           console.error('Error loading user in header:', err);
@@ -185,7 +187,10 @@ export function Header({ title = 'Dashboard', subtitle, action }: HeaderProps) {
                 {/* User info */}
                 <div className="px-3 py-2.5">
                   <p className="text-sm font-semibold text-foreground truncate">{user.nombre}</p>
-                  <p className="text-xs text-muted-foreground truncate mb-2">{user.email}</p>
+                  {(user as any).cargo && (
+                    <p className="text-[10px] text-muted-foreground truncate font-medium -mt-0.5">{(user as any).cargo}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground/80 truncate mb-2">{user.email}</p>
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${getRoleConfig(user.rol).color}`}>
                     {getRoleConfig(user.rol).label}
                   </span>

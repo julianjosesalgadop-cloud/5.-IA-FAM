@@ -43,7 +43,8 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
       sum +
       (e.valor_recobro_vehiculo || 0) +
       (e.valor_recobro_abogado || 0) +
-      (e.valor_recobro_empresa || 0),
+      (e.valor_recobro_empresa || 0) +
+      (e.valor_descuento_conductor || 0),
     0
   );
 
