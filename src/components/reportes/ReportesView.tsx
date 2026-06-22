@@ -136,8 +136,9 @@ export function ReportesView() {
       const wsData = filtered.map((e) => ({
         'No. Expediente': e.numero_expediente,
         'Fecha Incidente': e.fecha_incidente,
-        'Placa': e.placa,
         'No. Interno': e.numero_interno || '',
+        'Placa': e.placa,
+        'Tipo de Servicio': e.tipo_servicio || '',
         'Propietario': e.propietario,
         'Tipo Reclamación': e.tipo_reclamacion,
         'Ciudad Origen': e.ciudad_origen || '',
@@ -152,8 +153,24 @@ export function ReportesView() {
         'Valor Aprobado': e.valor_final_aprobado || 0,
         'Conductor': e.nombre_conductor || '',
         'Cédula Conductor': e.id_conductor || '',
+        'Celular Conductor': e.celular_conductor || '',
         'Culpabilidad': e.culpabilidad || 'Sin definir',
+        'Descuento Conductor': e.valor_descuento_conductor || 0,
+        'Memorando Descuento': e.memorando_descuento || '',
+        'Recobro Vehículo': e.valor_recobro_vehiculo || 0,
+        'Recobro Vehículo %': e.porcentaje_recobro_vehiculo ? `${e.porcentaje_recobro_vehiculo}%` : '0%',
+        'Recobro Abogado': e.valor_recobro_abogado || 0,
+        'Recobro Abogado %': e.porcentaje_recobro_abogado ? `${e.porcentaje_recobro_abogado}%` : '0%',
+        'Recobro Empresa': e.valor_recobro_empresa || 0,
+        'Recobro Empresa %': e.porcentaje_recobro_empresa ? `${e.porcentaje_recobro_empresa}%` : '0%',
+        'Fecha Comité': e.fecha_comite || '',
+        'Número Acta': e.numero_acta || '',
         'Causa Raíz': e.causa_raiz || '',
+        'Observaciones Comité': e.observaciones_comite || '',
+        'Autorizado Por': e.autorizado_por || '',
+        'Cargo': e.cargo_autorizador || '',
+        'Fecha Autorización': e.fecha_autorizacion || '',
+        'Memorando Pago': e.memorando_pago_nombre || '',
         'Estado': e.estado,
       }));
 
@@ -199,6 +216,7 @@ export function ReportesView() {
     toast.info('Generando reporte consolidado...');
     try {
       const doc = new jsPDF({
+        orientation: 'landscape',
         compress: true,
       });
       const logoB64 = await loadLogoBase64();
@@ -231,19 +249,22 @@ export function ReportesView() {
       const tableData = filtered.map((e) => [
         e.numero_expediente,
         formatDate(e.fecha_incidente),
+        e.numero_interno || '—',
         e.placa,
         e.propietario,
         e.tipo_reclamacion,
+        e.nombre_conductor || '—',
+        e.numero_acta || '—',
         formatCOP(e.valor_final_aprobado),
         e.estado,
       ]);
 
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 14,
-        head: [['Expediente', 'Fecha', 'Placa', 'Propietario', 'Tipo', 'V. Aprobado', 'Estado']],
+        head: [['Expediente', 'Fecha', 'Interno', 'Placa', 'Propietario', 'Tipo', 'Conductor', 'Acta', 'V. Aprobado', 'Estado']],
         body: tableData,
-        headStyles: { fillColor: [27, 54, 93], fontSize: 9 },
-        bodyStyles: { fontSize: 8 },
+        headStyles: { fillColor: [27, 54, 93], fontSize: 8 },
+        bodyStyles: { fontSize: 7 },
         margin: { top: 38 },
       });
 
@@ -271,12 +292,12 @@ export function ReportesView() {
         // Orange line separator
         doc.setDrawColor(217, 91, 42);
         doc.setLineWidth(0.8);
-        doc.line(12, 33, 198, 33);
+        doc.line(12, 33, 285, 33);
 
         // Footer
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
-        doc.text(`Página ${i} de ${pageCount} — Reportes SIGFAM — Flota Sugamuxi S.A.`, 12, 285);
+        doc.text(`Página ${i} de ${pageCount} — Reportes SIGFAM — Flota Sugamuxi S.A.`, 12, 198);
       }
 
       doc.save(`SIGFAM_Consolidado_Reporte.pdf`);
@@ -395,23 +416,53 @@ export function ReportesView() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto w-full">
-              <table className="w-full min-w-[800px] text-xs">
+              <table className="w-full min-w-[4200px] text-xs">
                 <thead>
                   <tr className="border-b border-border bg-secondary/5 font-semibold text-muted-foreground uppercase tracking-wider text-left">
                     <th className="px-4 py-3">Expediente</th>
-                    <th className="px-4 py-3">Fecha</th>
-                    <th className="px-4 py-3">Interno (Placa)</th>
-                    <th className="px-4 py-3">Tipo</th>
-                    <th className="px-4 py-3 text-right">V. Aprobado</th>
-                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Fecha Incidente</th>
+                    <th className="px-4 py-3">No. Interno</th>
+                    <th className="px-4 py-3">Placa</th>
+                    <th className="px-4 py-3">Tipo Servicio</th>
                     <th className="px-4 py-3">Propietario</th>
+                    <th className="px-4 py-3">Tipo Reclamación</th>
+                    <th className="px-4 py-3">Ciudad Origen</th>
+                    <th className="px-4 py-3">Ciudad Destino</th>
+                    <th className="px-4 py-3">Concepto</th>
+                    <th className="px-4 py-3 text-right">V. Cotización</th>
+                    <th className="px-4 py-3 text-right">V. Negociado</th>
+                    <th className="px-4 py-3 text-right">Deducible %</th>
+                    <th className="px-4 py-3 text-right">V. Deducible</th>
+                    <th className="px-4 py-3 text-right">V. a Pagar</th>
+                    <th className="px-4 py-3 text-right">V. Salvamento</th>
+                    <th className="px-4 py-3 text-right">V. Aprobado</th>
                     <th className="px-4 py-3">Conductor</th>
+                    <th className="px-4 py-3">Cédula Conductor</th>
+                    <th className="px-4 py-3">Celular Conductor</th>
+                    <th className="px-4 py-3">Culpabilidad</th>
+                    <th className="px-4 py-3 text-right">Dto. Conductor</th>
+                    <th className="px-4 py-3">Mem. Descuento</th>
+                    <th className="px-4 py-3 text-right">Recobro Vehículo</th>
+                    <th className="px-4 py-3 text-right">Recobro Vehículo %</th>
+                    <th className="px-4 py-3 text-right">Recobro Abogado</th>
+                    <th className="px-4 py-3 text-right">Recobro Abogado %</th>
+                    <th className="px-4 py-3 text-right">Recobro Empresa</th>
+                    <th className="px-4 py-3 text-right">Recobro Empresa %</th>
+                    <th className="px-4 py-3">Fecha Comité</th>
+                    <th className="px-4 py-3">Acta</th>
+                    <th className="px-4 py-3">Causa Raíz</th>
+                    <th className="px-4 py-3">Obs. Comité</th>
+                    <th className="px-4 py-3">Autorizado Por</th>
+                    <th className="px-4 py-3">Cargo</th>
+                    <th className="px-4 py-3">Fecha Aut.</th>
+                    <th className="px-4 py-3">Mem. Pago</th>
+                    <th className="px-4 py-3">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={38} className="py-8 text-center text-muted-foreground">
                         No se encontraron registros que coincidan con la búsqueda.
                       </td>
                     </tr>
@@ -420,15 +471,51 @@ export function ReportesView() {
                       <tr key={e.id || idx} className="hover:bg-secondary/20 transition-colors">
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{e.numero_expediente}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_incidente)}</td>
-                        <td className="px-4 py-2.5 font-semibold text-foreground">
-                          {e.numero_interno ? `${e.numero_interno} (${e.placa})` : e.placa}
-                        </td>
+                        <td className="px-4 py-2.5 font-semibold text-foreground">{e.numero_interno || '—'}</td>
+                        <td className="px-4 py-2.5 font-mono text-muted-foreground">{e.placa}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.tipo_servicio || '—'}</td>
+                        <td className="px-4 py-2.5 text-foreground">{e.propietario}</td>
                         <td className="px-4 py-2.5">
                           <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
                             {e.tipo_reclamacion}
                           </span>
                         </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.ciudad_origen || '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.ciudad_destino || '—'}</td>
+                        <td className="px-4 py-2.5 truncate max-w-[150px] text-muted-foreground" title={e.concepto || ''}>{e.concepto || '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_cotizacion)}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_negociado)}</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_deducible)}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_a_pagar)}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_salvamento)}</td>
                         <td className="px-4 py-2.5 text-right font-semibold text-foreground">{formatCOP(e.valor_final_aprobado)}</td>
+                        <td className="px-4 py-2.5 text-foreground font-medium">{e.nombre_conductor || '—'}</td>
+                        <td className="px-4 py-2.5 font-mono text-muted-foreground">{e.id_conductor || '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.celular_conductor || '—'}</td>
+                        <td className="px-4 py-2.5">
+                          {e.culpabilidad ? (
+                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-slate-500/10 text-slate-400">
+                              {e.culpabilidad}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_descuento_conductor)}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.memorando_descuento || '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_recobro_vehiculo)}</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_recobro_vehiculo ? `${e.porcentaje_recobro_vehiculo}%` : '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_recobro_abogado)}</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_recobro_abogado ? `${e.porcentaje_recobro_abogado}%` : '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_recobro_empresa)}</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_recobro_empresa ? `${e.porcentaje_recobro_empresa}%` : '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_comite)}</td>
+                        <td className="px-4 py-2.5 font-semibold text-primary">{e.numero_acta || '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.causa_raiz || '—'}</td>
+                        <td className="px-4 py-2.5 truncate max-w-[150px] text-muted-foreground" title={e.observaciones_comite || ''}>{e.observaciones_comite || '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.autorizado_por || '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.cargo_autorizador || '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_autorizacion)}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{e.memorando_pago_nombre || '—'}</td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
                             e.estado === 'Aprobado'
@@ -440,8 +527,6 @@ export function ReportesView() {
                             {e.estado}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 truncate max-w-[120px] text-muted-foreground">{e.propietario}</td>
-                        <td className="px-4 py-2.5 truncate max-w-[120px] text-muted-foreground">{e.nombre_conductor || '—'}</td>
                       </tr>
                     ))
                   )}
