@@ -359,10 +359,10 @@ export function ExpedientesList() {
             size="sm"
             onClick={() => router.push('/expedientes/nuevo')}
             id="expedientes-nuevo-btn"
-            className="h-10 px-4 text-xs font-semibold shrink-0"
+            className="h-10 w-10 sm:w-auto px-0 sm:px-4 text-xs font-semibold shrink-0 flex items-center justify-center"
           >
-            <Plus className="w-4 h-4 mr-1.5 shrink-0" />
-            <span>Nuevo Expediente</span>
+            <Plus className="w-4 h-4 sm:mr-1.5 shrink-0" />
+            <span className="hidden sm:inline">Nuevo Expediente</span>
           </Button>
 
           <Button
