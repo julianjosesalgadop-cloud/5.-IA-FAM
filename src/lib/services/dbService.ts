@@ -16,6 +16,41 @@ const MOCK_STORAGE_KEYS = {
   PERFILES: 'fam_mock_perfiles',
 };
 
+const formatCOPValue = (val: number | null | undefined): string => {
+  if (val === null || val === undefined) return '$0';
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(val);
+};
+
+const isSameValue = (a: any, b: any) => {
+  if (a === b) return true;
+  if (a === null || a === undefined || b === null || b === undefined) {
+    return (a === null || a === undefined || a === '') && (b === null || b === undefined || b === '');
+  }
+  if (typeof a === 'object' && typeof b === 'object') {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  return String(a) === String(b);
+};
+
+const formatAuditValue = (key: string, value: any): string => {
+  if (value === null || value === undefined || value === '') return 'vacío';
+  if (typeof value === 'object') {
+    if (key === 'cotizaciones' && Array.isArray(value)) {
+      return value.map((c: any) => `${c.proveedor}: ${formatCOPValue(c.valor_final_aprobado || c.valor_a_pagar || 0)} (${c.seleccionada ? 'Seleccionada' : 'No sel'})`).join(', ');
+    }
+    if (key === 'propietarios' && Array.isArray(value)) {
+      return value.map((p: any) => `${p.nombre} (${p.tipo_documento}: ${p.numero_documento})`).join(', ');
+    }
+    return JSON.stringify(value);
+  }
+  return String(value);
+};
+
 const INITIAL_EXPEDIENTES: Expediente[] = [
   {
     id: '1',
@@ -570,13 +605,13 @@ export const dbService = {
       // Simple audit logging for changed values
       Object.keys(formattedPayload).forEach((key) => {
         const k = key as keyof Expediente;
-        if (old[k] !== formattedPayload[k] && key !== 'updated_at') {
+        if (!isSameValue(old[k], formattedPayload[k]) && key !== 'updated_at') {
           logMockAudit(
             id,
             k === 'estado' ? 'ESTADO' : 'EDITAR',
             key,
-            String(old[k] ?? 'vacío'),
-            String(formattedPayload[k] ?? 'vacío')
+            formatAuditValue(key, old[k]),
+            formatAuditValue(key, formattedPayload[k])
           );
         }
       });
@@ -630,15 +665,15 @@ export const dbService = {
     if (oldData) {
       // Audit log insertions
       const auditLogs = Object.keys(formattedPayload)
-        .filter((key) => formattedPayload[key as keyof typeof formattedPayload] !== oldData[key as keyof typeof oldData] && key !== 'updated_at')
+        .filter((key) => !isSameValue(oldData[key as keyof typeof oldData], formattedPayload[key as keyof typeof formattedPayload]) && key !== 'updated_at')
         .map((key) => ({
           expediente_id: id,
           usuario_id: user?.id || null,
           usuario_email: user?.email || null,
           accion: key === 'estado' ? 'ESTADO' : 'EDITAR',
           campo_modificado: key,
-          valor_anterior: String(oldData[key as keyof typeof oldData] ?? ''),
-          valor_nuevo: String(formattedPayload[key as keyof typeof formattedPayload] ?? ''),
+          valor_anterior: formatAuditValue(key, oldData[key as keyof typeof oldData]),
+          valor_nuevo: formatAuditValue(key, formattedPayload[key as keyof typeof formattedPayload]),
         }));
 
       if (auditLogs.length > 0) {
