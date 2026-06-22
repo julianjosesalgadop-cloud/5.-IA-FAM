@@ -70,6 +70,11 @@ function CustomTooltipBar({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     const isFiltered = data.totalFilteredCases < data.totalGeneralCases;
+    const prevPeriodText = data.year 
+      ? 'año anterior' 
+      : data.rawDate 
+        ? 'día anterior' 
+        : 'mes anterior';
     
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
@@ -86,6 +91,8 @@ function CustomTooltipBar({ active, payload, label }: any) {
             pct = denom > 0 ? (val / denom) * 100 : 0;
           }
 
+          const diffPct = (p.name === 'valor' || p.name === 'aprobado') ? data.valorDiffPct : data.casesDiffPct;
+
           return (
             <div key={p.name} className="flex flex-col gap-0.5 text-foreground">
               <div className="flex items-center gap-2">
@@ -94,8 +101,21 @@ function CustomTooltipBar({ active, payload, label }: any) {
                   {p.name === 'valor' || p.name === 'aprobado' ? 'Valor Aprobado:' : 'Casos:'} {p.name === 'valor' || p.name === 'aprobado' ? formatCOP(val) : `${val} expedientes`}
                 </span>
               </div>
-              <div className="pl-4 text-[10px] text-muted-foreground">
+              <div className="pl-4 text-[10px] text-muted-foreground flex flex-col gap-0.5">
                 <span>{isFiltered ? 'Porcentaje (Filtrado)' : 'Porcentaje'}: {pct.toFixed(1)}%</span>
+                {diffPct !== null && diffPct !== undefined && (
+                  <span className={cn(
+                    "font-semibold flex items-center gap-0.5",
+                    diffPct > 0 
+                      ? "text-emerald-500 dark:text-emerald-400" 
+                      : diffPct < 0 
+                        ? "text-rose-500 dark:text-rose-400" 
+                        : "text-muted-foreground"
+                  )}>
+                    {diffPct > 0 ? `▲ +${diffPct.toFixed(1)}%` : diffPct < 0 ? `▼ ${diffPct.toFixed(1)}%` : `• 0.0%`}{' '}
+                    <span className="font-normal text-muted-foreground">vs {prevPeriodText}</span>
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -319,6 +339,28 @@ export function DashboardCharts({
     const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
     const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
     const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+
+    // MoM comparison values
+    const prevMonthIndex = index - 1;
+    let prevCasesCount = 0;
+    let prevSumAprobado = 0;
+    if (prevMonthIndex >= 0) {
+      const prevCases = expedientes.filter((e) => {
+        if (!e.fecha_incidente) return false;
+        const d = new Date(e.fecha_incidente + 'T00:00:00');
+        return !isNaN(d.getTime()) && d.getMonth() === prevMonthIndex;
+      });
+      prevCasesCount = prevCases.length;
+      prevSumAprobado = prevCases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+    }
+
+    let casesDiffPct = null;
+    let valorDiffPct = null;
+    if (prevMonthIndex >= 0) {
+      casesDiffPct = prevCasesCount === 0 ? (cases.length > 0 ? 100 : 0) : ((cases.length - prevCasesCount) / prevCasesCount) * 100;
+      valorDiffPct = prevSumAprobado === 0 ? (sumAprobado > 0 ? 100 : 0) : ((sumAprobado - prevSumAprobado) / prevSumAprobado) * 100;
+    }
+
     return {
       mes: name,
       monthIndex: index,
@@ -327,6 +369,8 @@ export function DashboardCharts({
       cotizado: sumCotizado,
       negociado: sumNegociado,
       aprobado: sumAprobado,
+      casesDiffPct,
+      valorDiffPct,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
       totalFilteredApprovedSum: totalFilteredApproved,
@@ -351,7 +395,7 @@ export function DashboardCharts({
     )
   ).sort((a, b) => a - b);
 
-  const yearlyData = years.map((year) => {
+  const yearlyData = years.map((year, yIdx) => {
     const cases = expedientes.filter((e) => {
       if (!e.fecha_incidente) return false;
       const d = new Date(e.fecha_incidente + 'T00:00:00');
@@ -360,6 +404,28 @@ export function DashboardCharts({
     const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
     const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
     const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+
+    // YoY comparison values
+    let prevCasesCount = 0;
+    let prevSumAprobado = 0;
+    if (yIdx > 0) {
+      const prevYear = years[yIdx - 1];
+      const prevCases = expedientes.filter((e) => {
+        if (!e.fecha_incidente) return false;
+        const d = new Date(e.fecha_incidente + 'T00:00:00');
+        return !isNaN(d.getTime()) && d.getFullYear() === prevYear;
+      });
+      prevCasesCount = prevCases.length;
+      prevSumAprobado = prevCases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+    }
+
+    let casesDiffPct = null;
+    let valorDiffPct = null;
+    if (yIdx > 0) {
+      casesDiffPct = prevCasesCount === 0 ? (cases.length > 0 ? 100 : 0) : ((cases.length - prevCasesCount) / prevCasesCount) * 100;
+      valorDiffPct = prevSumAprobado === 0 ? (sumAprobado > 0 ? 100 : 0) : ((sumAprobado - prevSumAprobado) / prevSumAprobado) * 100;
+    }
+
     return {
       mes: `${year}`,
       year,
@@ -368,6 +434,8 @@ export function DashboardCharts({
       cotizado: sumCotizado,
       negociado: sumNegociado,
       aprobado: sumAprobado,
+      casesDiffPct,
+      valorDiffPct,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
       totalFilteredApprovedSum: totalFilteredApproved,
@@ -413,11 +481,29 @@ export function DashboardCharts({
     return `${d.getDate()} ${monthsShort[d.getMonth()]}`;
   };
 
-  const dailyData = uniqueDates.map((dateStr) => {
+  const dailyData = uniqueDates.map((dateStr, dIdx) => {
     const cases = expedientes.filter((e) => e.fecha_incidente === dateStr);
     const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
     const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
     const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+
+    // DoD comparison values
+    let prevCasesCount = 0;
+    let prevSumAprobado = 0;
+    if (dIdx > 0) {
+      const prevDateStr = uniqueDates[dIdx - 1];
+      const prevCases = expedientes.filter((e) => e.fecha_incidente === prevDateStr);
+      prevCasesCount = prevCases.length;
+      prevSumAprobado = prevCases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+    }
+
+    let casesDiffPct = null;
+    let valorDiffPct = null;
+    if (dIdx > 0) {
+      casesDiffPct = prevCasesCount === 0 ? (cases.length > 0 ? 100 : 0) : ((cases.length - prevCasesCount) / prevCasesCount) * 100;
+      valorDiffPct = prevSumAprobado === 0 ? (sumAprobado > 0 ? 100 : 0) : ((sumAprobado - prevSumAprobado) / prevSumAprobado) * 100;
+    }
+
     return {
       mes: formatDateLabel(dateStr),
       rawDate: dateStr,
@@ -426,6 +512,8 @@ export function DashboardCharts({
       cotizado: sumCotizado,
       negociado: sumNegociado,
       aprobado: sumAprobado,
+      casesDiffPct,
+      valorDiffPct,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
       totalFilteredApprovedSum: totalFilteredApproved,
