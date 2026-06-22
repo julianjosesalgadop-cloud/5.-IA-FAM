@@ -974,7 +974,15 @@ export const dbService = {
     return data || null;
   },
 
-  updatePerfil: async (id: string, payload: { nombre?: string; rol?: RolUsuario; activo?: boolean; cargo?: string }): Promise<any> => {
+  updatePerfil: async (id: string, payload: { 
+    nombre?: string; 
+    email?: string; 
+    rol?: RolUsuario; 
+    activo?: boolean; 
+    cargo?: string | null; 
+    tipo_documento?: string | null; 
+    numero_documento?: string | null; 
+  }): Promise<any> => {
     if (IS_MOCK_MODE) {
       const list = getLocalData<any>(MOCK_STORAGE_KEYS.PERFILES, INITIAL_PERFILES);
       const idx = list.findIndex((p) => p.id === id);
@@ -991,6 +999,7 @@ export const dbService = {
           nombre: updated.nombre,
           rol: updated.rol,
           cargo: updated.cargo,
+          email: updated.email,
         };
         localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(nextUser));
         window.dispatchEvent(new Event('storage'));

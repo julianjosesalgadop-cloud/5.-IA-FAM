@@ -68,7 +68,13 @@ export function UsuariosView() {
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   // Edit form state
+  const [editNombre, setEditNombre] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editCargo, setEditCargo] = useState('');
   const [editRol, setEditRol] = useState<RolUsuario>('consultor');
+  const [editActivo, setEditActivo] = useState(true);
+  const [editTipoDoc, setEditTipoDoc] = useState('CC');
+  const [editNumDoc, setEditNumDoc] = useState('');
 
   // Password reset modal state
   const [resetPassword, setResetPassword] = useState('');
@@ -152,17 +158,29 @@ export function UsuariosView() {
     }
   };
 
-  const handleUpdateRol = async (e: React.FormEvent) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPerfil) return;
+    if (!editNombre.trim() || !editEmail.trim()) {
+      toast.error('Por favor, completa los campos obligatorios.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await dbService.updatePerfil(selectedPerfil.id, { rol: editRol });
-      toast.success(`Rol de ${selectedPerfil.nombre} actualizado a ${editRol}`);
+      await dbService.updatePerfil(selectedPerfil.id, {
+        nombre: editNombre.trim(),
+        email: editEmail.trim().toLowerCase(),
+        rol: editRol,
+        activo: editActivo,
+        cargo: editCargo.trim() || null,
+        tipo_documento: editTipoDoc || null,
+        numero_documento: editNumDoc.trim() || null,
+      });
+      toast.success(`Información de ${editNombre} actualizada correctamente`);
       setShowEditModal(false);
       loadPerfiles();
     } catch (err: any) {
-      toast.error(err.message || 'Error al actualizar el rol');
+      toast.error(err.message || 'Error al actualizar el usuario');
     } finally {
       setIsSubmitting(false);
     }
@@ -376,10 +394,16 @@ export function UsuariosView() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                              title="Editar rol"
+                              title="Editar usuario"
                               onClick={() => {
                                 setSelectedPerfil(perfil);
+                                setEditNombre(perfil.nombre || '');
+                                setEditEmail(perfil.email || '');
+                                setEditCargo(perfil.cargo || '');
                                 setEditRol(perfil.rol);
+                                setEditActivo(perfil.activo);
+                                setEditTipoDoc(perfil.tipo_documento || 'CC');
+                                setEditNumDoc(perfil.numero_documento || '');
                                 setShowEditModal(true);
                               }}
                             >
@@ -572,7 +596,7 @@ export function UsuariosView() {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════ EDIT ROLE MODAL ══════════════════════ */}
+      {/* ══════════════════════ EDIT USER MODAL ══════════════════════ */}
       <AnimatePresence>
         {showEditModal && selectedPerfil && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -580,25 +604,80 @@ export function UsuariosView() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+              className="w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
             >
-              <div className="p-5 border-b border-border bg-secondary/10">
+              <div className="p-5 border-b border-border bg-secondary/10 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-primary" />
-                  Editar Rol de Usuario
+                  <Edit className="w-5 h-5 text-primary" />
+                  Editar Información de Usuario
                 </h3>
               </div>
 
-              <form onSubmit={handleUpdateRol} className="p-6 space-y-4">
-                <div className="bg-secondary/40 rounded-lg p-3 text-xs text-muted-foreground">
-                  <p className="font-semibold text-foreground mb-1">Usuario seleccionado:</p>
-                  <p>• Nombre: <span className="text-foreground">{selectedPerfil.nombre || '—'}</span></p>
-                  <p>• Correo: <span className="text-foreground">{selectedPerfil.email}</span></p>
-                  {selectedPerfil.cargo && <p>• Cargo: <span className="text-foreground">{selectedPerfil.cargo}</span></p>}
+              <form onSubmit={handleUpdateUser} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                {/* Nombre */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-user-name">Nombre Completo <span className="text-red-400">*</span></Label>
+                  <div className="relative">
+                    <User className={iconClass} />
+                    <Input id="edit-user-name" placeholder="Ej: Juan Pérez" className={inputWithIcon}
+                      value={editNombre} onChange={(e) => setEditNombre(e.target.value)} required />
+                  </div>
                 </div>
 
+                {/* Email */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-user-role">Nuevo Rol Asignado</Label>
+                  <Label htmlFor="edit-user-email">Correo Electrónico <span className="text-red-400">*</span></Label>
+                  <div className="relative">
+                    <Mail className={iconClass} />
+                    <Input id="edit-user-email" type="email" placeholder="ejemplo@flotasugamuxi.co"
+                      className={inputWithIcon} value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)} required />
+                  </div>
+                </div>
+
+                {/* Documento — Tipo + Número */}
+                <div className="space-y-1.5">
+                  <Label>Documento de Identidad</Label>
+                  <div className="flex gap-2">
+                    <select
+                      id="edit-user-tipo-doc"
+                      className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground flex-shrink-0 w-[120px]"
+                      value={editTipoDoc}
+                      onChange={(e) => setEditTipoDoc(e.target.value)}
+                    >
+                      <option value="CC">CC</option>
+                      <option value="TI">TI</option>
+                      <option value="CE">CE</option>
+                      <option value="Pasaporte">Pasaporte</option>
+                      <option value="NIT">NIT</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <CreditCard className={iconClass} />
+                      <Input
+                        id="edit-user-doc"
+                        placeholder="Número de documento"
+                        className={inputWithIcon}
+                        value={editNumDoc}
+                        onChange={(e) => setEditNumDoc(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cargo */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-user-cargo">Cargo</Label>
+                  <div className="relative">
+                    <Briefcase className={iconClass} />
+                    <Input id="edit-user-cargo" placeholder="Ej: Analista FAM" className={inputWithIcon}
+                      value={editCargo} onChange={(e) => setEditCargo(e.target.value)} />
+                  </div>
+                </div>
+
+                {/* Rol */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-user-role">Rol del Sistema <span className="text-red-400">*</span></Label>
                   <select id="edit-user-role"
                     className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                     value={editRol} onChange={(e) => setEditRol(e.target.value as RolUsuario)}>
@@ -606,6 +685,23 @@ export function UsuariosView() {
                     <option value="analista">Analista (Lectura y escritura)</option>
                     <option value="admin">Administrador (Control total)</option>
                   </select>
+                </div>
+
+                {/* Estado */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-user-status">Estado del Usuario <span className="text-red-400">*</span></Label>
+                  <select id="edit-user-status"
+                    className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+                    value={editActivo ? "activo" : "inactivo"} 
+                    onChange={(e) => setEditActivo(e.target.value === "activo")}
+                    disabled={currentUser?.id === selectedPerfil.id}
+                  >
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                  </select>
+                  {currentUser?.id === selectedPerfil.id && (
+                    <p className="text-[10px] text-amber-500">No puedes desactivar tu propio usuario en sesión.</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
