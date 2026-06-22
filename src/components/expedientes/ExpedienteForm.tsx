@@ -1512,7 +1512,7 @@ export function ExpedienteForm({
             {step === 3 && (
               <>
                 <p className="text-sm font-semibold text-foreground">Información del Conductor</p>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                   {formConfig.campoConfig.nombre_conductor?.visible && (
                     <div className="md:col-span-5">
                       <FormField label={`${formConfig.campoConfig.nombre_conductor.label} (Solo primer nombre y primer apellido)`} required={formConfig.campoConfig.nombre_conductor.requerido}>
