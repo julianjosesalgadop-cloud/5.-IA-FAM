@@ -1528,7 +1528,7 @@ export function DashboardCharts({
   );
 
   const renderEstadoExpedientes = (isLarge = false) => (
-    <div className={`space-y-4 pt-2 ${isLarge ? 'max-w-xl mx-auto py-8' : ''}`}>
+    <div className={`pt-2 ${isLarge ? 'max-w-xl mx-auto py-8 space-y-4' : 'grid grid-cols-1 md:grid-cols-3 gap-6 pb-2'}`}>
       {estadoData.map((item) => {
         const total = estadoData.reduce((sum, d) => sum + d.value, 0);
         const pct = total ? Math.round((item.value / total) * 100) : 0;
@@ -2665,6 +2665,7 @@ export function DashboardCharts({
 
       {/* By type */}
       <motion.div
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
@@ -2765,6 +2766,7 @@ export function DashboardCharts({
 
       {/* By status */}
       <motion.div
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4 }}
@@ -2790,7 +2792,7 @@ export function DashboardCharts({
               <Maximize2 className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4 pt-2">
+          <CardContent className="pt-2">
             {renderEstadoExpedientes(false)}
           </CardContent>
         </Card>
