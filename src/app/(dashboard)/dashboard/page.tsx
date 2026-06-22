@@ -53,6 +53,19 @@ export default function DashboardPage() {
   const [selectedChartCausaRaiz, setSelectedChartCausaRaiz] = useState('');
   const [selectedChartSerie, setSelectedChartSerie] = useState('');
   const [selectedChartRoute, setSelectedChartRoute] = useState('');
+  const [selectedChartProveedor, setSelectedChartProveedor] = useState('');
+  const [selectedChartTipoServicio, setSelectedChartTipoServicio] = useState('');
+
+  const getExpedienteProveedor = (e: any): string => {
+    if (e.cotizaciones && e.cotizaciones.length > 0) {
+      const selectedCots = e.cotizaciones.filter((c: any) => c.seleccionada);
+      const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+      if (activeCots[0] && activeCots[0].proveedor) {
+        return activeCots[0].proveedor.trim().toUpperCase();
+      }
+    }
+    return 'SIN ESPECIFICAR';
+  };
 
   const getRouteKey = (e: any): string => {
     const origin = (e.ciudad_origen || '').trim().toUpperCase();
@@ -132,6 +145,8 @@ export default function DashboardPage() {
     if (selectedChartStatus && e.estado !== selectedChartStatus) return false;
     if (selectedChartCulpabilidad && e.culpabilidad !== selectedChartCulpabilidad) return false;
     if (selectedChartCausaRaiz && e.causa_raiz !== selectedChartCausaRaiz) return false;
+    if (selectedChartProveedor && getExpedienteProveedor(e) !== selectedChartProveedor) return false;
+    if (selectedChartTipoServicio && e.tipo_servicio !== selectedChartTipoServicio) return false;
     
     if (selectedChartMonth !== null) {
       if (!e.fecha_incidente) return false;
@@ -323,7 +338,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute) && (
+          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || selectedChartProveedor || selectedChartTipoServicio) && (
             <Button
               variant="ghost"
               size="sm"
@@ -342,6 +357,8 @@ export default function DashboardPage() {
                 setSelectedChartCausaRaiz('');
                 setSelectedChartSerie('');
                 setSelectedChartRoute('');
+                setSelectedChartProveedor('');
+                setSelectedChartTipoServicio('');
               }}
               className="w-full sm:w-auto text-xs text-red-400 hover:text-red-500 h-10 px-3"
             >
@@ -376,6 +393,8 @@ export default function DashboardPage() {
               onSelectCausaRaiz={(causa) => setSelectedChartCausaRaiz(current => current === causa ? '' : causa)}
               onSelectSerie={(serie) => setSelectedChartSerie(current => current === serie ? '' : serie)}
               onSelectRoute={(route) => setSelectedChartRoute(current => current === route ? '' : route)}
+              onSelectProveedor={(prov) => setSelectedChartProveedor(current => current === prov ? '' : prov)}
+              onSelectTipoServicio={(tipo) => setSelectedChartTipoServicio(current => current === tipo ? '' : tipo)}
               selectedPlaca={selectedChartPlaca}
               selectedConductor={selectedChartConductor}
               selectedProprietario={selectedChartProprietario}
@@ -386,6 +405,8 @@ export default function DashboardPage() {
               selectedCausaRaiz={selectedChartCausaRaiz}
               selectedSerie={selectedChartSerie}
               selectedRoute={selectedChartRoute}
+              selectedProveedor={selectedChartProveedor}
+              selectedTipoServicio={selectedChartTipoServicio}
             />
           </>
         )}
@@ -393,7 +414,7 @@ export default function DashboardPage() {
 
       {/* Active Chart Filters Notification */}
       <AnimatePresence>
-        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos') && (
+        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || selectedChartProveedor || selectedChartTipoServicio) && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -418,6 +439,8 @@ export default function DashboardPage() {
                   setSelectedChartCausaRaiz('');
                   setSelectedChartSerie('');
                   setSelectedChartRoute('');
+                  setSelectedChartProveedor('');
+                  setSelectedChartTipoServicio('');
                   setTipoReclamacion('todos');
                 }}
                 className="text-[10px] text-red-400 hover:text-red-500 font-semibold p-0 h-auto"
@@ -582,6 +605,38 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setSelectedChartCausaRaiz('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartProveedor && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Taller / Proveedor</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartProveedor}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartProveedor('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartTipoServicio && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo de Servicio</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartTipoServicio}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartTipoServicio('')}
                     className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-3 w-3" />

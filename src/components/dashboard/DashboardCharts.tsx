@@ -51,10 +51,16 @@ interface DashboardChartsProps {
   selectedSerie?: string;
   onSelectRoute?: (route: string) => void;
   selectedRoute?: string;
+  onSelectProveedor?: (proveedor: string) => void;
+  selectedProveedor?: string;
+  onSelectTipoServicio?: (tipo: string) => void;
+  selectedTipoServicio?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
-  backgroundColor: 'hsl(var(--card))',
+  backgroundColor: 'hsla(var(--card), 0.85)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
   border: '1px solid hsl(var(--border))',
   borderRadius: '8px',
   color: 'hsl(var(--foreground))',
@@ -232,6 +238,10 @@ export function DashboardCharts({
   selectedSerie,
   onSelectRoute,
   selectedRoute,
+  onSelectProveedor,
+  selectedProveedor,
+  onSelectTipoServicio,
+  selectedTipoServicio,
 }: DashboardChartsProps) {
   // Filter out 'Rechazado' and 'Inactivo' states for all graphics/charts
   const allowedStates = ['Pendiente', 'Revisado', 'Aprobado'];
@@ -853,7 +863,37 @@ export function DashboardCharts({
               margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+              <XAxis 
+                dataKey="name" 
+                tick={(props: any) => {
+                  const { x, y, payload } = props;
+                  const value = payload?.value || '';
+                  const isSelected = selectedTipoServicio === value;
+                  return (
+                    <g 
+                      style={{ pointerEvents: 'auto' }} 
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectTipoServicio) {
+                          onSelectTipoServicio(value);
+                        }
+                      }}
+                    >
+                      <text
+                        x={x}
+                        y={y}
+                        dy={12}
+                        textAnchor="middle"
+                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        className="hover:fill-primary font-semibold text-[10px] transition-colors"
+                      >
+                        {value}
+                      </text>
+                    </g>
+                  );
+                }}
+              />
               <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} allowDecimals={false} />
               <Tooltip
                 content={(props: any) => {
@@ -875,7 +915,24 @@ export function DashboardCharts({
                   );
                 }}
               />
-              <Bar dataKey="cantidad" fill="hsl(203, 100%, 50%)" radius={[4, 4, 0, 0]}>
+              <Bar 
+                dataKey="cantidad" 
+                fill="hsl(203, 100%, 50%)" 
+                radius={[4, 4, 0, 0]}
+                onClick={(data) => {
+                  const val = data?.name || data?.payload?.name;
+                  if (val && onSelectTipoServicio) {
+                    onSelectTipoServicio(val);
+                  }
+                }}
+                className="cursor-pointer"
+              >
+                {serviceTypeData.map((d, index) => (
+                  <Cell 
+                    key={index} 
+                    fill={selectedTipoServicio === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                  />
+                ))}
                 <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
                   formatter={(v: number) => v > 0 ? `${v}` : ''}
                 />
@@ -899,7 +956,37 @@ export function DashboardCharts({
               margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+              <XAxis 
+                dataKey="name" 
+                tick={(props: any) => {
+                  const { x, y, payload } = props;
+                  const value = payload?.value || '';
+                  const isSelected = selectedTipoServicio === value;
+                  return (
+                    <g 
+                      style={{ pointerEvents: 'auto' }} 
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectTipoServicio) {
+                          onSelectTipoServicio(value);
+                        }
+                      }}
+                    >
+                      <text
+                        x={x}
+                        y={y}
+                        dy={12}
+                        textAnchor="middle"
+                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        className="hover:fill-primary font-semibold text-[10px] transition-colors"
+                      >
+                        {value}
+                      </text>
+                    </g>
+                  );
+                }}
+              />
               <YAxis
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
@@ -924,7 +1011,24 @@ export function DashboardCharts({
                   );
                 }}
               />
-              <Bar dataKey="monto" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]}>
+              <Bar 
+                dataKey="monto" 
+                fill="hsl(142, 71%, 45%)" 
+                radius={[4, 4, 0, 0]}
+                onClick={(data) => {
+                  const val = data?.name || data?.payload?.name;
+                  if (val && onSelectTipoServicio) {
+                    onSelectTipoServicio(val);
+                  }
+                }}
+                className="cursor-pointer"
+              >
+                {serviceTypeData.map((d, index) => (
+                  <Cell 
+                    key={index} 
+                    fill={selectedTipoServicio === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                  />
+                ))}
                 <LabelList
                   dataKey="monto"
                   position="top"
@@ -1373,12 +1477,12 @@ export function DashboardCharts({
 
   const renderIngresosProveedor = (height: number) => {
     const dataToUse = showAllProveedor ? allProveedorData : proveedorData;
-    const isModal = height > 350;
-    const finalHeight = showAllProveedor && !isModal ? Math.max(height, dataToUse.length * 36) : height;
+    const isScrollable = showAllProveedor && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     
     return (
-      <div style={{ height: showAllProveedor && !isModal ? `${height}px` : 'auto', overflowY: showAllProveedor && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
           ) : (
@@ -1393,7 +1497,35 @@ export function DashboardCharts({
                 <YAxis
                   dataKey="name"
                   type="category"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9, fontWeight: 500 }}
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedProveedor === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectProveedor) {
+                            onSelectProveedor(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[9px] transition-colors"
+                        >
+                          {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
                   axisLine={false}
                   tickLine={false}
                   width={90}
@@ -1414,11 +1546,22 @@ export function DashboardCharts({
                     );
                   }}
                 />
-                <Bar dataKey="value" fill="hsl(142, 71%, 45%)" radius={[0, 4, 4, 0]}>
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(142, 71%, 45%)" 
+                  radius={[0, 4, 4, 0]}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectProveedor) {
+                      onSelectProveedor(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill="hsl(142, 71%, 45%)"
+                      fill={selectedProveedor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
                     />
                   ))}
                   <LabelList
@@ -1785,11 +1928,11 @@ export function DashboardCharts({
 
   const renderCausasRaiz = (height: number) => {
     const dataToUse = showAllCausa ? allCausaData : causaData;
-    const isModal = height > 350;
-    const finalHeight = showAllCausa && !isModal ? Math.max(height, dataToUse.length * 36) : height;
+    const isScrollable = showAllCausa && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllCausa && !isModal ? `${height}px` : 'auto', overflowY: showAllCausa && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
           ) : (
@@ -1825,9 +1968,8 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value.length > 22 ? `${value.slice(0, 20)}...` : value}
                         </text>
@@ -1874,11 +2016,11 @@ export function DashboardCharts({
 
   const renderAfectacionPropietario = (height: number) => {
     const dataToUse = showAllPropietario ? allPropietarioData : propietarioData;
-    const isModal = height > 350;
-    const finalHeight = showAllPropietario && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllPropietario && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllPropietario && !isModal ? `${height}px` : 'auto', overflowY: showAllPropietario && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
           ) : (
@@ -1920,9 +2062,8 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
                         </text>
@@ -1970,11 +2111,11 @@ export function DashboardCharts({
 
   const renderAfectacionConductor = (height: number) => {
     const dataToUse = showAllConductor ? allConductorData : conductorData;
-    const isModal = height > 350;
-    const finalHeight = showAllConductor && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllConductor && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllConductor && !isModal ? `${height}px` : 'auto', overflowY: showAllConductor && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
           ) : (
@@ -2016,9 +2157,8 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
                         </text>
@@ -2066,11 +2206,11 @@ export function DashboardCharts({
 
   const renderAfectacionVehiculo = (height: number) => {
     const dataToUse = showAllVehiculoAfectacion ? allVehiculoAfectacionData : vehiculoAfectacionData;
-    const isModal = height > 350;
-    const finalHeight = showAllVehiculoAfectacion && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllVehiculoAfectacion && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllVehiculoAfectacion && !isModal ? `${height}px` : 'auto', overflowY: showAllVehiculoAfectacion && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
           ) : (
@@ -2114,9 +2254,8 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value}
                         </text>
@@ -2166,11 +2305,11 @@ export function DashboardCharts({
 
   const renderTopPlacas = (height: number) => {
     const dataToUse = showAllTopPlacas ? allTopPlacasData : topPlacasData;
-    const isModal = height > 350;
-    const finalHeight = showAllTopPlacas && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllTopPlacas && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllTopPlacas && !isModal ? `${height}px` : 'auto', overflowY: showAllTopPlacas && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de vehículos</div>
           ) : (
@@ -2214,9 +2353,8 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value}
                         </text>
@@ -2265,11 +2403,11 @@ export function DashboardCharts({
 
   const renderTopConductores = (height: number) => {
     const dataToUse = showAllTopConductores ? allTopConductoresData : topConductoresData;
-    const isModal = height > 350;
-    const finalHeight = showAllTopConductores && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllTopConductores && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllTopConductores && !isModal ? `${height}px` : 'auto', overflowY: showAllTopConductores && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de conductores</div>
           ) : (
@@ -2311,9 +2449,8 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
                         </text>
@@ -2360,11 +2497,11 @@ export function DashboardCharts({
 
   const renderRoutesCant = (height: number) => {
     const dataToUse = showAllRoutesCant ? allRoutesCantData : routesCantData;
-    const isModal = height > 350;
-    const finalHeight = showAllRoutesCant && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllRoutesCant && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllRoutesCant && !isModal ? `${height}px` : 'auto', overflowY: showAllRoutesCant && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de rutas</div>
           ) : (
@@ -2408,7 +2545,6 @@ export function DashboardCharts({
                           textAnchor="end"
                           fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[10px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value.length > 20 ? `${value.substring(0, 18)}...` : value}
                         </text>
@@ -2451,11 +2587,11 @@ export function DashboardCharts({
 
   const renderRoutesMonto = (height: number) => {
     const dataToUse = showAllRoutesMonto ? allRoutesMontoData : routesMontoData;
-    const isModal = height > 350;
-    const finalHeight = showAllRoutesMonto && !isModal ? Math.max(height, dataToUse.length * 45) : height;
+    const isScrollable = showAllRoutesMonto && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
     return (
-      <div style={{ height: showAllRoutesMonto && !isModal ? `${height}px` : 'auto', overflowY: showAllRoutesMonto && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
-        <div style={{ height: `${finalHeight}px` }} className="w-full">
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de afectación</div>
           ) : (
@@ -2499,7 +2635,6 @@ export function DashboardCharts({
                           textAnchor="end"
                           fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[10px] transition-colors"
-                          style={{ pointerEvents: 'auto' }}
                         >
                           {value.length > 20 ? `${value.substring(0, 18)}...` : value}
                         </text>
@@ -2542,6 +2677,68 @@ export function DashboardCharts({
           )}
         </div>
       </div>
+    );
+  };
+
+  const getVerTodosButton = () => {
+    if (!expandedChart) return null;
+    
+    let isShowingAll = false;
+    let toggleFn: (() => void) | null = null;
+    
+    switch (expandedChart.id) {
+      case 'ingresos-proveedor':
+        isShowingAll = showAllProveedor;
+        toggleFn = () => setShowAllProveedor(!showAllProveedor);
+        break;
+      case 'causas-raiz':
+        isShowingAll = showAllCausa;
+        toggleFn = () => setShowAllCausa(!showAllCausa);
+        break;
+      case 'afectacion-propietario':
+        isShowingAll = showAllPropietario;
+        toggleFn = () => setShowAllPropietario(!showAllPropietario);
+        break;
+      case 'afectacion-conductor':
+        isShowingAll = showAllConductor;
+        toggleFn = () => setShowAllConductor(!showAllConductor);
+        break;
+      case 'afectacion-vehiculo':
+        isShowingAll = showAllVehiculoAfectacion;
+        toggleFn = () => setShowAllVehiculoAfectacion(!showAllVehiculoAfectacion);
+        break;
+      case 'top-vehiculos':
+        isShowingAll = showAllTopPlacas;
+        toggleFn = () => setShowAllTopPlacas(!showAllTopPlacas);
+        break;
+      case 'top-conductores':
+        isShowingAll = showAllTopConductores;
+        toggleFn = () => setShowAllTopConductores(!showAllTopConductores);
+        break;
+      case 'ruta-cantidad':
+        isShowingAll = showAllRoutesCant;
+        toggleFn = () => setShowAllRoutesCant(!showAllRoutesCant);
+        break;
+      case 'ruta-monto':
+        isShowingAll = showAllRoutesMonto;
+        toggleFn = () => setShowAllRoutesMonto(!showAllRoutesMonto);
+        break;
+      default:
+        return null;
+    }
+    
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        className="text-xs h-8 px-3 hover:bg-secondary/40 text-foreground"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFn?.();
+        }}
+      >
+        {isShowingAll ? 'Ver Top 5' : 'Ver Todos'}
+      </Button>
     );
   };
 
@@ -3379,6 +3576,7 @@ export function DashboardCharts({
                   <p className="text-xs text-muted-foreground mt-0.5">{getExpandedDescription()}</p>
                 </div>
                 <div className="flex items-center gap-4">
+                  {getVerTodosButton()}
                   {expandedChart.id === 'expedientes-mes' && (
                     <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
                       <button

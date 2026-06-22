@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, FileSpreadsheet, FileText, Calendar, Filter, RefreshCw } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Calendar, Filter, RefreshCw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,12 @@ export function ReportesView() {
   const [fechaHasta, setFechaHasta] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('');
+  const [searchPreview, setSearchPreview] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [fechaDesde, fechaHasta, tipoFiltro, estadoFiltro, searchPreview]);
 
   const loadData = async () => {
     setLoading(true);
@@ -67,6 +73,29 @@ export function ReportesView() {
     if (estadoFiltro && e.estado !== estadoFiltro) return false;
     return true;
   });
+
+  const previewFiltered = React.useMemo(() => {
+    return filtered.filter((e) => {
+      if (!searchPreview) return true;
+      const s = searchPreview.toLowerCase();
+      return (
+        e.numero_expediente?.toLowerCase().includes(s) ||
+        e.placa?.toLowerCase().includes(s) ||
+        e.numero_interno?.toLowerCase().includes(s) ||
+        e.propietario?.toLowerCase().includes(s) ||
+        e.nombre_conductor?.toLowerCase().includes(s) ||
+        e.tipo_reclamacion?.toLowerCase().includes(s) ||
+        e.estado?.toLowerCase().includes(s)
+      );
+    });
+  }, [filtered, searchPreview]);
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(previewFiltered.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedData = React.useMemo(() => {
+    return previewFiltered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [previewFiltered, startIndex]);
 
   // Calculate top plates from filtered list
   const placaGroups: Record<string, { total: number; valor: number }> = {};
@@ -346,12 +375,116 @@ export function ReportesView() {
           No hay expedientes registrados para los filtros seleccionados.
         </Card>
       ) : (
-        <Card className="border-border bg-card p-8 text-center text-muted-foreground">
-          <FileText className="w-8 h-8 mx-auto mb-3 text-primary/60" />
-          <p className="font-semibold text-foreground text-sm">Filtros aplicados correctamente</p>
-          <p className="text-xs mt-1">
-            Los datos consolidados han sido filtrados. Use los botones superiores para exportar el reporte consolidado en formato Excel (.xlsx) o PDF (.pdf).
-          </p>
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 gap-4 flex-wrap sm:flex-nowrap border-b border-border bg-secondary/10">
+            <div>
+              <CardTitle className="text-sm font-bold text-foreground">Previsualización del Reporte</CardTitle>
+              <CardDescription className="text-xs">
+                Se generarán <span className="font-semibold text-foreground">{filtered.length}</span> registros en el reporte final.
+              </CardDescription>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar en la previsualización..."
+                className="pl-9 h-8 bg-background border-border text-xs"
+                value={searchPreview}
+                onChange={(e) => setSearchPreview(e.target.value)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[800px] text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/5 font-semibold text-muted-foreground uppercase tracking-wider text-left">
+                    <th className="px-4 py-3">Expediente</th>
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Interno (Placa)</th>
+                    <th className="px-4 py-3">Tipo</th>
+                    <th className="px-4 py-3 text-right">V. Aprobado</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Propietario</th>
+                    <th className="px-4 py-3">Conductor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedData.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                        No se encontraron registros que coincidan con la búsqueda.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedData.map((e, idx) => (
+                      <tr key={e.id || idx} className="hover:bg-secondary/20 transition-colors">
+                        <td className="px-4 py-2.5 font-mono font-semibold text-primary">{e.numero_expediente}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_incidente)}</td>
+                        <td className="px-4 py-2.5 font-semibold text-foreground">
+                          {e.numero_interno ? `${e.numero_interno} (${e.placa})` : e.placa}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
+                            {e.tipo_reclamacion}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-semibold text-foreground">{formatCOP(e.valor_final_aprobado)}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                            e.estado === 'Aprobado'
+                              ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                              : e.estado === 'Rechazado'
+                              ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                              : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
+                          }`}>
+                            {e.estado}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 truncate max-w-[120px] text-muted-foreground">{e.propietario}</td>
+                        <td className="px-4 py-2.5 truncate max-w-[120px] text-muted-foreground">{e.nombre_conductor || '—'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between p-4 border-t border-border bg-secondary/5">
+                <p className="text-xs text-muted-foreground">
+                  Mostrando <span className="font-semibold text-foreground">{startIndex + 1}</span> a{' '}
+                  <span className="font-semibold text-foreground">
+                    {Math.min(startIndex + ITEMS_PER_PAGE, previewFiltered.length)}
+                  </span>{' '}
+                  de <span className="font-semibold text-foreground">{previewFiltered.length}</span> registros
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7 rounded"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground px-2">
+                    Pág. {currentPage} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7 rounded"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
       )}
     </div>

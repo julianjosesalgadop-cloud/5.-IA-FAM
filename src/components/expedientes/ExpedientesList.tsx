@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Download, FileText, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Search, Download, FileText, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, FolderOpen, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -332,6 +332,10 @@ export function ExpedientesList() {
     });
   }, [filtered, sortField, sortOrder]);
 
+  const totalAprobado = React.useMemo(() => {
+    return sorted.reduce((sum, exp) => sum + (exp.valor_final_aprobado || 0), 0);
+  }, [sorted]);
+
   return (
     <div className="space-y-5">
       {/* Toolbar */}
@@ -444,6 +448,59 @@ export function ExpedientesList() {
             <span className="sm:hidden">Nuevo</span>
           </Button>
         </div>
+      </div>
+
+      {/* Metrics Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Card 1: Count of cases */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="border-border bg-card p-5 relative overflow-hidden group hover:border-primary/50 transition-all duration-300">
+            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all duration-500">
+              <FolderOpen className="w-32 h-32 text-primary" />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                <FolderOpen className="w-6 h-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expedientes Filtrados</p>
+                <h3 className="text-2xl font-bold text-foreground mt-1 number-font">
+                  {loading ? '—' : sorted.length}
+                </h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Casos registrados según filtros aplicados</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Card 2: Sum of APPROVED VALUE */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Card className="border-border bg-card p-5 relative overflow-hidden group hover:border-amber-500/50 transition-all duration-300">
+            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all duration-500">
+              <DollarSign className="w-32 h-32 text-amber-500" />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor Aprobado Total</p>
+                <h3 className="text-2xl font-bold text-foreground mt-1 number-font">
+                  {loading ? '—' : formatCOP(totalAprobado)}
+                </h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Monto total aprobado para siniestros y reclamaciones</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Results count */}

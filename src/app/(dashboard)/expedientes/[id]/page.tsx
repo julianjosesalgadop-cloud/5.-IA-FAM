@@ -559,8 +559,8 @@ export default function ExpedienteDetailPage() {
               </Button>
 
               {currentUser.rol === 'admin' && (
-                <div className="flex items-center gap-1.5 ml-2 border border-border rounded-lg p-1 bg-secondary/20">
-                  <span className="text-xs text-muted-foreground px-2">Estado:</span>
+                <div className="flex flex-wrap items-center gap-1 border border-border rounded-lg p-1 bg-secondary/20 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-2">
+                  <span className="text-[11px] sm:text-xs text-muted-foreground px-1.5 sm:px-2">Estado:</span>
                   {['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'].map((status) => {
                     const isLocked = (expediente.estado === 'Aprobado' || expediente.estado === 'Rechazado') && currentUser.rol !== 'admin';
                     const isActive = expediente.estado === status;
@@ -569,7 +569,7 @@ export default function ExpedienteDetailPage() {
                         key={status}
                         disabled={isLocked}
                         onClick={() => handleStatusChange(status)}
-                        className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                        className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-semibold transition-all ${
                           isActive
                             ? 'bg-primary text-white shadow-sm'
                             : isLocked

@@ -5,6 +5,35 @@ import { Sidebar } from '@/components/layout/Sidebar';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { dbService } = await import('@/lib/services/dbService');
+        if (dbService.isMockMode()) {
+          const userStr = localStorage.getItem('fam_mock_user');
+          if (!userStr) {
+            window.location.href = '/auth/login';
+            return;
+          }
+        } else {
+          const { createClient } = await import('@/lib/supabase/client');
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            window.location.href = '/auth/login';
+            return;
+          }
+        }
+        setAuthorized(true);
+      } catch (err) {
+        console.error('Error checking auth:', err);
+        window.location.href = '/auth/login';
+      }
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const handleToggle = () => setMobileOpen(prev => !prev);
@@ -59,6 +88,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       });
     };
   }, []);
+
+  if (!authorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-muted-foreground">
+        <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+        <p className="text-sm font-medium">Verificando credenciales...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden relative">

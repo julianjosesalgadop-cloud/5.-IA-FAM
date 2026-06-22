@@ -339,9 +339,7 @@ export function getMockUser() {
     return parsed;
   }
   
-  const defaultUser = { id: 'mock-user-id', email: 'admin@flotasugamuxi.co', nombre: 'Administrador SIGFAM', rol: 'admin' as RolUsuario };
-  localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(defaultUser));
-  return defaultUser;
+  return null;
 }
 
 export function setMockUser(rol: RolUsuario, nombre: string = '', cargo: string = '') {
