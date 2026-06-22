@@ -49,7 +49,7 @@ INSERT INTO public.campos_configuracion (id, label, placeholder, visible, requer
   ('valor_a_pagar', 'Valor a Pagar', '$ 0', true, false),
   ('valor_salvamento', 'Valor Salvamento', '$ 0', true, false),
   ('valor_final_aprobado', 'Valor Final Aprobado', '$ 0', true, false),
-  ('nombre_conductor', 'Nombre Conductor', 'Nombre completo', true, false),
+  ('nombre_conductor', 'Nombre Conductor', 'Ej: JUAN PEREZ (solo primer nombre y primer apellido)', true, false),
   ('id_conductor', 'Número de Documento', 'Cédula o nit', true, false),
   ('celular_conductor', 'Celular', 'Ej: 310...', true, false),
   ('culpabilidad', 'Culpabilidad', '', true, false),

@@ -1017,9 +1017,9 @@ export function ExpedienteForm({
                       {propietariosFields.map((fieldItem, idx) => (
                         <div key={fieldItem.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end p-4 rounded-xl border border-border bg-card shadow-sm relative">
                           <div className="sm:col-span-5 space-y-1.5">
-                            <Label className="text-xs text-muted-foreground font-semibold">Nombre Completo / Razón Social *</Label>
+                            <Label className="text-xs text-muted-foreground font-semibold">Nombre Completo / Razón Social (Solo primer nombre y primer apellido) *</Label>
                             <Input
-                              placeholder="Nombre del propietario"
+                              placeholder="Ej: JUAN PEREZ (solo primer nombre y primer apellido)"
                               {...register(`propietarios.${idx}.nombre` as const)}
                               className={inputClass}
                             />
@@ -1515,8 +1515,8 @@ export function ExpedienteForm({
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                   {formConfig.campoConfig.nombre_conductor?.visible && (
                     <div className="md:col-span-5">
-                      <FormField label={formConfig.campoConfig.nombre_conductor.label} required={formConfig.campoConfig.nombre_conductor.requerido}>
-                        <Input placeholder={formConfig.campoConfig.nombre_conductor.placeholder} {...register('nombre_conductor')} className={inputClass} />
+                      <FormField label={`${formConfig.campoConfig.nombre_conductor.label} (Solo primer nombre y primer apellido)`} required={formConfig.campoConfig.nombre_conductor.requerido}>
+                        <Input placeholder="Ej: JUAN PEREZ (solo primer nombre y primer apellido)" {...register('nombre_conductor')} className={inputClass} />
                         {errors.nombre_conductor && <p className="text-red-400 text-xs">{errors.nombre_conductor.message}</p>}
                       </FormField>
                     </div>

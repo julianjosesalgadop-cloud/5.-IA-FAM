@@ -117,7 +117,7 @@ const DEFAULT_CATALOGS = {
     valor_final_aprobado: { label: 'Valor Final Aprobado', placeholder: '$ 0', visible: true, requerido: false },
 
     // Paso 3
-    nombre_conductor: { label: 'Nombre Conductor', placeholder: 'Nombre completo', visible: true, requerido: false },
+    nombre_conductor: { label: 'Nombre Conductor', placeholder: 'Ej: JUAN PEREZ (solo primer nombre y primer apellido)', visible: true, requerido: false },
     id_conductor: { label: 'Número de Documento', placeholder: 'Cédula o nit', visible: true, requerido: false },
     celular_conductor: { label: 'Celular', placeholder: 'Ej: 310...', visible: true, requerido: false },
     culpabilidad: { label: 'Culpabilidad', placeholder: '', visible: true, requerido: false },
