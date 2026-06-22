@@ -1553,7 +1553,6 @@ export function ExpedienteForm({
                         {...register('culpabilidad')}
                         className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       >
-                        <option value="">Seleccionar culpabilidad...</option>
                         {activeCulpabilidades.map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}

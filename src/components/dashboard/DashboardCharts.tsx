@@ -205,13 +205,13 @@ function CustomTooltipSeries({ active, payload }: any) {
 }
 
 export function DashboardCharts({
-  expedientes,
-  unfilteredExpedientes,
-  expedientesForVehicles,
-  expedientesForDrivers,
-  expedientesForPropietarios,
-  expedientesForSeries,
-  expedientesForRoutes,
+  expedientes: rawExpedientes,
+  unfilteredExpedientes: rawUnfilteredExpedientes,
+  expedientesForVehicles: rawExpedientesForVehicles,
+  expedientesForDrivers: rawExpedientesForDrivers,
+  expedientesForPropietarios: rawExpedientesForPropietarios,
+  expedientesForSeries: rawExpedientesForSeries,
+  expedientesForRoutes: rawExpedientesForRoutes,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
@@ -233,12 +233,17 @@ export function DashboardCharts({
   onSelectRoute,
   selectedRoute,
 }: DashboardChartsProps) {
-  // Use specialized arrays if passed, otherwise fallback to default filtered array
-  const ev = expedientesForVehicles || expedientes;
-  const ed = expedientesForDrivers || expedientes;
-  const ep = expedientesForPropietarios || expedientes;
-  const es = expedientesForSeries || expedientes;
-  const er = expedientesForRoutes || expedientes;
+  // Filter out 'Rechazado' and 'Inactivo' states for all graphics/charts
+  const allowedStates = ['Pendiente', 'Revisado', 'Aprobado'];
+  const filterAllowed = (list: Expediente[]) => list.filter((e) => allowedStates.includes(e.estado));
+
+  const expedientes = filterAllowed(rawExpedientes);
+  const unfilteredExpedientes = filterAllowed(rawUnfilteredExpedientes);
+  const ev = rawExpedientesForVehicles ? filterAllowed(rawExpedientesForVehicles) : expedientes;
+  const ed = rawExpedientesForDrivers ? filterAllowed(rawExpedientesForDrivers) : expedientes;
+  const ep = rawExpedientesForPropietarios ? filterAllowed(rawExpedientesForPropietarios) : expedientes;
+  const es = rawExpedientesForSeries ? filterAllowed(rawExpedientesForSeries) : expedientes;
+  const er = rawExpedientesForRoutes ? filterAllowed(rawExpedientesForRoutes) : expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -463,14 +468,13 @@ export function DashboardCharts({
     };
   }).filter((t) => t.value > 0);
 
-  // 3. Status Distribution
+  // 3. Status Distribution (only Pendiente, Revisado, Aprobado)
   const ESTADO_COLORS = {
     'Aprobado': 'hsl(142, 71%, 45%)',
     'Pendiente': 'hsl(43, 96%, 52%)',
-    'Rechazado': 'hsl(0, 72%, 55%)',
     'Revisado': 'hsl(203, 100%, 50%)',
   };
-  const estadoData = ['Aprobado', 'Pendiente', 'Rechazado', 'Revisado'].map((status) => {
+  const estadoData = ['Aprobado', 'Pendiente', 'Revisado'].map((status) => {
     const count = expedientes.filter((e) => e.estado === status).length;
     return { name: status, value: count, fill: ESTADO_COLORS[status as keyof typeof ESTADO_COLORS] };
   });
