@@ -479,8 +479,12 @@ export const dbService = {
       const list = getLocalData<Expediente>(MOCK_STORAGE_KEYS.EXPEDIENTES, INITIAL_EXPEDIENTES);
       const user = getMockUser();
 
-      const year = new Date(formattedPayload.fecha_incidente).getFullYear() || new Date().getFullYear();
-      const countOfYear = list.filter((e) => new Date(e.fecha_incidente).getFullYear() === year).length + 1;
+      const yearStr = formattedPayload.fecha_incidente ? formattedPayload.fecha_incidente.split('-')[0] : '';
+      const year = parseInt(yearStr, 10) || new Date().getFullYear();
+      const countOfYear = list.filter((e) => {
+        const itemYearStr = e.fecha_incidente ? e.fecha_incidente.split('-')[0] : '';
+        return parseInt(itemYearStr, 10) === year;
+      }).length + 1;
       const numero_expediente = `FAMFS-${year}-${String(countOfYear).padStart(3, '0')}`;
 
       const newExpediente: Expediente = {

@@ -2630,6 +2630,39 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
+      {/* Culpabilidad (Accident Responsibility) */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Culpabilidad de Incidentes</CardTitle>
+              <CardDescription>Distribución de responsabilidad en siniestros</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'culpabilidad',
+                title: 'Culpabilidad de Incidentes',
+                description: 'Distribución de responsabilidad en siniestros',
+                render: renderCulpabilidad
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderCulpabilidad(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* By type */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -2698,7 +2731,7 @@ export function DashboardCharts({
 
       {/* Financial by month */}
       <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
@@ -2765,7 +2798,7 @@ export function DashboardCharts({
 
       {/* Financial Cost Comparison (Quoted vs Negotiated vs Approved) */}
       <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.4 }}
@@ -2793,39 +2826,6 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderGestionCostos(260)}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Culpabilidad (Accident Responsibility) */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Culpabilidad de Incidentes</CardTitle>
-              <CardDescription>Distribución de responsabilidad en siniestros</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'culpabilidad',
-                title: 'Culpabilidad de Incidentes',
-                description: 'Distribución de responsabilidad en siniestros',
-                render: renderCulpabilidad
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {renderCulpabilidad(260)}
           </CardContent>
         </Card>
       </motion.div>
