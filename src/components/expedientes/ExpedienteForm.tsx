@@ -87,7 +87,7 @@ const baseSchema = z.object({
     proveedor: z.string().optional(),
     tipo_documento: z.enum(['CC', 'CE', 'TI', 'NIT', 'PP']).optional().nullable(),
     numero_documento: z.string().optional().nullable(),
-    concepto: z.string().min(1, 'Requerido'),
+    concepto: z.string().min(1, 'Debe seleccionar una opción'),
     concepto_otro: z.string().optional(),
     valor_cotizacion: z.number().min(0),
     valor_negociado: z.number().min(0),
@@ -204,7 +204,7 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
       numero_documento: isRequired('cotizaciones_numero_documento', false)
         ? z.string().min(1, 'Requerido')
         : z.string().optional().nullable(),
-      concepto: z.string().min(1, 'Requerido'),
+      concepto: z.string().min(1, 'Debe seleccionar una opción'),
       concepto_otro: z.string().optional().nullable(),
       valor_cotizacion: isRequired('valor_cotizacion', false)
         ? z.number({ invalid_type_error: 'Requerido' }).min(1, 'Monto debe ser positivo')
@@ -553,7 +553,7 @@ export function ExpedienteForm({
         proveedor: '', 
         tipo_documento: 'NIT',
         numero_documento: '',
-        concepto: 'SINIESTRO', 
+        concepto: '', 
         concepto_otro: '', 
         valor_cotizacion: 0, 
         valor_negociado: 0, 
@@ -1189,7 +1189,7 @@ export function ExpedienteForm({
                           proveedor: '', 
                           tipo_documento: 'NIT',
                           numero_documento: '',
-                          concepto: activeConceptos[0] || 'SINIESTRO', 
+                          concepto: '', 
                           concepto_otro: '', 
                           valor_cotizacion: 0, 
                           valor_negociado: 0, 
@@ -1325,10 +1325,16 @@ export function ExpedienteForm({
                                   {...register(`cotizaciones.${idx}.concepto` as const)}
                                   className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
+                                  <option value="">Seleccione una opción...</option>
                                   {activeConceptos.map((c) => (
                                     <option key={c} value={c}>{c}</option>
                                   ))}
                                 </select>
+                                {errors.cotizaciones?.[idx]?.concepto && (
+                                  <p className="text-red-400 text-xs mt-1">
+                                    {errors.cotizaciones[idx]?.concepto?.message || 'Requerido'}
+                                  </p>
+                                )}
                               </FormField>
 
                               {watchConcepto === 'OTROS' && (
