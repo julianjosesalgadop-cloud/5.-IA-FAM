@@ -352,111 +352,118 @@ export function ExpedientesList() {
   return (
     <div className="space-y-5">
       {/* Toolbar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full">
-        {/* Filters Area */}
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por placa, número interno, expediente, propietario..."
-              className="pl-9 bg-background border-border"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              id="expedientes-search"
-              autoComplete="one-time-code"
-              name="prevent_autofill"
-            />
-          </div>
-
-          <select
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={presetRange}
-            onChange={(e) => setPresetRange(e.target.value)}
-            id="expedientes-date-preset"
-          >
-            <option value="todo">Todas las fechas</option>
-            <option value="este-mes">Este Mes</option>
-            <option value="ultimos-30">Últimos 30 días</option>
-            <option value="este-anio">Este Año</option>
-            <option value="personalizado">Rango Personalizado</option>
-          </select>
-
-          {presetRange === 'personalizado' && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                className="h-10 bg-background border-border text-xs w-[135px]"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                placeholder="Inicio"
-              />
-              <span className="text-xs text-muted-foreground">a</span>
-              <Input
-                type="date"
-                className="h-10 bg-background border-border text-xs w-[135px]"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                placeholder="Fin"
-              />
-            </div>
-          )}
-
-          <select
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-            id="expedientes-estado-filter"
-          >
-            <option value="">Todos los estados</option>
-            {ESTADOS_EXPEDIENTE.map((e) => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
-
-          <select
-            className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={tipoFilter}
-            onChange={(e) => setTipoFilter(e.target.value)}
-            id="expedientes-tipo-filter"
-          >
-            <option value="">Todos los tipos</option>
-            {TIPOS_RECLAMACION.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-
-          {tipoFilter === 'Otro' && (
-            <Input
-              placeholder="Especificar tipo..."
-              className="h-10 bg-background border-border text-xs w-[140px]"
-              value={customTipoFilter}
-              onChange={(e) => setCustomTipoFilter(e.target.value)}
-            />
-          )}
-
-          {(search || estadoFilter || tipoFilter || presetRange !== 'todo' || fechaInicio || fechaFin) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearch('');
-                setEstadoFilter('');
-                setTipoFilter('');
-                setCustomTipoFilter('');
-                setPresetRange('todo');
-                setFechaInicio('');
-                setFechaFin('');
-              }}
-              className="text-muted-foreground hover:text-foreground text-xs"
-            >
-              Limpiar filtros
-            </Button>
-          )}
+      <div className="flex flex-wrap items-center gap-2.5 w-full">
+        {/* Search */}
+        <div className="relative w-full sm:w-64 md:w-72 shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por placa, número interno, expediente, propietario..."
+            className="pl-9 bg-background border-border h-10"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            id="expedientes-search"
+            autoComplete="one-time-code"
+            name="prevent_autofill"
+          />
         </div>
 
-        {/* Buttons Area */}
-        <div className="flex items-center gap-2 lg:ml-auto shrink-0 w-full sm:w-auto justify-end">
-          <Button variant="outline" size="sm" onClick={fetchExpedientes} title="Refrescar" className="h-9 px-2 sm:px-3">
+        {/* Date Preset */}
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+          value={presetRange}
+          onChange={(e) => setPresetRange(e.target.value)}
+          id="expedientes-date-preset"
+        >
+          <option value="todo">Todas las fechas</option>
+          <option value="este-mes">Este Mes</option>
+          <option value="ultimos-30">Últimos 30 días</option>
+          <option value="este-anio">Este Año</option>
+          <option value="personalizado">Rango Personalizado</option>
+        </select>
+
+        {/* Custom Dates if Personalized */}
+        {presetRange === 'personalizado' && (
+          <div className="flex items-center gap-2 shrink-0">
+            <Input
+              type="date"
+              className="h-10 bg-background border-border text-xs w-[135px]"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              placeholder="Inicio"
+            />
+            <span className="text-xs text-muted-foreground">a</span>
+            <Input
+              type="date"
+              className="h-10 bg-background border-border text-xs w-[135px]"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              placeholder="Fin"
+            />
+          </div>
+        )}
+
+        {/* Estado Filter */}
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+          value={estadoFilter}
+          onChange={(e) => setEstadoFilter(e.target.value)}
+          id="expedientes-estado-filter"
+        >
+          <option value="">Todos los estados</option>
+          {ESTADOS_EXPEDIENTE.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+
+        {/* Tipo Filter */}
+        <select
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+          value={tipoFilter}
+          onChange={(e) => setTipoFilter(e.target.value)}
+          id="expedientes-tipo-filter"
+        >
+          <option value="">Todos los tipos</option>
+          {TIPOS_RECLAMACION.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+
+        {/* Custom Tipo Input if Otro */}
+        {tipoFilter === 'Otro' && (
+          <Input
+            placeholder="Especificar tipo..."
+            className="h-10 bg-background border-border text-xs w-[140px] shrink-0"
+            value={customTipoFilter}
+            onChange={(e) => setCustomTipoFilter(e.target.value)}
+          />
+        )}
+
+        {/* Clean Filters Button */}
+        {(search || estadoFilter || tipoFilter || presetRange !== 'todo' || fechaInicio || fechaFin) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch('');
+              setEstadoFilter('');
+              setTipoFilter('');
+              setCustomTipoFilter('');
+              setPresetRange('todo');
+              setFechaInicio('');
+              setFechaFin('');
+            }}
+            className="text-muted-foreground hover:text-foreground text-xs h-10 shrink-0"
+          >
+            Limpiar filtros
+          </Button>
+        )}
+
+        {/* Spacer to push buttons to the right on large screens */}
+        <div className="hidden xl:block flex-1" />
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0 ml-auto xl:ml-0 w-full sm:w-auto justify-end">
+          <Button variant="outline" size="sm" onClick={fetchExpedientes} title="Refrescar" className="h-10 w-10 p-0 shrink-0 flex items-center justify-center">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button
@@ -464,7 +471,7 @@ export function ExpedientesList() {
             size="sm"
             onClick={handleExportExcel}
             id="expedientes-export-btn"
-            className="h-9 px-3 text-xs border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-700 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/20 transition-all font-semibold gap-1.5"
+            className="h-10 px-4 text-xs border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-700 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/20 transition-all font-semibold gap-1.5 shrink-0"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
             <span>Exportar Excel</span>
@@ -474,15 +481,14 @@ export function ExpedientesList() {
             size="sm"
             onClick={handleExportPDF}
             id="expedientes-export-pdf-btn"
-            className="h-9 px-3 text-xs border-rose-500/30 bg-rose-500/5 text-rose-600 dark:text-rose-400 dark:bg-rose-500/10 hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-700 dark:hover:text-rose-300 dark:hover:bg-rose-500/20 transition-all font-semibold gap-1.5"
+            className="h-10 px-4 text-xs border-rose-500/30 bg-rose-500/5 text-rose-600 dark:text-rose-400 dark:bg-rose-500/10 hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-700 dark:hover:text-rose-300 dark:hover:bg-rose-500/20 transition-all font-semibold gap-1.5 shrink-0"
           >
             <FileText className="w-4 h-4 text-rose-500 shrink-0" />
             <span>Exportar PDF</span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/expedientes/nuevo')} id="expedientes-nuevo-btn" className="h-9 px-2 sm:px-3 text-xs">
-            <Plus className="w-4 h-4 sm:mr-1.5" />
-            <span className="hidden sm:inline">Nuevo Expediente</span>
-            <span className="sm:hidden">Nuevo</span>
+          <Button size="sm" onClick={() => router.push('/expedientes/nuevo')} id="expedientes-nuevo-btn" className="h-10 px-4 text-xs shrink-0">
+            <Plus className="w-4 h-4 mr-1.5 shrink-0" />
+            <span>Nuevo Expediente</span>
           </Button>
         </div>
       </div>
