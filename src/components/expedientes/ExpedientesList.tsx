@@ -214,7 +214,7 @@ export function ExpedientesList() {
           ['Rango de fechas:', `${fechaInicio || 'Inicio'} a ${fechaFin || 'Fin'}`, '', ''],
         ],
         styles: { fontSize: 9 },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 22 },
       });
 
       // Detalle de expedientes title (will be on page 1)
@@ -240,7 +240,7 @@ export function ExpedientesList() {
         body: tableData,
         headStyles: { fillColor: [27, 54, 93], fontSize: 8.5 },
         bodyStyles: { fontSize: 7.5 },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 22 },
       });
 
       // Pagination/Footer text + Header repetition on all pages

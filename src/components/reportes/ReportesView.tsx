@@ -239,7 +239,7 @@ export function ReportesView() {
           ['Rango de fechas:', `${fechaDesde || 'Inicio'} a ${fechaHasta || 'Fin'}`, '', ''],
         ],
         styles: { fontSize: 9 },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 22 },
       });
 
       // Detalle de expedientes title
@@ -265,7 +265,7 @@ export function ReportesView() {
         body: tableData,
         headStyles: { fillColor: [27, 54, 93], fontSize: 8 },
         bodyStyles: { fontSize: 7 },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 22 },
       });
 
       // Pagination/Footer text + Header repetition on all pages

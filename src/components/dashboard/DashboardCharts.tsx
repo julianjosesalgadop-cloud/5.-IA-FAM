@@ -129,24 +129,25 @@ function CustomTooltipBar({ active, payload, label }: any) {
 function CustomTooltipFinanzas({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const isFiltered = data.totalFilteredCases < data.totalGeneralCases;
+    const cotizado = data.cotizado || 0;
     
     return (
       <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
         <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((p: any) => {
           const val = p.value || 0;
-          let pct = 0;
+          let pctText = '';
 
           if (p.name === 'cotizado') {
-            const denom = isFiltered ? data.totalFilteredCotizadoSum : data.totalGeneralCotizadoSum;
-            pct = denom > 0 ? (val / denom) * 100 : 0;
+            pctText = 'Valor base (100%)';
           } else if (p.name === 'negociado') {
-            const denom = isFiltered ? data.totalFilteredNegociadoSum : data.totalGeneralNegociadoSum;
-            pct = denom > 0 ? (val / denom) * 100 : 0;
+            const savings = Math.max(0, cotizado - val);
+            const pct = cotizado > 0 ? (savings / cotizado) * 100 : 0;
+            pctText = `Ahorro por Negociación: ${pct.toFixed(1)}% sobre cotizado`;
           } else if (p.name === 'aprobado') {
-            const denom = isFiltered ? data.totalFilteredApprovedSum : data.totalGeneralApprovedSum;
-            pct = denom > 0 ? (val / denom) * 100 : 0;
+            const savings = Math.max(0, cotizado - val);
+            const pct = cotizado > 0 ? (savings / cotizado) * 100 : 0;
+            pctText = `Ahorro vs Aprobado: ${pct.toFixed(1)}% sobre cotizado`;
           }
 
           return (
@@ -158,8 +159,8 @@ function CustomTooltipFinanzas({ active, payload, label }: any) {
                 </div>
                 <span className="font-semibold number-font">{formatCOP(val)}</span>
               </div>
-              <div className="pl-3.5 text-[10px] text-muted-foreground">
-                <span>{isFiltered ? 'Porcentaje (Filtrado)' : 'Porcentaje'}: {pct.toFixed(1)}%</span>
+              <div className="pl-3.5 text-[10px] text-muted-foreground font-medium">
+                <span>{pctText}</span>
               </div>
             </div>
           );

@@ -319,7 +319,7 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 35 },
           3: { cellWidth: 58 },
         },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 25 },
       });
 
       // Financial Block title
@@ -347,7 +347,7 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 45 },
           3: { cellWidth: 50 },
         },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 25 },
       });
 
       // Detalle de Cotizaciones
@@ -384,7 +384,7 @@ export default function ExpedienteDetailPage() {
             5: { halign: 'right' },
             6: { halign: 'right' },
           },
-          margin: { top: 38 },
+          margin: { top: 38, bottom: 25 },
         });
       }
 
@@ -413,7 +413,7 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 25 },
       });
 
       // Committee title
@@ -441,7 +441,7 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
-        margin: { top: 38 },
+        margin: { top: 38, bottom: 25 },
       });
 
       // Pagination/Footer text + Header repetition on all pages
@@ -538,7 +538,7 @@ export default function ExpedienteDetailPage() {
               )}
             </div>
             <p className="text-sm text-muted-foreground font-mono">
-              Placa: {expediente.placa} | Propietario: {expediente.propietario}
+              Placa: {expediente.placa} | Interno: {expediente.numero_interno || '—'} | Propietario: {expediente.propietario}
             </p>
           </div>
         </div>
