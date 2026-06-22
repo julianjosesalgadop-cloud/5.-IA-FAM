@@ -107,9 +107,9 @@ function CustomTooltipBar({ active, payload, label }: any) {
                   <span className={cn(
                     "font-semibold flex items-center gap-0.5",
                     diffPct > 0 
-                      ? "text-emerald-500 dark:text-emerald-400" 
+                      ? "text-rose-500 dark:text-rose-400" 
                       : diffPct < 0 
-                        ? "text-rose-500 dark:text-rose-400" 
+                        ? "text-emerald-500 dark:text-emerald-400" 
                         : "text-muted-foreground"
                   )}>
                     {diffPct > 0 ? `▲ +${diffPct.toFixed(1)}%` : diffPct < 0 ? `▼ ${diffPct.toFixed(1)}%` : `• 0.0%`}{' '}
