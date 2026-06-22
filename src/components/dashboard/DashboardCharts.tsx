@@ -330,7 +330,7 @@ export function DashboardCharts({
   const totalGeneralNegociado = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
 
   const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  const monthlyData = MONTH_NAMES.map((name, index) => {
+  const allMonthlyData = MONTH_NAMES.map((name, index) => {
     const cases = expedientes.filter((e) => {
       // Handle date comparison safely
       if (!e.fecha_incidente) return false;
@@ -382,6 +382,7 @@ export function DashboardCharts({
       totalGeneralNegociadoSum: totalGeneralNegociado,
     };
   });
+  const monthlyData = allMonthlyData.filter(d => d.expedientes > 0);
 
   // Year, Month, Day dynamic data processing
   const years = Array.from(
@@ -780,7 +781,7 @@ export function DashboardCharts({
     .map((d) => ({ ...d, totalCantidad: totalServiceCantidad, totalMonto: totalServiceMonto }));
 
   // 11. Costos Ahorrados monthly data
-  const monthlySavingsData = MONTH_NAMES.map((name, index) => {
+  const allMonthlySavingsData = MONTH_NAMES.map((name, index) => {
     const cases = expedientes.filter((e) => {
       if (!e.fecha_incidente) return false;
       const d = new Date(e.fecha_incidente + 'T00:00:00');
@@ -804,10 +805,12 @@ export function DashboardCharts({
       ahorroAprobado,
       pctAhorroNegociacion,
       pctAhorroAprobado,
+      casesCount: cases.length,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
     };
   });
+  const monthlySavingsData = allMonthlySavingsData.filter(d => d.casesCount > 0);
 
   // 12. Internal Number prefixes categorization
   const getInternalNumberCategory = (numStr: string | null | undefined): string => {
@@ -929,6 +932,20 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
 
   const proveedorData = allProveedorData.slice(0, 5);
+
+  const allProveedorCountData = Object.entries(providerGroups)
+    .map(([name, data]) => ({
+      name,
+      value: data.count,
+      count: data.count,
+      totalVal: data.totalVal,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const proveedorCountData = allProveedorCountData.slice(0, 5);
 
   const hasData = expedientes.length > 0;
 
@@ -1367,9 +1384,9 @@ export function DashboardCharts({
           margin={{ left: -20, right: 10, top: 20, bottom: 0 }}
           onClick={(data) => {
             if (timeUnit !== 'month') return;
-            const activeTooltipIndex = data?.activeTooltipIndex;
-            if (activeTooltipIndex !== undefined && onSelectMonth) {
-              onSelectMonth(activeTooltipIndex);
+            const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
+            if (monthIdx !== undefined && onSelectMonth) {
+              onSelectMonth(monthIdx);
             }
           }}
           className="cursor-pointer"
@@ -1668,6 +1685,110 @@ export function DashboardCharts({
     );
   };
 
+  const renderServiciosProveedor = (height: number) => {
+    const dataToUse = showAllProveedor ? allProveedorCountData : proveedorCountData;
+    const isScrollable = showAllProveedor && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
+    
+    return (
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 80, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedProveedor === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectProveedor) {
+                            onSelectProveedor(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[9px] transition-colors"
+                        >
+                          {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={90}
+                />
+                <Tooltip
+                  content={(props: any) => {
+                    if (!props.active || !props.payload?.length) return null;
+                    const p = props.payload[0];
+                    const d = p.payload;
+                    return (
+                      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
+                        <p className="font-semibold text-foreground mb-1">{d.name}</p>
+                        <div className="flex flex-col gap-0.5 text-foreground">
+                          <div>Servicios Atendidos: <span className="font-bold">{d.value}</span></div>
+                          <div className="text-[10px] text-muted-foreground">Monto total: {formatCOP(d.totalVal)}</div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(217, 91%, 60%)" 
+                  radius={[0, 4, 4, 0]}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectProveedor) {
+                      onSelectProveedor(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedProveedor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    formatter={(v: any) => `${v} serv.`}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderMontoAprobado = (height: number) => (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -1676,9 +1797,9 @@ export function DashboardCharts({
           barSize={height > 300 ? 35 : 20} 
           margin={{ left: -10, right: 10, top: 20, bottom: 0 }}
           onClick={(data) => {
-            const activeTooltipIndex = data?.activeTooltipIndex;
-            if (activeTooltipIndex !== undefined && onSelectMonth) {
-              onSelectMonth(activeTooltipIndex);
+            const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
+            if (monthIdx !== undefined && onSelectMonth) {
+              onSelectMonth(monthIdx);
             }
           }}
           className="cursor-pointer"
@@ -1805,9 +1926,9 @@ export function DashboardCharts({
           barSize={height > 300 ? 16 : undefined} 
           margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
           onClick={(data) => {
-            const activeTooltipIndex = data?.activeTooltipIndex;
-            if (activeTooltipIndex !== undefined && onSelectMonth) {
-              onSelectMonth(activeTooltipIndex);
+            const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
+            if (monthIdx !== undefined && onSelectMonth) {
+              onSelectMonth(monthIdx);
             }
           }}
           className="cursor-pointer"
@@ -2777,6 +2898,7 @@ export function DashboardCharts({
     
     switch (expandedChart.id) {
       case 'ingresos-proveedor':
+      case 'servicios-proveedor':
         isShowingAll = showAllProveedor;
         toggleFn = () => setShowAllProveedor(!showAllProveedor);
         break;
@@ -3152,48 +3274,88 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Ingresos por Taller / Proveedor */}
+      {/* Talleres / Proveedores — Ingresos y Servicios */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.58, duration: 0.4 }}
       >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Ingresos por Taller / Proveedor</CardTitle>
-              <CardDescription>{showAllProveedor ? 'Ingresos totales acumulados de todos los talleres' : 'Ingresos totales por taller/proveedor (Top 5)'}</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
-                onClick={(e) => { e.stopPropagation(); setShowAllProveedor(!showAllProveedor); }}
-              >
-                {showAllProveedor ? 'Ver Top 5' : 'Ver Todos'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
-                onClick={() => setExpandedChart({
-                  id: 'ingresos-proveedor',
-                  title: 'Ingresos por Taller / Proveedor',
-                  description: 'Ingresos totales acumulados por taller o proveedor',
-                  render: renderIngresosProveedor
-                })}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {renderIngresosProveedor(240)}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Ingresos por Taller / Proveedor */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Ingresos por Taller / Proveedor</CardTitle>
+                <CardDescription>{showAllProveedor ? 'Ingresos totales acumulados de todos los talleres' : 'Ingresos totales por taller/proveedor (Top 5)'}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                  onClick={(e) => { e.stopPropagation(); setShowAllProveedor(!showAllProveedor); }}
+                >
+                  {showAllProveedor ? 'Ver Top 5' : 'Ver Todos'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                  title="Expandir gráfico"
+                  onClick={() => setExpandedChart({
+                    id: 'ingresos-proveedor',
+                    title: 'Ingresos por Taller / Proveedor',
+                    description: 'Ingresos totales acumulados por taller o proveedor',
+                    render: renderIngresosProveedor
+                  })}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {renderIngresosProveedor(240)}
+            </CardContent>
+          </Card>
+
+          {/* Servicios por Taller / Proveedor */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Servicios por Taller / Proveedor</CardTitle>
+                <CardDescription>{showAllProveedor ? 'Cantidad de servicios atendidos de todos los talleres' : 'Servicios atendidos por taller/proveedor (Top 5)'}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                  onClick={(e) => { e.stopPropagation(); setShowAllProveedor(!showAllProveedor); }}
+                >
+                  {showAllProveedor ? 'Ver Top 5' : 'Ver Todos'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                  title="Expandir gráfico"
+                  onClick={() => setExpandedChart({
+                    id: 'servicios-proveedor',
+                    title: 'Servicios por Taller / Proveedor',
+                    description: 'Cantidad de expedientes/servicios atendidos por taller o proveedor',
+                    render: renderServiciosProveedor
+                  })}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {renderServiciosProveedor(240)}
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
 
       {/* Tipo de Servicio — Cantidad y Monto en la misma fila */}

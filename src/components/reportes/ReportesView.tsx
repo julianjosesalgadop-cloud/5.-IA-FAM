@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, FileSpreadsheet, FileText, Calendar, Filter, RefreshCw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Calendar, Filter, RefreshCw, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,13 +11,54 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
-import { formatCOP, formatDate } from '@/lib/utils';
-import { TIPOS_RECLAMACION, ESTADOS_EXPEDIENTE } from '@/lib/constants';
+import { formatCOP, formatDate, cn } from '@/lib/utils';
+import { TIPOS_RECLAMACION, ESTADOS_EXPEDIENTE, CULPABILIDADES, CAUSAS_RAIZ_DEFAULT } from '@/lib/constants';
 import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+const REPORT_COLUMNS = [
+  { label: 'Expediente', key: 'numero_expediente', isNumeric: false },
+  { label: 'Fecha Incidente', key: 'fecha_incidente', isNumeric: false },
+  { label: 'No. Interno', key: 'numero_interno', isNumeric: false },
+  { label: 'Placa', key: 'placa', isNumeric: false },
+  { label: 'Tipo Servicio', key: 'tipo_servicio', isNumeric: false },
+  { label: 'Propietario', key: 'propietario', isNumeric: false },
+  { label: 'Tipo Reclamación', key: 'tipo_reclamacion', isNumeric: false },
+  { label: 'Ciudad Origen', key: 'ciudad_origen', isNumeric: false },
+  { label: 'Ciudad Destino', key: 'ciudad_destino', isNumeric: false },
+  { label: 'Concepto', key: 'concepto', isNumeric: false },
+  { label: 'V. Cotización', key: 'valor_cotizacion', isNumeric: true },
+  { label: 'V. Negociado', key: 'valor_negociado', isNumeric: true },
+  { label: 'Deducible %', key: 'porcentaje_deducible', isNumeric: true },
+  { label: 'V. Deducible', key: 'valor_deducible', isNumeric: true },
+  { label: 'V. a Pagar', key: 'valor_a_pagar', isNumeric: true },
+  { label: 'V. Salvamento', key: 'valor_salvamento', isNumeric: true },
+  { label: 'V. Aprobado', key: 'valor_final_aprobado', isNumeric: true },
+  { label: 'Conductor', key: 'nombre_conductor', isNumeric: false },
+  { label: 'Cédula Conductor', key: 'id_conductor', isNumeric: false },
+  { label: 'Celular Conductor', key: 'celular_conductor', isNumeric: false },
+  { label: 'Culpabilidad', key: 'culpabilidad', isNumeric: false },
+  { label: 'Dto. Conductor', key: 'valor_descuento_conductor', isNumeric: true },
+  { label: 'Mem. Descuento', key: 'memorando_descuento', isNumeric: false },
+  { label: 'Recobro Vehículo', key: 'valor_recobro_vehiculo', isNumeric: true },
+  { label: 'Recobro Vehículo %', key: 'porcentaje_recobro_vehiculo', isNumeric: true },
+  { label: 'Recobro Abogado', key: 'valor_recobro_abogado', isNumeric: true },
+  { label: 'Recobro Abogado %', key: 'porcentaje_recobro_abogado', isNumeric: true },
+  { label: 'Recobro Empresa', key: 'valor_recobro_empresa', isNumeric: true },
+  { label: 'Recobro Empresa %', key: 'porcentaje_recobro_empresa', isNumeric: true },
+  { label: 'Fecha Comité', key: 'fecha_comite', isNumeric: false },
+  { label: 'Acta', key: 'numero_acta', isNumeric: false },
+  { label: 'Causa Raíz', key: 'causa_raiz', isNumeric: false },
+  { label: 'Obs. Comité', key: 'observaciones_comite', isNumeric: false },
+  { label: 'Autorizado Por', key: 'autorizado_por', isNumeric: false },
+  { label: 'Cargo', key: 'cargo_autorizador', isNumeric: false },
+  { label: 'Fecha Aut.', key: 'fecha_autorizacion', isNumeric: false },
+  { label: 'Mem. Pago', key: 'memorando_pago_nombre', isNumeric: false },
+  { label: 'Estado', key: 'estado', isNumeric: false },
+] as const;
 
 export function ReportesView() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -41,9 +82,29 @@ export function ReportesView() {
   const [searchPreview, setSearchPreview] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // New filters
+  const [culpabilidadFilter, setCulpabilidadFilter] = useState('');
+  const [causaRaizFilter, setCausaRaizFilter] = useState('');
+  const [tipoServicioFilter, setTipoServicioFilter] = useState('');
+  const [placaFilter, setPlacaFilter] = useState('');
+  const [internoFilter, setInternoFilter] = useState('');
+  const [propietarioFilter, setPropietarioFilter] = useState('');
+  const [conductorFilter, setConductorFilter] = useState('');
+  const [valorMinFilter, setValorMinFilter] = useState('');
+  const [valorMaxFilter, setValorMaxFilter] = useState('');
+
+  // Sorting states
+  const [sortField, setSortField] = useState<string>('numero_expediente');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [fechaDesde, fechaHasta, tipoFiltro, estadoFiltro, searchPreview]);
+  }, [
+    fechaDesde, fechaHasta, tipoFiltro, estadoFiltro, searchPreview,
+    culpabilidadFilter, causaRaizFilter, tipoServicioFilter,
+    placaFilter, internoFilter, propietarioFilter, conductorFilter,
+    valorMinFilter, valorMaxFilter
+  ]);
 
   const loadData = async () => {
     setLoading(true);
@@ -62,6 +123,33 @@ export function ReportesView() {
     loadData();
   }, []);
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleClearFilters = () => {
+    setFechaDesde('');
+    setFechaHasta('');
+    setTipoFiltro('');
+    setEstadoFiltro('');
+    setCulpabilidadFilter('');
+    setCausaRaizFilter('');
+    setTipoServicioFilter('');
+    setPlacaFilter('');
+    setInternoFilter('');
+    setPropietarioFilter('');
+    setConductorFilter('');
+    setValorMinFilter('');
+    setValorMaxFilter('');
+    setSearchPreview('');
+    toast.success('Filtros restablecidos');
+  };
+
   const filtered = expedientes.filter((e) => {
     const dIncidente = e.fecha_incidente ? new Date(e.fecha_incidente + 'T00:00:00') : null;
     const dDesde = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
@@ -71,6 +159,19 @@ export function ReportesView() {
     if (dHasta && dIncidente && dIncidente > dHasta) return false;
     if (tipoFiltro && e.tipo_reclamacion !== tipoFiltro) return false;
     if (estadoFiltro && e.estado !== estadoFiltro) return false;
+
+    // Apply new filters
+    if (culpabilidadFilter && e.culpabilidad !== culpabilidadFilter) return false;
+    if (causaRaizFilter && e.causa_raiz !== causaRaizFilter) return false;
+    if (tipoServicioFilter && e.tipo_servicio !== tipoServicioFilter) return false;
+    if (placaFilter && !e.placa?.toLowerCase().includes(placaFilter.toLowerCase())) return false;
+    if (internoFilter && !e.numero_interno?.toLowerCase().includes(internoFilter.toLowerCase())) return false;
+    if (propietarioFilter && !e.propietario?.toLowerCase().includes(propietarioFilter.toLowerCase())) return false;
+    if (conductorFilter && !e.nombre_conductor?.toLowerCase().includes(conductorFilter.toLowerCase())) return false;
+    
+    if (valorMinFilter && (e.valor_final_aprobado === null || e.valor_final_aprobado === undefined || e.valor_final_aprobado < Number(valorMinFilter))) return false;
+    if (valorMaxFilter && (e.valor_final_aprobado === null || e.valor_final_aprobado === undefined || e.valor_final_aprobado > Number(valorMaxFilter))) return false;
+
     return true;
   });
 
@@ -90,12 +191,35 @@ export function ReportesView() {
     });
   }, [filtered, searchPreview]);
 
+  const sortedData = React.useMemo(() => {
+    return [...previewFiltered].sort((a, b) => {
+      let valA = a[sortField as keyof Expediente];
+      let valB = b[sortField as keyof Expediente];
+
+      if (valA === null || valA === undefined) return sortOrder === 'asc' ? 1 : -1;
+      if (valB === null || valB === undefined) return sortOrder === 'asc' ? -1 : 1;
+
+      // number sorting
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      }
+
+      // string sorting
+      const strA = String(valA);
+      const strB = String(valB);
+
+      return sortOrder === 'asc'
+        ? strA.localeCompare(strB, 'es', { sensitivity: 'base' })
+        : strB.localeCompare(strA, 'es', { sensitivity: 'base' });
+    });
+  }, [previewFiltered, sortField, sortOrder]);
+
   const ITEMS_PER_PAGE = 10;
   const totalPages = Math.ceil(previewFiltered.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedData = React.useMemo(() => {
-    return previewFiltered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [previewFiltered, startIndex]);
+    return sortedData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [sortedData, startIndex]);
 
   // Calculate top plates from filtered list
   const placaGroups: Record<string, { total: number; valor: number }> = {};
@@ -320,25 +444,25 @@ export function ReportesView() {
           <CardDescription>Define el rango y criterios para el análisis</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-5">
             <div className="space-y-1.5">
-              <Label className="text-foreground font-medium">Fecha Desde</Label>
+              <Label className="text-foreground font-medium text-xs">Fecha Desde</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input type="date" className="pl-8 bg-background border-border" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} id="reporte-fecha-desde" />
+                <Input type="date" className="pl-8 bg-background border-border text-xs" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} id="reporte-fecha-desde" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-foreground font-medium">Fecha Hasta</Label>
+              <Label className="text-foreground font-medium text-xs">Fecha Hasta</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input type="date" className="pl-8 bg-background border-border" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} id="reporte-fecha-hasta" />
+                <Input type="date" className="pl-8 bg-background border-border text-xs" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} id="reporte-fecha-hasta" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-foreground font-medium">Tipo de Reclamación</Label>
+              <Label className="text-foreground font-medium text-xs">Tipo de Reclamación</Label>
               <select
-                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 value={tipoFiltro}
                 onChange={(e) => setTipoFiltro(e.target.value)}
                 id="reporte-tipo-filter"
@@ -348,9 +472,9 @@ export function ReportesView() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-foreground font-medium">Estado</Label>
+              <Label className="text-foreground font-medium text-xs">Estado</Label>
               <select
-                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 value={estadoFiltro}
                 onChange={(e) => setEstadoFiltro(e.target.value)}
                 id="reporte-estado-filter"
@@ -358,6 +482,70 @@ export function ReportesView() {
                 <option value="">Todos</option>
                 {ESTADOS_EXPEDIENTE.map((e) => <option key={e} value={e}>{e}</option>)}
               </select>
+            </div>
+
+            {/* New responsive filters */}
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">Placa</Label>
+              <Input placeholder="Buscar placa..." className="bg-background border-border text-xs h-10" value={placaFilter} onChange={(e) => setPlacaFilter(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">No. Interno</Label>
+              <Input placeholder="Buscar interno..." className="bg-background border-border text-xs h-10" value={internoFilter} onChange={(e) => setInternoFilter(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">Tipo de Servicio</Label>
+              <select
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                value={tipoServicioFilter}
+                onChange={(e) => setTipoServicioFilter(e.target.value)}
+              >
+                <option value="">Todos</option>
+                <option value="Intermunicipal">Intermunicipal</option>
+                <option value="Especial">Especial</option>
+                <option value="Urbano">Urbano</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">Conductor</Label>
+              <Input placeholder="Nombre conductor..." className="bg-background border-border text-xs h-10" value={conductorFilter} onChange={(e) => setConductorFilter(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">Propietario</Label>
+              <Input placeholder="Nombre propietario..." className="bg-background border-border text-xs h-10" value={propietarioFilter} onChange={(e) => setPropietarioFilter(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">Culpabilidad</Label>
+              <select
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                value={culpabilidadFilter}
+                onChange={(e) => setCulpabilidadFilter(e.target.value)}
+              >
+                <option value="">Todos</option>
+                {CULPABILIDADES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">Causa Raíz</Label>
+              <select
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                value={causaRaizFilter}
+                onChange={(e) => setCausaRaizFilter(e.target.value)}
+              >
+                <option value="">Todas</option>
+                {CAUSAS_RAIZ_DEFAULT.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-foreground font-medium text-[11px] truncate block">Val. Aprobado Mín</Label>
+                <Input type="number" placeholder="Mín" className="bg-background border-border text-xs h-10" value={valorMinFilter} onChange={(e) => setValorMinFilter(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-foreground font-medium text-[11px] truncate block">Val. Aprobado Máx</Label>
+                <Input type="number" placeholder="Máx" className="bg-background border-border text-xs h-10" value={valorMaxFilter} onChange={(e) => setValorMaxFilter(e.target.value)} />
+              </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -376,14 +564,12 @@ export function ReportesView() {
               <span className="hidden sm:inline">Exportar PDF Consolidado</span>
               <span className="sm:hidden">PDF</span>
             </Button>
+            <Button onClick={handleClearFilters} variant="ghost" size="sm" className="h-9 text-xs text-muted-foreground hover:text-foreground">
+              Limpiar Filtros
+            </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Dynamic Results info */}
-      <p className="text-sm text-muted-foreground">
-        Registros que coinciden con los filtros: <span className="font-semibold text-foreground">{filtered.length}</span>
-      </p>
 
       {/* Charts */}
       {loading ? (
@@ -419,44 +605,35 @@ export function ReportesView() {
               <table className="w-full min-w-[4200px] text-xs">
                 <thead>
                   <tr className="border-b border-border bg-secondary/5 font-semibold text-muted-foreground uppercase tracking-wider text-left">
-                    <th className="px-4 py-3">Expediente</th>
-                    <th className="px-4 py-3">Fecha Incidente</th>
-                    <th className="px-4 py-3">No. Interno</th>
-                    <th className="px-4 py-3">Placa</th>
-                    <th className="px-4 py-3">Tipo Servicio</th>
-                    <th className="px-4 py-3">Propietario</th>
-                    <th className="px-4 py-3">Tipo Reclamación</th>
-                    <th className="px-4 py-3">Ciudad Origen</th>
-                    <th className="px-4 py-3">Ciudad Destino</th>
-                    <th className="px-4 py-3">Concepto</th>
-                    <th className="px-4 py-3 text-right">V. Cotización</th>
-                    <th className="px-4 py-3 text-right">V. Negociado</th>
-                    <th className="px-4 py-3 text-right">Deducible %</th>
-                    <th className="px-4 py-3 text-right">V. Deducible</th>
-                    <th className="px-4 py-3 text-right">V. a Pagar</th>
-                    <th className="px-4 py-3 text-right">V. Salvamento</th>
-                    <th className="px-4 py-3 text-right">V. Aprobado</th>
-                    <th className="px-4 py-3">Conductor</th>
-                    <th className="px-4 py-3">Cédula Conductor</th>
-                    <th className="px-4 py-3">Celular Conductor</th>
-                    <th className="px-4 py-3">Culpabilidad</th>
-                    <th className="px-4 py-3 text-right">Dto. Conductor</th>
-                    <th className="px-4 py-3">Mem. Descuento</th>
-                    <th className="px-4 py-3 text-right">Recobro Vehículo</th>
-                    <th className="px-4 py-3 text-right">Recobro Vehículo %</th>
-                    <th className="px-4 py-3 text-right">Recobro Abogado</th>
-                    <th className="px-4 py-3 text-right">Recobro Abogado %</th>
-                    <th className="px-4 py-3 text-right">Recobro Empresa</th>
-                    <th className="px-4 py-3 text-right">Recobro Empresa %</th>
-                    <th className="px-4 py-3">Fecha Comité</th>
-                    <th className="px-4 py-3">Acta</th>
-                    <th className="px-4 py-3">Causa Raíz</th>
-                    <th className="px-4 py-3">Obs. Comité</th>
-                    <th className="px-4 py-3">Autorizado Por</th>
-                    <th className="px-4 py-3">Cargo</th>
-                    <th className="px-4 py-3">Fecha Aut.</th>
-                    <th className="px-4 py-3">Mem. Pago</th>
-                    <th className="px-4 py-3">Estado</th>
+                    {REPORT_COLUMNS.map((col) => {
+                      const isSortedByThis = sortField === col.key;
+                      return (
+                        <th
+                          key={col.key}
+                          onClick={() => handleSort(col.key)}
+                          className={cn(
+                            "px-4 py-3 cursor-pointer select-none hover:bg-secondary/40 transition-colors",
+                            col.isNumeric ? "text-right" : "text-left"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex items-center gap-1.5",
+                            col.isNumeric ? "justify-end" : "justify-start"
+                          )}>
+                            <span>{col.label}</span>
+                            {isSortedByThis ? (
+                              sortOrder === 'asc' ? (
+                                <ArrowUp className="w-3.5 h-3.5 text-primary" />
+                              ) : (
+                                <ArrowDown className="w-3.5 h-3.5 text-primary" />
+                              )
+                            ) : (
+                              <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -469,64 +646,62 @@ export function ReportesView() {
                   ) : (
                     paginatedData.map((e, idx) => (
                       <tr key={e.id || idx} className="hover:bg-secondary/20 transition-colors">
-                        <td className="px-4 py-2.5 font-mono font-semibold text-primary">{e.numero_expediente}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_incidente)}</td>
-                        <td className="px-4 py-2.5 font-semibold text-foreground">{e.numero_interno || '—'}</td>
-                        <td className="px-4 py-2.5 font-mono text-muted-foreground">{e.placa}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.tipo_servicio || '—'}</td>
-                        <td className="px-4 py-2.5 text-foreground">{e.propietario}</td>
-                        <td className="px-4 py-2.5">
-                          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
-                            {e.tipo_reclamacion}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.ciudad_origen || '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.ciudad_destino || '—'}</td>
-                        <td className="px-4 py-2.5 truncate max-w-[150px] text-muted-foreground" title={e.concepto || ''}>{e.concepto || '—'}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_cotizacion)}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_negociado)}</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '—'}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_deducible)}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_a_pagar)}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_salvamento)}</td>
-                        <td className="px-4 py-2.5 text-right font-semibold text-foreground">{formatCOP(e.valor_final_aprobado)}</td>
-                        <td className="px-4 py-2.5 text-foreground font-medium">{e.nombre_conductor || '—'}</td>
-                        <td className="px-4 py-2.5 font-mono text-muted-foreground">{e.id_conductor || '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.celular_conductor || '—'}</td>
-                        <td className="px-4 py-2.5">
-                          {e.culpabilidad ? (
-                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-slate-500/10 text-slate-400">
-                              {e.culpabilidad}
-                            </span>
-                          ) : '—'}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_descuento_conductor)}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.memorando_descuento || '—'}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_recobro_vehiculo)}</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_recobro_vehiculo ? `${e.porcentaje_recobro_vehiculo}%` : '—'}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_recobro_abogado)}</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_recobro_abogado ? `${e.porcentaje_recobro_abogado}%` : '—'}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-muted-foreground">{formatCOP(e.valor_recobro_empresa)}</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">{e.porcentaje_recobro_empresa ? `${e.porcentaje_recobro_empresa}%` : '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_comite)}</td>
-                        <td className="px-4 py-2.5 font-semibold text-primary">{e.numero_acta || '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.causa_raiz || '—'}</td>
-                        <td className="px-4 py-2.5 truncate max-w-[150px] text-muted-foreground" title={e.observaciones_comite || ''}>{e.observaciones_comite || '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.autorizado_por || '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.cargo_autorizador || '—'}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{formatDate(e.fecha_autorizacion)}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{e.memorando_pago_nombre || '—'}</td>
-                        <td className="px-4 py-2.5">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                            e.estado === 'Aprobado'
-                              ? 'bg-green-500/15 text-green-400 border-green-500/30'
-                              : e.estado === 'Rechazado'
-                              ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                              : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
-                          }`}>
-                            {e.estado}
-                          </span>
-                        </td>
+                        {REPORT_COLUMNS.map((col) => {
+                          const val = e[col.key as keyof Expediente];
+                          let content: React.ReactNode = String(val ?? '—');
+                          
+                          if (col.key === 'numero_expediente') {
+                            content = <span className="font-mono font-semibold text-primary">{String(val)}</span>;
+                          } else if (col.key === 'fecha_incidente' || col.key === 'fecha_comite' || col.key === 'fecha_autorizacion') {
+                            content = formatDate(val as string);
+                          } else if (col.isNumeric) {
+                            content = formatCOP(val as number);
+                          } else if (col.key === 'tipo_reclamacion') {
+                            content = (
+                              <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                {String(val)}
+                              </span>
+                            );
+                          } else if (col.key === 'estado') {
+                            content = (
+                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                                val === 'Aprobado'
+                                  ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                                  : val === 'Rechazado'
+                                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                                  : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
+                              }`}>
+                                {String(val)}
+                              </span>
+                            );
+                          } else if (col.key === 'culpabilidad') {
+                            content = val ? (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-slate-500/10 text-slate-400">
+                                {String(val)}
+                              </span>
+                            ) : '—';
+                          } else if (col.key === 'numero_interno') {
+                            content = <span className="font-semibold text-foreground">{String(val || '—')}</span>;
+                          } else if (col.key === 'placa') {
+                            content = <span className="font-mono text-muted-foreground">{String(val || '—')}</span>;
+                          } else if (col.key === 'propietario' || col.key === 'nombre_conductor') {
+                            content = <span className="truncate max-w-[120px] inline-block" title={String(val || '')}>{String(val || '—')}</span>;
+                          } else if (col.key === 'concepto' || col.key === 'observaciones_comite') {
+                            content = <span className="truncate max-w-[150px] inline-block" title={String(val || '')}>{String(val || '—')}</span>;
+                          }
+
+                          return (
+                            <td 
+                              key={col.key} 
+                              className={cn(
+                                "px-4 py-2.5 text-muted-foreground",
+                                col.isNumeric ? "text-right" : "text-left"
+                              )}
+                            >
+                              {content}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))
                   )}
