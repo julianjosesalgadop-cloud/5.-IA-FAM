@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BarChart,
   Bar,
@@ -250,6 +250,31 @@ export function DashboardCharts({
     description: string;
     render: (height: number) => React.ReactNode;
   } | null>(null);
+
+  const modalContentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(400);
+
+  useEffect(() => {
+    if (!expandedChart) return;
+
+    const updateHeight = () => {
+      if (modalContentRef.current) {
+        const height = modalContentRef.current.clientHeight - 48; // p-6 is 24px top/bottom (48px)
+        if (height > 100) {
+          setContentHeight(height);
+        }
+      }
+    };
+
+    updateHeight();
+    const timer = setTimeout(updateHeight, 50);
+
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [expandedChart]);
 
   const [showAllCausa, setShowAllCausa] = useState(false);
   const [showAllPropietario, setShowAllPropietario] = useState(false);
@@ -3343,7 +3368,7 @@ export function DashboardCharts({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="w-full max-w-4xl bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
+              className="w-full max-w-[95vw] lg:max-w-7xl h-[90vh] bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between p-5 border-b border-border bg-secondary/10">
@@ -3404,13 +3429,16 @@ export function DashboardCharts({
               </div>
 
               {/* Modal Content */}
-              <div className="p-6 flex-1 flex items-center justify-center bg-card">
+              <div 
+                ref={modalContentRef}
+                className="p-6 flex-1 flex items-center justify-center bg-card min-h-0 w-full"
+              >
                 {expandedChart.id === 'estado-expedientes' ? (
-                  <div className="w-full max-w-2xl">
+                  <div className="w-full max-w-2xl overflow-y-auto max-h-full">
                     {renderEstadoExpedientes(true)}
                   </div>
                 ) : (
-                  expandedChart.render(400)
+                  expandedChart.render(contentHeight)
                 )}
               </div>
             </motion.div>
