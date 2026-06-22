@@ -22,6 +22,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, []);
 
+  // Inactivity timeout: auto logout after 15 minutes of inactivity
+  useEffect(() => {
+    let timeoutId: any;
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+
+    const handleLogout = async () => {
+      localStorage.removeItem('fam_mock_user');
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error('Error signing out due to inactivity:', err);
+      }
+      window.location.href = '/auth/login';
+    };
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleLogout, INACTIVITY_TIMEOUT);
+    };
+
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'mousemove', 'click', 'touchstart'];
+
+    resetTimer();
+
+    activityEvents.forEach((event) => {
+      document.addEventListener(event, resetTimer, { passive: true });
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      activityEvents.forEach((event) => {
+        document.removeEventListener(event, resetTimer);
+      });
+    };
+  }, []);
+
   return (
     <div className="flex h-screen bg-background overflow-hidden relative">
       {/* Desktop Sidebar */}

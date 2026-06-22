@@ -247,7 +247,14 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
     celular_conductor: isRequired('celular_conductor', false)
       ? z.string().min(1, 'Requerido')
       : z.string().optional().nullable(),
-    culpabilidad: z.string().optional().nullable(),
+    culpabilidad: z.string().optional().nullable().refine((val) => {
+      if (campoConfig.culpabilidad?.visible) {
+        return !!val && val !== "";
+      }
+      return true;
+    }, {
+      message: 'Debe seleccionar una opción de culpabilidad'
+    }),
     valor_descuento_conductor: isRequired('valor_descuento_conductor', false)
       ? z.number().min(0, 'Monto debe ser positivo')
       : z.number().min(0).optional().nullable(),
@@ -536,7 +543,7 @@ export function ExpedienteForm({
       tipo_reclamacion_otro: isCustomTipoReclamacion ? initialTipoReclamacion : '',
       tipo_servicio: isCustomTipoServicio ? 'Otro' : (initialTipoServicio || 'Intermunicipal'),
       tipo_servicio_otro: isCustomTipoServicio ? initialTipoServicio : '',
-      culpabilidad: 'Sin definir',
+      culpabilidad: '',
       propietarios: defaultValues?.propietarios && defaultValues.propietarios.length > 0
         ? defaultValues.propietarios
         : [{ nombre: defaultValues?.propietario || '', tipo_documento: 'CC', numero_documento: '' }],
@@ -1553,6 +1560,7 @@ export function ExpedienteForm({
                         {...register('culpabilidad')}
                         className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       >
+                        <option value="">Seleccione una opción...</option>
                         {activeCulpabilidades.map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}

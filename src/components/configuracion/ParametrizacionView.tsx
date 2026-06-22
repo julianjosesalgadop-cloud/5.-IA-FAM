@@ -101,8 +101,8 @@ const DEFAULT_CATALOGS = {
     tipo_servicio: { label: 'Tipo de Servicio', placeholder: '', visible: true, requerido: true },
     propietarios: { label: 'Propietarios', placeholder: '', visible: true, requerido: true },
     tipo_reclamacion: { label: 'Tipo de Reclamación', placeholder: '', visible: true, requerido: true },
-    ciudad_origen: { label: 'Ciudad Origen', placeholder: 'Ej: Sogamoso', visible: true, requerido: false },
-    ciudad_destino: { label: 'Ciudad Destino', placeholder: 'Ej: Bogotá', visible: true, requerido: false },
+    ciudad_origen: { label: 'Ciudad Origen', placeholder: 'EJ: SOGAMOSO', visible: true, requerido: false },
+    ciudad_destino: { label: 'Ciudad Destino', placeholder: 'EJ: BOGOTÁ', visible: true, requerido: false },
     concepto: { label: 'Concepto / Descripción', placeholder: 'Escriba una descripción...', visible: true, requerido: false },
     
     // Paso 2

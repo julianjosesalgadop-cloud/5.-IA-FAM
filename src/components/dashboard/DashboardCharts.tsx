@@ -259,6 +259,7 @@ export function DashboardCharts({
   const [showAllTopConductores, setShowAllTopConductores] = useState(false);
   const [showAllRoutesCant, setShowAllRoutesCant] = useState(false);
   const [showAllRoutesMonto, setShowAllRoutesMonto] = useState(false);
+  const [showAllProveedor, setShowAllProveedor] = useState(false);
   const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
   const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
 
@@ -463,6 +464,21 @@ export function DashboardCharts({
       name: type, 
       value: count, 
       fill: TIPO_COLORS[type as keyof typeof TIPO_COLORS],
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    };
+  }).filter((t) => t.value > 0);
+
+  // 2b. Claim Type Expenses (Gastos por Tipo de Reclamación)
+  const tipoGastosData = CLAIM_TYPES.map((type) => {
+    const cases = expedientes.filter((e) => e.tipo_reclamacion === type);
+    const sumAprobado = cases.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
+    return {
+      name: type,
+      value: sumAprobado,
+      fill: TIPO_COLORS[type as keyof typeof TIPO_COLORS],
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
       totalFilteredCases: totalFilteredCount,
       totalGeneralCases: totalGeneralCount,
     };
@@ -752,6 +768,43 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
 
   const routesMontoData = allRoutesMontoData.slice(0, 5);
+
+  // 14. Ingresos por Taller / Proveedor
+  const providerGroups: Record<string, { totalVal: number; count: number }> = {};
+  expedientes.forEach((e) => {
+    if (e.cotizaciones && e.cotizaciones.length > 0) {
+      const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+      const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+      activeCots.forEach((cot) => {
+        const prov = (cot.proveedor || 'Sin definir').trim().toUpperCase();
+        if (!providerGroups[prov]) {
+          providerGroups[prov] = { totalVal: 0, count: 0 };
+        }
+        providerGroups[prov].totalVal += (cot.valor_a_pagar || cot.valor_negociado || 0);
+        providerGroups[prov].count += 1;
+      });
+    } else {
+      const prov = 'SIN ESPECIFICAR';
+      if (!providerGroups[prov]) {
+        providerGroups[prov] = { totalVal: 0, count: 0 };
+      }
+      providerGroups[prov].totalVal += (e.valor_final_aprobado || e.valor_negociado || 0);
+      providerGroups[prov].count += 1;
+    }
+  });
+
+  const allProveedorData = Object.entries(providerGroups)
+    .map(([name, data]) => ({
+      name,
+      value: data.totalVal,
+      count: data.count,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const proveedorData = allProveedorData.slice(0, 5);
 
   const hasData = expedientes.length > 0;
 
@@ -1229,6 +1282,134 @@ export function DashboardCharts({
       )}
     </div>
   );
+
+  const renderGastosTipoReclamacion = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {tipoGastosData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={tipoGastosData}
+              cx="50%"
+              cy="45%"
+              innerRadius={height > 300 ? 80 : 55}
+              outerRadius={height > 300 ? 120 : 80}
+              paddingAngle={3}
+              dataKey="value"
+              label={({ value }) => value > 0 ? `$${(value / 1000000).toFixed(1)}M` : ''}
+              labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectTipoReclamacion) {
+                  onSelectTipoReclamacion(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {tipoGastosData.map((entry, index) => {
+                const isSelected = selectedTipoReclamacion === entry.name;
+                return (
+                  <Cell 
+                    key={index} 
+                    fill={entry.fill}
+                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                    opacity={selectedTipoReclamacion && !isSelected ? 0.45 : 1}
+                  />
+                );
+              })}
+            </Pie>
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+            <Legend
+              iconSize={8}
+              onClick={(data) => {
+                const val = data?.value;
+                if (val && onSelectTipoReclamacion) {
+                  onSelectTipoReclamacion(val);
+                }
+              }}
+              className="cursor-pointer"
+              formatter={(value) => {
+                const isSelected = selectedTipoReclamacion === value;
+                return (
+                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
+                    {value}
+                  </span>
+                );
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderIngresosProveedor = (height: number) => {
+    const dataToUse = showAllProveedor ? allProveedorData : proveedorData;
+    const isModal = height > 350;
+    const finalHeight = showAllProveedor && !isModal ? Math.max(height, dataToUse.length * 36) : height;
+    
+    return (
+      <div style={{ height: showAllProveedor && !isModal ? `${height}px` : 'auto', overflowY: showAllProveedor && !isModal ? 'auto' : 'visible' }} className="w-full pr-1">
+        <div style={{ height: `${finalHeight}px` }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 80, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9, fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={90}
+                />
+                <Tooltip
+                  content={(props: any) => {
+                    if (!props.active || !props.payload?.length) return null;
+                    const p = props.payload[0];
+                    const d = p.payload;
+                    return (
+                      <div style={CUSTOM_TOOLTIP_STYLE} className="p-3 text-xs space-y-1.5 shadow-lg">
+                        <p className="font-semibold text-foreground mb-1">{d.name}</p>
+                        <div className="flex flex-col gap-0.5 text-foreground">
+                          <div>Ingresos Totales: <span className="font-bold">{formatCOP(d.value)}</span></div>
+                          <div className="text-[10px] text-muted-foreground">Trabajos realizados: {d.count}</div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="value" fill="hsl(142, 71%, 45%)" radius={[0, 4, 4, 0]}>
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill="hsl(142, 71%, 45%)"
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    formatter={(v: any) => `$${(v / 1000000).toFixed(1)}M`}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderMontoAprobado = (height: number) => (
     <div style={{ height }} className="w-full">
@@ -2457,6 +2638,39 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
+      {/* Gastos por Tipo de Reclamación */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Gastos por Tipo de Reclamo</CardTitle>
+              <CardDescription>Monto final aprobado por categoría ($)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'gastos-tipo-reclamacion',
+                title: 'Gastos por Tipo de Reclamación',
+                description: 'Monto final aprobado por categoría de reclamo',
+                render: renderGastosTipoReclamacion
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderGastosTipoReclamacion(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Financial by month */}
       <motion.div
         className="lg:col-span-2 min-w-0 w-full overflow-hidden"
@@ -2621,6 +2835,50 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderCostosAhorrados(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Ingresos por Taller / Proveedor */}
+      <motion.div
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.58, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Ingresos por Taller / Proveedor</CardTitle>
+              <CardDescription>{showAllProveedor ? 'Ingresos totales acumulados de todos los talleres' : 'Ingresos totales por taller/proveedor (Top 5)'}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllProveedor(!showAllProveedor); }}
+              >
+                {showAllProveedor ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'ingresos-proveedor',
+                  title: 'Ingresos por Taller / Proveedor',
+                  description: 'Ingresos totales acumulados por taller o proveedor',
+                  render: renderIngresosProveedor
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderIngresosProveedor(240)}
           </CardContent>
         </Card>
       </motion.div>
