@@ -1789,96 +1789,105 @@ export function DashboardCharts({
     );
   };
 
-  const renderMontoAprobado = (height: number) => (
-    <div style={{ height }} className="w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart 
-          data={monthlyData} 
-          barSize={height > 300 ? 35 : 20} 
-          margin={{ left: -10, right: 10, top: 20, bottom: 0 }}
-          onClick={(data) => {
-            const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
-            if (monthIdx !== undefined && onSelectMonth) {
-              onSelectMonth(monthIdx);
-            }
-          }}
-          className="cursor-pointer"
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis 
-            dataKey="mes" 
-            tick={(props: any) => {
-              const { x, y, payload } = props;
-              const value = payload?.value || '';
-              const idx = MONTH_NAMES.indexOf(value);
-              const isSelected = selectedMonth === idx;
-              return (
-                <g 
-                  style={{ pointerEvents: 'auto' }} 
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onSelectMonth && idx !== -1) {
-                      onSelectMonth(idx);
-                    }
-                  }}
-                >
-                  <text
-                    x={x}
-                    y={y}
-                    dy={12}
-                    textAnchor="middle"
-                    fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
-                    className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                  >
-                    {value}
-                  </text>
-                </g>
-              );
-            }}
-            axisLine={false} 
-            tickLine={false} 
-          />
-          <YAxis
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
-          />
-          <Tooltip content={<CustomTooltipBar />} />
-          <Bar 
-            dataKey="valor" 
-            name="valor" 
-            fill="hsl(142, 71%, 45%)" 
-            radius={[3, 3, 0, 0]}
+  const renderMontoAprobado = (height: number) => {
+    const getBarSize = () => {
+      const count = monthlyData.length;
+      if (count <= 2) return height > 300 ? 90 : 60;
+      if (count <= 5) return height > 300 ? 65 : 45;
+      return height > 300 ? 45 : 30;
+    };
+
+    return (
+      <div style={{ height }} className="w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart 
+            data={monthlyData} 
+            barSize={getBarSize()} 
+            margin={{ left: -10, right: 10, top: 20, bottom: 0 }}
             onClick={(data) => {
-              const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
+              const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
               if (monthIdx !== undefined && onSelectMonth) {
                 onSelectMonth(monthIdx);
               }
             }}
             className="cursor-pointer"
           >
-            <LabelList
-              dataKey="valor"
-              position="top"
-              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
-              style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis 
+              dataKey="mes" 
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const idx = MONTH_NAMES.indexOf(value);
+                const isSelected = selectedMonth === idx;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectMonth && idx !== -1) {
+                        onSelectMonth(idx);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dy={12}
+                      textAnchor="middle"
+                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                    >
+                      {value}
+                    </text>
+                  </g>
+                );
+              }}
+              axisLine={false} 
+              tickLine={false} 
             />
-            {monthlyData.map((entry, i) => {
-              const isSelected = selectedMonth === entry.monthIndex;
-              return (
-                <Cell
-                  key={i}
-                  fill={isSelected ? 'hsl(43, 96%, 52%)' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(34, 197, 94, 0.15)' : 'hsl(142, 71%, 45%)') : 'rgba(255,255,255,0.1)')}
-                />
-              );
-            })}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
+            <YAxis
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+            />
+            <Tooltip content={<CustomTooltipBar />} />
+            <Bar 
+              dataKey="valor" 
+              name="valor" 
+              fill="hsl(142, 71%, 45%)" 
+              radius={[3, 3, 0, 0]}
+              onClick={(data) => {
+                const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
+                if (monthIdx !== undefined && onSelectMonth) {
+                  onSelectMonth(monthIdx);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              <LabelList
+                dataKey="valor"
+                position="top"
+                formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+              {monthlyData.map((entry, i) => {
+                const isSelected = selectedMonth === entry.monthIndex;
+                return (
+                  <Cell
+                    key={i}
+                    fill={isSelected ? 'hsl(43, 96%, 52%)' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(34, 197, 94, 0.15)' : 'hsl(142, 71%, 45%)') : 'rgba(255,255,255,0.1)')}
+                  />
+                );
+              })}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
 
   const renderEstadoExpedientes = (isLarge = false) => (
     <div className={`pt-2 ${isLarge ? 'max-w-xl mx-auto py-8 space-y-4' : 'grid grid-cols-1 md:grid-cols-3 gap-6 pb-2'}`}>
