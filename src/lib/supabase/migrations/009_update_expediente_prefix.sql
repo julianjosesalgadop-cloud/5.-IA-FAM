@@ -1,6 +1,7 @@
--- Migration: Update case number prefix from FAMFS- to FAM-
--- =========================================================
+-- Migration: Update case number prefix from FAMFS- / FAM- to FAM-FS- and pad to 4 digits
+-- =========================================================================================
 
+-- 1. Create or replace the trigger function
 CREATE OR REPLACE FUNCTION public.set_expediente_number_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -22,10 +23,22 @@ BEGIN
     EXECUTE 'CREATE SEQUENCE IF NOT EXISTS ' || seq_name || ' START 1';
     EXECUTE 'SELECT nextval($1)' INTO seq_num USING seq_name;
     
-    -- Set the case number formatted as FAM-AÑO-###
-    NEW.numero_expediente := 'FAM-' || year_num || '-' || LPAD(seq_num::TEXT, 3, '0');
+    -- Set the case number formatted as FAM-FS-AÑO-####
+    NEW.numero_expediente := 'FAM-FS-' || year_num || '-' || LPAD(seq_num::TEXT, 4, '0');
   END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. Update existing records in the database to match the new format
+UPDATE public.expedientes
+SET numero_expediente = 
+  CASE 
+    WHEN numero_expediente LIKE 'FAMFS-%' THEN
+      'FAM-FS-' || split_part(numero_expediente, '-', 2) || '-' || LPAD(split_part(numero_expediente, '-', 3), 4, '0')
+    WHEN numero_expediente LIKE 'FAM-%' THEN
+      'FAM-FS-' || split_part(numero_expediente, '-', 2) || '-' || LPAD(split_part(numero_expediente, '-', 3), 4, '0')
+    ELSE numero_expediente
+  END
+WHERE numero_expediente LIKE 'FAMFS-%' OR numero_expediente LIKE 'FAM-%';
