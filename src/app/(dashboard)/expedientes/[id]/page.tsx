@@ -546,7 +546,7 @@ export default function ExpedienteDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           {!isEditMode ? (
             <>
-              {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
+              {(currentUser.rol === 'admin' || currentUser.rol === 'analista') && expediente.estado === 'Pendiente' && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Editar Caso
@@ -1066,7 +1066,7 @@ export default function ExpedienteDetailPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Upload section */}
-                    {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
+                    {(currentUser.rol === 'admin' || currentUser.rol === 'analista') && expediente.estado === 'Pendiente' && (
                       <form onSubmit={handleUpload} className="p-4 rounded-xl border border-dashed border-border bg-secondary/5 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex-1 min-w-[200px] space-y-1.5">

@@ -54,7 +54,7 @@ const formatAuditValue = (key: string, value: any): string => {
 const INITIAL_EXPEDIENTES: Expediente[] = [
   {
     id: '1',
-    numero_expediente: 'FAMFS-2025-001',
+    numero_expediente: 'FAM-2025-001',
     fecha_incidente: '2025-01-15',
     placa: 'ABC-123',
     numero_interno: '0042',
@@ -100,7 +100,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
   },
   {
     id: '2',
-    numero_expediente: 'FAMFS-2025-002',
+    numero_expediente: 'FAM-2025-002',
     fecha_incidente: '2025-01-22',
     placa: 'XYZ-789',
     numero_interno: '0108',
@@ -144,7 +144,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
   },
   {
     id: '3',
-    numero_expediente: 'FAMFS-2025-003',
+    numero_expediente: 'FAM-2025-003',
     fecha_incidente: '2025-02-03',
     placa: 'DEF-456',
     numero_interno: '0015',
@@ -224,11 +224,11 @@ function getLocalData<T>(key: string, initial: T[]): T[] {
   if (key === MOCK_STORAGE_KEYS.EXPEDIENTES && Array.isArray(parsed)) {
     let migrated = false;
     parsed = parsed.map((exp: any) => {
-      if (exp && typeof exp.numero_expediente === 'string' && exp.numero_expediente.startsWith('FAM-')) {
+      if (exp && typeof exp.numero_expediente === 'string' && exp.numero_expediente.startsWith('FAMFS-')) {
         migrated = true;
         return {
           ...exp,
-          numero_expediente: exp.numero_expediente.replace('FAM-', 'FAMFS-')
+          numero_expediente: exp.numero_expediente.replace('FAMFS-', 'FAM-')
         };
       }
       return exp;
@@ -514,11 +514,23 @@ export const dbService = {
 
       const yearStr = formattedPayload.fecha_incidente ? formattedPayload.fecha_incidente.split('-')[0] : '';
       const year = parseInt(yearStr, 10) || new Date().getFullYear();
-      const countOfYear = list.filter((e) => {
+      const yearCases = list.filter((e) => {
+        if (e.deleted_at !== null) return false;
         const itemYearStr = e.fecha_incidente ? e.fecha_incidente.split('-')[0] : '';
         return parseInt(itemYearStr, 10) === year;
-      }).length + 1;
-      const numero_expediente = `FAMFS-${year}-${String(countOfYear).padStart(3, '0')}`;
+      });
+      let maxSeq = 0;
+      yearCases.forEach(e => {
+        const parts = e.numero_expediente.split('-');
+        if (parts.length >= 3) {
+          const seq = parseInt(parts[2], 10);
+          if (!isNaN(seq) && seq > maxSeq) {
+            maxSeq = seq;
+          }
+        }
+      });
+      const nextSeq = maxSeq + 1;
+      const numero_expediente = `FAM-${year}-${String(nextSeq).padStart(3, '0')}`;
 
       const newExpediente: Expediente = {
         ...(formattedPayload as any),
