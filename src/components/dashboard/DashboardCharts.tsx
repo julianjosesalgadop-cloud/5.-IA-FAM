@@ -826,13 +826,13 @@ export function DashboardCharts({
   };
 
   const internalCategoriesMap: Record<string, { name: string; cantidad: number; monto: number }> = {
-    'Serie 71': { name: 'Serie 71', cantidad: 0, monto: 0 },
-    'Serie 80': { name: 'Serie 80', cantidad: 0, monto: 0 },
-    'Serie 4': { name: 'Serie 4', cantidad: 0, monto: 0 },
+    'Serie 10': { name: 'Serie 10', cantidad: 0, monto: 0 },
     'Serie 32': { name: 'Serie 32', cantidad: 0, monto: 0 },
+    'Serie 4': { name: 'Serie 4', cantidad: 0, monto: 0 },
     'Serie 6': { name: 'Serie 6', cantidad: 0, monto: 0 },
     'Serie 7': { name: 'Serie 7', cantidad: 0, monto: 0 },
-    'Serie 10': { name: 'Serie 10', cantidad: 0, monto: 0 },
+    'Serie 71': { name: 'Serie 71', cantidad: 0, monto: 0 },
+    'Serie 80': { name: 'Serie 80', cantidad: 0, monto: 0 },
     'Serie 90': { name: 'Serie 90', cantidad: 0, monto: 0 },
     'Otros': { name: 'Otros', cantidad: 0, monto: 0 },
   };
@@ -846,11 +846,18 @@ export function DashboardCharts({
   const esTotalQty = es.length;
   const esTotalVal = es.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
 
-  const internalCategoriesData = Object.values(internalCategoriesMap).map(item => ({
-    ...item,
-    totalCantidad: esTotalQty,
-    totalMonto: esTotalVal,
-  }));
+  const orderList = ['Serie 10', 'Serie 32', 'Serie 4', 'Serie 6', 'Serie 7', 'Serie 71', 'Serie 80', 'Serie 90', 'Otros'];
+  const internalCategoriesData = Object.values(internalCategoriesMap)
+    .map(item => ({
+      ...item,
+      totalCantidad: esTotalQty,
+      totalMonto: esTotalVal,
+    }))
+    .sort((a, b) => {
+      const idxA = orderList.indexOf(a.name);
+      const idxB = orderList.indexOf(b.name);
+      return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+    });
 
   // Helper to extract route key
   const getRouteKey = (e: Expediente): string => {

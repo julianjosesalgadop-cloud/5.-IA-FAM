@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [fechaFin, setFechaFin] = useState('');
   const [presetRange, setPresetRange] = useState('todo');
   const [tipoReclamacion, setTipoReclamacion] = useState('todos');
+  const [customTipoFilter, setCustomTipoFilter] = useState('');
   const [placaSearch, setPlacaSearch] = useState('');
   const [selectedChartPlaca, setSelectedChartPlaca] = useState('');
   const [selectedChartConductor, setSelectedChartConductor] = useState('');
@@ -125,6 +126,12 @@ export default function DashboardPage() {
     }
   }, [presetRange]);
 
+  useEffect(() => {
+    if (tipoReclamacion !== 'Otro') {
+      setCustomTipoFilter('');
+    }
+  }, [tipoReclamacion]);
+
   // 1. Base Filtered Array (General Filters: Dates, Claim Type, Search Query, and new chart filters)
   const baseFilteredExpedientes = expedientes.filter((e) => {
     // Date Filter
@@ -132,7 +139,18 @@ export default function DashboardPage() {
     if (fechaFin && (!e.fecha_incidente || e.fecha_incidente > fechaFin)) return false;
     
     // Claim Type Filter
-    if (tipoReclamacion !== 'todos' && e.tipo_reclamacion !== tipoReclamacion) return false;
+    if (tipoReclamacion !== 'todos') {
+      const standardTipos = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial'];
+      const isCustomType = !standardTipos.includes(e.tipo_reclamacion || '');
+      if (tipoReclamacion === 'Otro') {
+        if (!isCustomType) return false;
+        if (customTipoFilter && !e.tipo_reclamacion?.toLowerCase().includes(customTipoFilter.toLowerCase())) {
+          return false;
+        }
+      } else {
+        if (e.tipo_reclamacion !== tipoReclamacion) return false;
+      }
+    }
     
     // Plate / Internal Number Filter
     if (placaSearch) {
@@ -326,6 +344,19 @@ export default function DashboardPage() {
             </select>
           </div>
 
+          {tipoReclamacion === 'Otro' && (
+            <div className="w-full sm:w-[200px] space-y-1.5 animate-fade-in">
+              <span className="text-xs font-semibold text-muted-foreground">Especificar Tipo</span>
+              <input
+                type="text"
+                placeholder="Especificar tipo..."
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+                value={customTipoFilter}
+                onChange={(e) => setCustomTipoFilter(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="w-full sm:flex-1 sm:min-w-[140px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Buscar por Placa / Interno</span>
             <input
@@ -338,7 +369,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || selectedChartProveedor || selectedChartTipoServicio) && (
+          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || customTipoFilter || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || selectedChartProveedor || selectedChartTipoServicio) && (
             <Button
               variant="ghost"
               size="sm"
@@ -347,6 +378,7 @@ export default function DashboardPage() {
                 setFechaFin('');
                 setPresetRange('todo');
                 setTipoReclamacion('todos');
+                setCustomTipoFilter('');
                 setPlacaSearch('');
                 setSelectedChartPlaca('');
                 setSelectedChartConductor('');
@@ -414,7 +446,7 @@ export default function DashboardPage() {
 
       {/* Active Chart Filters Notification */}
       <AnimatePresence>
-        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || selectedChartProveedor || selectedChartTipoServicio) && (
+        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || customTipoFilter || selectedChartProveedor || selectedChartTipoServicio) && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -442,6 +474,7 @@ export default function DashboardPage() {
                   setSelectedChartProveedor('');
                   setSelectedChartTipoServicio('');
                   setTipoReclamacion('todos');
+                  setCustomTipoFilter('');
                 }}
                 className="text-[10px] text-red-400 hover:text-red-500 font-semibold p-0 h-auto"
               >
@@ -533,12 +566,17 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
                   <div className="min-w-0">
                     <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo Reclamo</p>
-                    <p className="text-xs font-semibold text-foreground truncate">{tipoReclamacion}</p>
+                    <p className="text-xs font-semibold text-foreground truncate">
+                      {tipoReclamacion === 'Otro' && customTipoFilter ? `Otro: ${customTipoFilter}` : tipoReclamacion}
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setTipoReclamacion('todos')}
+                    onClick={() => {
+                      setTipoReclamacion('todos');
+                      setCustomTipoFilter('');
+                    }}
                     className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-3 w-3" />
