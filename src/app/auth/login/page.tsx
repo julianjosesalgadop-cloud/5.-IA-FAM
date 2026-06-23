@@ -101,7 +101,7 @@ export default function LoginPage() {
           }
           
           if (profile.must_change_password) {
-            setMockUser(role, name, cargo);
+            setMockUser(role, name, cargo, authData.user.email || '');
             toast.info('Debes establecer una nueva contraseña antes de continuar.', {
               description: 'El administrador requiere que cambies tu contraseña.',
             });
@@ -111,7 +111,7 @@ export default function LoginPage() {
         }
 
         // Sincronizar el estado de sesión local
-        setMockUser(role, name, cargo);
+        setMockUser(role, name, cargo, authData.user.email || '');
       }
 
       const userCargo = isMock 

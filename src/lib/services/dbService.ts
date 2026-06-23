@@ -390,11 +390,11 @@ export function getMockUser() {
   return null;
 }
 
-export function setMockUser(rol: RolUsuario, nombre: string = '', cargo: string = '') {
-  const email = `${rol}@flotasugamuxi.co`;
+export function setMockUser(rol: RolUsuario, nombre: string = '', cargo: string = '', email: string = '') {
+  const finalEmail = email || `${rol}@flotasugamuxi.co`;
   const name = nombre || (rol === 'admin' ? 'Administrador SIGFAM' : rol === 'analista' ? 'Analista de Casos' : 'Consultor Invitado');
   const defaultCargo = cargo || (rol === 'admin' ? 'Administrador de Sistema' : rol === 'analista' ? 'Analista de Casos' : 'Consultor');
-  const user = { id: 'mock-user-id', email, nombre: name, rol, cargo: defaultCargo };
+  const user = { id: 'mock-user-id', email: finalEmail, nombre: name, rol, cargo: defaultCargo };
   localStorage.setItem(MOCK_STORAGE_KEYS.USER, JSON.stringify(user));
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('storage'));

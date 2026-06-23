@@ -57,18 +57,31 @@ export function PerfilView() {
           try {
             const { createClient } = await import('@/lib/supabase/client');
             const supabase = createClient();
+
+            // Get email from auth session
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (authUser?.email) {
+              setEmail(authUser.email);
+            }
+
             const { data } = (await supabase
               .from('perfiles')
-              .select('nombre, cargo, created_at')
+              .select('nombre, cargo, created_at, email')
               .eq('id', user.id)
               .single()) as any;
             if (data) {
               setNombre(data.nombre || user.nombre);
               setCargo(data.cargo || '');
               if (data.created_at) setCreatedAt(data.created_at);
+              if (data.email) setEmail(data.email);
 
               // Update localStorage with fresh data
-              const updatedUser = { ...user, nombre: data.nombre || user.nombre, cargo: data.cargo || '' };
+              const updatedUser = { 
+                ...user, 
+                nombre: data.nombre || user.nombre, 
+                cargo: data.cargo || '',
+                email: data.email || authUser?.email || user.email
+              };
               localStorage.setItem('fam_mock_user', JSON.stringify(updatedUser));
             }
           } catch (err) {
