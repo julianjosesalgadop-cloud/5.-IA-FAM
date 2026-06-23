@@ -54,7 +54,7 @@ const formatAuditValue = (key: string, value: any): string => {
 const INITIAL_EXPEDIENTES: Expediente[] = [
   {
     id: '1',
-    numero_expediente: 'FAM-FS-2025-0001',
+    numero_expediente: 'FAM-FS-2025-001',
     fecha_incidente: '2025-01-15',
     placa: 'ABC-123',
     numero_interno: '0042',
@@ -100,7 +100,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
   },
   {
     id: '2',
-    numero_expediente: 'FAM-FS-2025-0002',
+    numero_expediente: 'FAM-FS-2025-002',
     fecha_incidente: '2025-01-22',
     placa: 'XYZ-789',
     numero_interno: '0108',
@@ -144,7 +144,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
   },
   {
     id: '3',
-    numero_expediente: 'FAM-FS-2025-0003',
+    numero_expediente: 'FAM-FS-2025-003',
     fecha_incidente: '2025-02-03',
     placa: 'DEF-456',
     numero_interno: '0015',
@@ -226,7 +226,8 @@ function getLocalData<T>(key: string, initial: T[]): T[] {
     parsed = parsed.map((exp: any) => {
       if (exp && typeof exp.numero_expediente === 'string') {
         const num = exp.numero_expediente;
-        if (num.startsWith('FAMFS-') || (num.startsWith('FAM-') && !num.startsWith('FAM-FS-'))) {
+        const isStandard = /^FAM-FS-\d{4}-\d{3}$/.test(num);
+        if (!isStandard) {
           migrated = true;
           const parts = num.split('-');
           if (parts.length >= 3) {
@@ -234,7 +235,7 @@ function getLocalData<T>(key: string, initial: T[]): T[] {
             const seqStr = parts[parts.length - 1];
             const seq = parseInt(seqStr, 10);
             if (!isNaN(seq) && year) {
-              const paddedSeq = String(seq).padStart(4, '0');
+              const paddedSeq = String(seq).padStart(3, '0');
               return {
                 ...exp,
                 numero_expediente: `FAM-FS-${year}-${paddedSeq}`
@@ -542,7 +543,7 @@ export const dbService = {
         }
       });
       const nextSeq = maxSeq + 1;
-      const numero_expediente = `FAM-FS-${year}-${String(nextSeq).padStart(4, '0')}`;
+      const numero_expediente = `FAM-FS-${year}-${String(nextSeq).padStart(3, '0')}`;
 
       const newExpediente: Expediente = {
         ...(formattedPayload as any),

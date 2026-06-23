@@ -1,4 +1,4 @@
--- Migration: Update case number prefix from FAMFS- / FAM- to FAM-FS- and pad to 4 digits
+-- Migration: Update case number prefix from FAMFS- / FAM- to FAM-FS- and pad to 3 digits
 -- =========================================================================================
 
 -- 1. Create or replace the trigger function
@@ -23,8 +23,8 @@ BEGIN
     EXECUTE 'CREATE SEQUENCE IF NOT EXISTS ' || seq_name || ' START 1';
     EXECUTE 'SELECT nextval($1)' INTO seq_num USING seq_name;
     
-    -- Set the case number formatted as FAM-FS-AÑO-####
-    NEW.numero_expediente := 'FAM-FS-' || year_num || '-' || LPAD(seq_num::TEXT, 4, '0');
+    -- Set the case number formatted as FAM-FS-AÑO-###
+    NEW.numero_expediente := 'FAM-FS-' || year_num || '-' || LPAD(seq_num::TEXT, 3, '0');
   END IF;
   
   RETURN NEW;
@@ -36,9 +36,11 @@ UPDATE public.expedientes
 SET numero_expediente = 
   CASE 
     WHEN numero_expediente LIKE 'FAMFS-%' THEN
-      'FAM-FS-' || split_part(numero_expediente, '-', 2) || '-' || LPAD(split_part(numero_expediente, '-', 3), 4, '0')
+      'FAM-FS-' || split_part(numero_expediente, '-', 2) || '-' || LPAD((split_part(numero_expediente, '-', 3)::integer)::text, 3, '0')
+    WHEN numero_expediente LIKE 'FAM-FS-%' THEN
+      'FAM-FS-' || split_part(numero_expediente, '-', 3) || '-' || LPAD((split_part(numero_expediente, '-', 4)::integer)::text, 3, '0')
     WHEN numero_expediente LIKE 'FAM-%' THEN
-      'FAM-FS-' || split_part(numero_expediente, '-', 2) || '-' || LPAD(split_part(numero_expediente, '-', 3), 4, '0')
+      'FAM-FS-' || split_part(numero_expediente, '-', 2) || '-' || LPAD((split_part(numero_expediente, '-', 3)::integer)::text, 3, '0')
     ELSE numero_expediente
   END
-WHERE numero_expediente LIKE 'FAMFS-%' OR numero_expediente LIKE 'FAM-%';
+WHERE numero_expediente LIKE 'FAMFS-%' OR numero_expediente LIKE 'FAM-FS-%' OR (numero_expediente LIKE 'FAM-%' AND numero_expediente NOT LIKE 'FAM-FS-%');
