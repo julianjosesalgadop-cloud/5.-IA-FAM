@@ -13,4 +13,4 @@
 - [x] Eliminar los expedientes FAM-2026-112 y FAM-2026-113 de la base de datos y sus registros vinculados
 - [x] Actualizar dbService.ts para usar la lógica de consecutivo max + 1 y prefijo FAM- en mock mode
 - [x] Permitir al rol de Analista editar expedientes y subir documentos en la vista de detalles
-- [/] Compilación y verificación del build de Next.js
+- [x] Compilación y verificación del build de Next.js
