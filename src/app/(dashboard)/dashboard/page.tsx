@@ -77,7 +77,7 @@ export default function DashboardPage() {
   const getInternalNumberCategory = (numStr: string | null | undefined): string => {
     if (!numStr) return 'Otros';
     const cleanNum = numStr.trim();
-    const prefixes = ['71', '80', '10', '90', '4', '5', '6', '7'];
+    const prefixes = ['71', '80', '10', '90', '4', '32', '6', '7'];
     for (const prefix of prefixes) {
       if (cleanNum.startsWith(prefix)) {
         return `Serie ${prefix}`;

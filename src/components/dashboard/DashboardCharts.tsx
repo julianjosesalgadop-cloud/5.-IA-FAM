@@ -816,7 +816,7 @@ export function DashboardCharts({
   const getInternalNumberCategory = (numStr: string | null | undefined): string => {
     if (!numStr) return 'Otros';
     const cleanNum = numStr.trim();
-    const prefixes = ['71', '80', '10', '90', '4', '5', '6', '7'];
+    const prefixes = ['71', '80', '10', '90', '4', '32', '6', '7'];
     for (const prefix of prefixes) {
       if (cleanNum.startsWith(prefix)) {
         return `Serie ${prefix}`;
@@ -829,7 +829,7 @@ export function DashboardCharts({
     'Serie 71': { name: 'Serie 71', cantidad: 0, monto: 0 },
     'Serie 80': { name: 'Serie 80', cantidad: 0, monto: 0 },
     'Serie 4': { name: 'Serie 4', cantidad: 0, monto: 0 },
-    'Serie 5': { name: 'Serie 5', cantidad: 0, monto: 0 },
+    'Serie 32': { name: 'Serie 32', cantidad: 0, monto: 0 },
     'Serie 6': { name: 'Serie 6', cantidad: 0, monto: 0 },
     'Serie 7': { name: 'Serie 7', cantidad: 0, monto: 0 },
     'Serie 10': { name: 'Serie 10', cantidad: 0, monto: 0 },

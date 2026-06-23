@@ -148,7 +148,10 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground font-medium truncate">{kpi.label}</p>
-                    <p className="text-xl sm:text-2xl font-bold mt-1 number-font text-foreground truncate">
+                    <p 
+                      className="text-[15px] sm:text-base xl:text-lg font-bold mt-1 number-font text-foreground truncate"
+                      title={String(kpi.value)}
+                    >
                       {kpi.value}
                     </p>
                     <p

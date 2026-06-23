@@ -547,7 +547,10 @@ export function ExpedientesList() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expedientes Filtrados</p>
-                <h3 className="text-2xl font-bold text-foreground mt-1 number-font">
+                <h3 
+                  className="text-[15px] sm:text-base xl:text-lg font-bold text-foreground mt-1 number-font truncate"
+                  title={loading ? '' : String(sorted.length)}
+                >
                   {loading ? '—' : sorted.length}
                 </h3>
                 <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Casos registrados según filtros aplicados</p>
@@ -572,7 +575,10 @@ export function ExpedientesList() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor Aprobado Total</p>
-                <h3 className="text-2xl font-bold text-foreground mt-1 number-font">
+                <h3 
+                  className="text-[15px] sm:text-base xl:text-lg font-bold text-foreground mt-1 number-font truncate"
+                  title={loading ? '' : formatCOP(totalAprobado)}
+                >
                   {loading ? '—' : formatCOP(totalAprobado)}
                 </h3>
                 <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Monto total aprobado para siniestros y reclamaciones</p>
