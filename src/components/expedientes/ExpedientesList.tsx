@@ -58,7 +58,7 @@ export function ExpedientesList() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
-  const [presetRange, setPresetRange] = useState('todo');
+  const [presetRange, setPresetRange] = useState('este-anio');
 
   useEffect(() => {
     const today = new Date();

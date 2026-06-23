@@ -41,7 +41,7 @@ export default function DashboardPage() {
   // Filters State
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
-  const [presetRange, setPresetRange] = useState('todo');
+  const [presetRange, setPresetRange] = useState('este-anio');
   const [tipoReclamacion, setTipoReclamacion] = useState('todos');
   const [customTipoFilter, setCustomTipoFilter] = useState('');
   const [placaSearch, setPlacaSearch] = useState('');
