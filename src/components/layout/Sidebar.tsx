@@ -155,7 +155,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
               >
                 <p className="text-sm font-bold text-slate-100 leading-tight">SIGFAM</p>
                 <p className="text-xs text-slate-400 leading-tight">Flota Sugamuxi S.A.</p>
-                <p className="text-[8px] text-slate-500 leading-tight mt-0.5 max-w-[150px]">
+                <p className="text-[10px] text-slate-300/90 leading-tight mt-1 max-w-[165px] font-medium">
                   Sistema Integrado de Gestión del Fondo de Auxilio Mutuo
                 </p>
               </motion.div>

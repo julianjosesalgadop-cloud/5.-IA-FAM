@@ -1125,16 +1125,16 @@ export default function ExpedienteDetailPage() {
                           </div>
                         ) : (
                           documentos.map((doc) => (
-                            <div key={doc.id} className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                            <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-secondary/20 transition-colors">
+                              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                                <div className="p-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
                                   <FileText className="w-5 h-5" />
                                 </div>
-                                <div>
-                                  <span className="font-semibold text-sm text-foreground block max-w-[250px] sm:max-w-md truncate" title={doc.nombre_archivo}>
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-semibold text-sm text-foreground block truncate" title={doc.nombre_archivo}>
                                     {doc.nombre_archivo}
                                   </span>
-                                  <div className="flex gap-3 text-xs text-muted-foreground">
+                                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-0.5">
                                     <span className="font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
                                       {doc.tipo_documento}
                                     </span>
@@ -1144,7 +1144,7 @@ export default function ExpedienteDetailPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 justify-start sm:justify-end pl-11 sm:pl-0 mt-1 sm:mt-0">
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
