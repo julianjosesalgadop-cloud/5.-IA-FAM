@@ -55,6 +55,8 @@ interface DashboardChartsProps {
   selectedProveedor?: string;
   onSelectTipoServicio?: (tipo: string) => void;
   selectedTipoServicio?: string;
+  onSelectConcepto?: (concepto: string) => void;
+  selectedConcepto?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -263,6 +265,8 @@ export function DashboardCharts({
   selectedProveedor,
   onSelectTipoServicio,
   selectedTipoServicio,
+  onSelectConcepto,
+  selectedConcepto,
 }: DashboardChartsProps) {
   // Filter out 'Rechazado' and 'Inactivo' states for all graphics/charts
   const allowedStates = ['Pendiente', 'Revisado', 'Aprobado'];
@@ -608,6 +612,76 @@ export function DashboardCharts({
       totalGeneralCases: totalGeneralCount,
     };
   }).filter((t) => t.value > 0);
+
+  // 2c. Concepto de la Cotización Distribution (Frecuencia y Gastos)
+  const conceptoGroups: Record<string, { count: number; value: number }> = {};
+  expedientes.forEach((e) => {
+    if (e.cotizaciones && e.cotizaciones.length > 0) {
+      const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+      const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+      activeCots.forEach((c) => {
+        if (!c) return;
+        let conceptName = (c.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+        if (conceptName === 'OTROS' && c.concepto_otro) {
+          conceptName = c.concepto_otro.trim().toUpperCase();
+        }
+        if (!conceptoGroups[conceptName]) {
+          conceptoGroups[conceptName] = { count: 0, value: 0 };
+        }
+        conceptoGroups[conceptName].count += 1;
+        conceptoGroups[conceptName].value += (c.valor_a_pagar || 0);
+      });
+    }
+  });
+
+  const CONCEPTO_COLORS: Record<string, string> = {
+    'SINIESTRO': 'hsl(0, 72%, 55%)',
+    'FACTURA': 'hsl(43, 96%, 52%)',
+    'ELECTRICO': 'hsl(203, 100%, 50%)',
+    'LLANTAS': 'hsl(200, 95%, 60%)',
+    'PANORAMICO': 'hsl(142, 71%, 45%)',
+    'PARABRISAS': 'hsl(175, 75%, 40%)',
+    'INSTALACIÓN': 'hsl(290, 60%, 60%)',
+    'VIDRIOS': 'hsl(190, 80%, 50%)',
+    'ESPEJOS': 'hsl(25, 95%, 55%)',
+    'OTROS': 'hsl(215, 20%, 55%)',
+  };
+
+  const getConceptoColor = (name: string, index: number): string => {
+    if (CONCEPTO_COLORS[name]) return CONCEPTO_COLORS[name];
+    const palette = [
+      'hsl(290, 60%, 60%)',
+      'hsl(25, 95%, 55%)',
+      'hsl(340, 75%, 60%)',
+      'hsl(160, 60%, 45%)',
+      'hsl(215, 20%, 55%)',
+    ];
+    return palette[index % palette.length];
+  };
+
+  const conceptoCountData = Object.entries(conceptoGroups)
+    .map(([name, group], index) => ({
+      name,
+      value: group.count,
+      fill: getConceptoColor(name, index),
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const conceptoGastosData = Object.entries(conceptoGroups)
+    .map(([name, group], index) => ({
+      name,
+      value: group.value,
+      fill: getConceptoColor(name, index),
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+      totalFilteredCases: totalFilteredCount,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   // 3. Status Distribution (only Pendiente, Revisado, Aprobado)
   const ESTADO_COLORS = {
@@ -1575,6 +1649,132 @@ export function DashboardCharts({
               className="cursor-pointer"
               formatter={(value) => {
                 const isSelected = selectedTipoReclamacion === value;
+                return (
+                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
+                    {value}
+                  </span>
+                );
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderDetalleTipoReclamacion = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {conceptoCountData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={conceptoCountData}
+              cx="50%"
+              cy="45%"
+              innerRadius={height > 300 ? 80 : 55}
+              outerRadius={height > 300 ? 120 : 80}
+              paddingAngle={3}
+              dataKey="value"
+              label={({ value }) => value}
+              labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectConcepto) {
+                  onSelectConcepto(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {conceptoCountData.map((entry, index) => {
+                const isSelected = selectedConcepto === entry.name;
+                return (
+                  <Cell 
+                    key={index} 
+                    fill={entry.fill}
+                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                    opacity={selectedConcepto && !isSelected ? 0.45 : 1}
+                  />
+                );
+              })}
+            </Pie>
+            <Tooltip content={<CustomTooltipPercentages />} />
+            <Legend
+              iconSize={8}
+              onClick={(data) => {
+                const val = data?.value;
+                if (val && onSelectConcepto) {
+                  onSelectConcepto(val);
+                }
+              }}
+              className="cursor-pointer"
+              formatter={(value) => {
+                const isSelected = selectedConcepto === value;
+                return (
+                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
+                    {value}
+                  </span>
+                );
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+
+  const renderDetalleGastosTipoReclamacion = (height: number) => (
+    <div style={{ height }} className="w-full">
+      {conceptoGastosData.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={conceptoGastosData}
+              cx="50%"
+              cy="45%"
+              innerRadius={height > 300 ? 80 : 55}
+              outerRadius={height > 300 ? 120 : 80}
+              paddingAngle={3}
+              dataKey="value"
+              label={({ value }) => value > 0 ? `$${(value / 1000000).toFixed(1)}M` : ''}
+              labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectConcepto) {
+                  onSelectConcepto(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {conceptoGastosData.map((entry, index) => {
+                const isSelected = selectedConcepto === entry.name;
+                return (
+                  <Cell 
+                    key={index} 
+                    fill={entry.fill}
+                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
+                    strokeWidth={isSelected ? 2 : 0}
+                    opacity={selectedConcepto && !isSelected ? 0.45 : 1}
+                  />
+                );
+              })}
+            </Pie>
+            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+            <Legend
+              iconSize={8}
+              onClick={(data) => {
+                const val = data?.value;
+                if (val && onSelectConcepto) {
+                  onSelectConcepto(val);
+                }
+              }}
+              className="cursor-pointer"
+              formatter={(value) => {
+                const isSelected = selectedConcepto === value;
                 return (
                   <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
                     {value}
@@ -3150,6 +3350,73 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderGastosTipoReclamacion(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Detalle de Tipo de Reclamación (Conceptos) */}
+      <motion.div
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.26, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Detalle de Tipo de Reclamación</CardTitle>
+              <CardDescription>Distribución por concepto de cotización</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'detalle-tipo-reclamacion',
+                title: 'Detalle de Tipo de Reclamación',
+                description: 'Distribución por concepto de cotización',
+                render: renderDetalleTipoReclamacion
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderDetalleTipoReclamacion(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Detalle de Gasto por Tipo de Reclamo (Conceptos) */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.27, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Detalle de Gasto por Tipo de Reclamo</CardTitle>
+              <CardDescription>Monto aprobado por concepto de cotización ($)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'detalle-gastos-tipo-reclamacion',
+                title: 'Detalle de Gasto por Tipo de Reclamo',
+                description: 'Monto aprobado por concepto de cotización',
+                render: renderDetalleGastosTipoReclamacion
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderDetalleGastosTipoReclamacion(260)}
           </CardContent>
         </Card>
       </motion.div>

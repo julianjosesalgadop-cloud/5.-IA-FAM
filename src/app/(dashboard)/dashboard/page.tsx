@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [selectedChartRoute, setSelectedChartRoute] = useState('');
   const [selectedChartProveedor, setSelectedChartProveedor] = useState('');
   const [selectedChartTipoServicio, setSelectedChartTipoServicio] = useState('');
+  const [selectedChartConcepto, setSelectedChartConcepto] = useState('');
 
   const getExpedienteProveedor = (e: any): string => {
     if (e.cotizaciones && e.cotizaciones.length > 0) {
@@ -165,6 +166,20 @@ export default function DashboardPage() {
     if (selectedChartCausaRaiz && e.causa_raiz !== selectedChartCausaRaiz) return false;
     if (selectedChartProveedor && getExpedienteProveedor(e) !== selectedChartProveedor) return false;
     if (selectedChartTipoServicio && e.tipo_servicio !== selectedChartTipoServicio) return false;
+    
+    if (selectedChartConcepto) {
+      if (!e.cotizaciones || e.cotizaciones.length === 0) return false;
+      const selectedCots = e.cotizaciones.filter((c: any) => c.seleccionada);
+      const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+      const hasConcepto = activeCots.some((c: any) => {
+        let name = (c.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+        if (name === 'OTROS' && c.concepto_otro) {
+          name = c.concepto_otro.trim().toUpperCase();
+        }
+        return name === selectedChartConcepto;
+      });
+      if (!hasConcepto) return false;
+    }
     
     if (selectedChartMonth !== null) {
       if (!e.fecha_incidente) return false;
@@ -427,6 +442,7 @@ export default function DashboardPage() {
               onSelectRoute={(route) => setSelectedChartRoute(current => current === route ? '' : route)}
               onSelectProveedor={(prov) => setSelectedChartProveedor(current => current === prov ? '' : prov)}
               onSelectTipoServicio={(tipo) => setSelectedChartTipoServicio(current => current === tipo ? '' : tipo)}
+              onSelectConcepto={(concepto) => setSelectedChartConcepto(current => current === concepto ? '' : concepto)}
               selectedPlaca={selectedChartPlaca}
               selectedConductor={selectedChartConductor}
               selectedProprietario={selectedChartProprietario}
@@ -439,6 +455,7 @@ export default function DashboardPage() {
               selectedRoute={selectedChartRoute}
               selectedProveedor={selectedChartProveedor}
               selectedTipoServicio={selectedChartTipoServicio}
+              selectedConcepto={selectedChartConcepto}
             />
           </>
         )}
@@ -446,7 +463,7 @@ export default function DashboardPage() {
 
       {/* Active Chart Filters Notification */}
       <AnimatePresence>
-        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || customTipoFilter || selectedChartProveedor || selectedChartTipoServicio) && (
+        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || customTipoFilter || selectedChartProveedor || selectedChartTipoServicio || selectedChartConcepto) && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -473,6 +490,7 @@ export default function DashboardPage() {
                   setSelectedChartRoute('');
                   setSelectedChartProveedor('');
                   setSelectedChartTipoServicio('');
+                  setSelectedChartConcepto('');
                   setTipoReclamacion('todos');
                   setCustomTipoFilter('');
                 }}
@@ -675,6 +693,22 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setSelectedChartTipoServicio('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartConcepto && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Concepto Cotización</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartConcepto}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartConcepto('')}
                     className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-3 w-3" />
