@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo crear el usuario.' }, { status: 500 });
     }
 
-    // 4. Insert profile in perfiles table
+    // 4. Upsert profile in perfiles table
     const { data: perfilData, error: perfilError } = await adminClient
       .from('perfiles')
-      .insert({
+      .upsert({
         id: authData.user.id,
         email,
         nombre,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         numero_documento: numero_documento || null,
         activo: true,
         must_change_password: must_change_password ?? false,
-      } as any)
+      } as any, { onConflict: 'id' })
       .select()
       .single();
 
