@@ -1662,131 +1662,167 @@ export function DashboardCharts({
     </div>
   );
 
-  const renderDetalleTipoReclamacion = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {conceptoCountData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={conceptoCountData}
-              cx="50%"
-              cy="45%"
-              innerRadius={height > 300 ? 80 : 55}
-              outerRadius={height > 300 ? 120 : 80}
-              paddingAngle={3}
-              dataKey="value"
-              label={({ value }) => value}
-              labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
-              onClick={(data) => {
-                const val = data?.name || data?.payload?.name;
-                if (val && onSelectConcepto) {
-                  onSelectConcepto(val);
-                }
-              }}
-              className="cursor-pointer"
+  const renderDetalleTipoReclamacion = (height: number, isExpanded = false) => {
+    const dataToUse = isExpanded ? conceptoCountData : conceptoCountData.slice(0, 6);
+    return (
+      <div style={{ height }} className="w-full">
+        {dataToUse.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="vertical"
+              data={dataToUse}
+              margin={{ left: 100, right: 30, top: 10, bottom: 5 }}
             >
-              {conceptoCountData.map((entry, index) => {
-                const isSelected = selectedConcepto === entry.name;
-                return (
-                  <Cell 
-                    key={index} 
-                    fill={entry.fill}
-                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
-                    strokeWidth={isSelected ? 2 : 0}
-                    opacity={selectedConcepto && !isSelected ? 0.45 : 1}
-                  />
-                );
-              })}
-            </Pie>
-            <Tooltip content={<CustomTooltipPercentages />} />
-            <Legend
-              iconSize={8}
-              onClick={(data) => {
-                const val = data?.value;
-                if (val && onSelectConcepto) {
-                  onSelectConcepto(val);
-                }
-              }}
-              className="cursor-pointer"
-              formatter={(value) => {
-                const isSelected = selectedConcepto === value;
-                return (
-                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
-                    {value}
-                  </span>
-                );
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                tick={(props: any) => {
+                  const { x, y, payload } = props;
+                  const value = payload?.value || '';
+                  const isSelected = selectedConcepto === value;
+                  return (
+                    <g 
+                      style={{ pointerEvents: 'auto' }} 
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectConcepto) {
+                          onSelectConcepto(value);
+                        }
+                      }}
+                    >
+                      <text
+                        x={x}
+                        y={y}
+                        dx={-6}
+                        dy={4}
+                        textAnchor="end"
+                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        className="hover:fill-primary font-semibold text-[9px] transition-colors"
+                      >
+                        {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                      </text>
+                    </g>
+                  );
+                }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip content={<CustomTooltipPercentages />} />
+              <Bar
+                dataKey="value"
+                radius={[0, 4, 4, 0]}
+                onClick={(data) => {
+                  const val = data?.name || data?.payload?.name;
+                  if (val && onSelectConcepto) {
+                    onSelectConcepto(val);
+                  }
+                }}
+                className="cursor-pointer"
+              >
+                {dataToUse.map((entry, index) => {
+                  const isSelected = selectedConcepto === entry.name;
+                  return (
+                    <Cell
+                      key={index}
+                      fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      opacity={selectedConcepto && !isSelected ? 0.45 : 1}
+                    />
+                  );
+                })}
+                <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 'bold' }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    );
+  };
 
-  const renderDetalleGastosTipoReclamacion = (height: number) => (
-    <div style={{ height }} className="w-full">
-      {conceptoGastosData.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={conceptoGastosData}
-              cx="50%"
-              cy="45%"
-              innerRadius={height > 300 ? 80 : 55}
-              outerRadius={height > 300 ? 120 : 80}
-              paddingAngle={3}
-              dataKey="value"
-              label={({ value }) => value > 0 ? `$${(value / 1000000).toFixed(1)}M` : ''}
-              labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
-              onClick={(data) => {
-                const val = data?.name || data?.payload?.name;
-                if (val && onSelectConcepto) {
-                  onSelectConcepto(val);
-                }
-              }}
-              className="cursor-pointer"
+  const renderDetalleGastosTipoReclamacion = (height: number, isExpanded = false) => {
+    const dataToUse = isExpanded ? conceptoGastosData : conceptoGastosData.slice(0, 6);
+    return (
+      <div style={{ height }} className="w-full">
+        {dataToUse.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="vertical"
+              data={dataToUse}
+              margin={{ left: 100, right: 35, top: 10, bottom: 5 }}
             >
-              {conceptoGastosData.map((entry, index) => {
-                const isSelected = selectedConcepto === entry.name;
-                return (
-                  <Cell 
-                    key={index} 
-                    fill={entry.fill}
-                    stroke={isSelected ? 'hsl(var(--foreground))' : 'none'}
-                    strokeWidth={isSelected ? 2 : 0}
-                    opacity={selectedConcepto && !isSelected ? 0.45 : 1}
-                  />
-                );
-              })}
-            </Pie>
-            <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
-            <Legend
-              iconSize={8}
-              onClick={(data) => {
-                const val = data?.value;
-                if (val && onSelectConcepto) {
-                  onSelectConcepto(val);
-                }
-              }}
-              className="cursor-pointer"
-              formatter={(value) => {
-                const isSelected = selectedConcepto === value;
-                return (
-                  <span className={`text-xs font-semibold cursor-pointer transition-colors hover:text-primary ${isSelected ? 'text-[hsl(142,71%,45%)] font-bold' : 'text-muted-foreground'}`}>
-                    {value}
-                  </span>
-                );
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                tick={(props: any) => {
+                  const { x, y, payload } = props;
+                  const value = payload?.value || '';
+                  const isSelected = selectedConcepto === value;
+                  return (
+                    <g 
+                      style={{ pointerEvents: 'auto' }} 
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectConcepto) {
+                          onSelectConcepto(value);
+                        }
+                      }}
+                    >
+                      <text
+                        x={x}
+                        y={y}
+                        dx={-6}
+                        dy={4}
+                        textAnchor="end"
+                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        className="hover:fill-primary font-semibold text-[9px] transition-colors"
+                      >
+                        {value.length > 18 ? `${value.slice(0, 16)}...` : value}
+                      </text>
+                    </g>
+                  );
+                }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+              <Bar
+                dataKey="value"
+                radius={[0, 4, 4, 0]}
+                onClick={(data) => {
+                  const val = data?.name || data?.payload?.name;
+                  if (val && onSelectConcepto) {
+                    onSelectConcepto(val);
+                  }
+                }}
+                className="cursor-pointer"
+              >
+                {dataToUse.map((entry, index) => {
+                  const isSelected = selectedConcepto === entry.name;
+                  return (
+                    <Cell
+                      key={index}
+                      fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      opacity={selectedConcepto && !isSelected ? 0.45 : 1}
+                    />
+                  );
+                })}
+                <LabelList dataKey="value" position="right" formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''} style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 'bold' }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    );
+  };
 
   const renderIngresosProveedor = (height: number) => {
     const dataToUse = showAllProveedor ? allProveedorData : proveedorData;
