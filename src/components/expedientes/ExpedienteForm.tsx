@@ -34,13 +34,15 @@ function CurrencyInputField({
   name, 
   placeholder = '$ 0', 
   className,
-  disabled
+  disabled,
+  onChangeCustom
 }: { 
   control: any; 
   name: string; 
   placeholder?: string; 
   className?: string;
   disabled?: boolean;
+  onChangeCustom?: (val: number | null) => void;
 }) {
   return (
     <Controller
@@ -55,7 +57,11 @@ function CurrencyInputField({
           value={value !== undefined && value !== null ? formatCOPInput(value) : ''}
           onChange={(e) => {
             const rawValue = parseCOPInput(e.target.value);
-            onChange(e.target.value === '' ? null : rawValue);
+            const finalVal = e.target.value === '' ? null : rawValue;
+            onChange(finalVal);
+            if (onChangeCustom) {
+              onChangeCustom(finalVal);
+            }
           }}
         />
       )}
@@ -353,6 +359,21 @@ export function ExpedienteForm({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const [isFinalAprobadoManual, setIsFinalAprobadoManual] = useState(() => {
+    if (!defaultValues) return false;
+    const cots = defaultValues.cotizaciones || [];
+    const selectedCots = cots.filter((c) => c.seleccionada);
+    const activeCots = selectedCots.length > 0 ? selectedCots : (cots[0] ? [cots[0]] : []);
+    const totalNegociado = activeCots.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+    const totalDeducible = activeCots.reduce((acc, c) => acc + Math.round(((c.valor_negociado || 0) * (c.porcentaje_deducible || 0)) / 100), 0);
+    const calculatedTotal = Math.max(0, totalNegociado - totalDeducible);
+    
+    const savedVal = defaultValues.valor_final_aprobado;
+    if (savedVal === undefined || savedVal === null) return false;
+    
+    return savedVal !== calculatedTotal;
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -697,10 +718,12 @@ export function ExpedienteForm({
   const totalDeducible = activeCots.reduce((acc, c) => acc + Math.round(((c.valor_negociado || 0) * (c.porcentaje_deducible || 0)) / 100), 0);
   const totalAPagar = Math.max(0, totalNegociado - totalDeducible);
 
-  // Sincronizar valor_final_aprobado con el cálculo neto a pagar (totalAPagar)
+  // Sincronizar valor_final_aprobado con el cálculo neto a pagar (totalAPagar) si no es manual
   React.useEffect(() => {
-    setValue('valor_final_aprobado', totalAPagar);
-  }, [totalAPagar, setValue]);
+    if (!isFinalAprobadoManual) {
+      setValue('valor_final_aprobado', totalAPagar);
+    }
+  }, [totalAPagar, setValue, isFinalAprobadoManual]);
 
   const valorRecVehiculo = watch('valor_recobro_vehiculo') || 0;
   const valorRecAbogado = watch('valor_recobro_abogado') || 0;
@@ -1506,6 +1529,13 @@ export function ExpedienteForm({
                           name="valor_final_aprobado"
                           placeholder={formConfig.campoConfig.valor_final_aprobado.placeholder}
                           className={`${inputClass} number-font`}
+                          onChangeCustom={(val) => {
+                            if (val === null || val === undefined) {
+                              setIsFinalAprobadoManual(false);
+                            } else {
+                              setIsFinalAprobadoManual(true);
+                            }
+                          }}
                         />
                       </FormField>
                     )}
