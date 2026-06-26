@@ -78,6 +78,7 @@ export function ReportesView() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState('');
+  const [tipoReclamacionOtroFilter, setTipoReclamacionOtroFilter] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('');
   const [searchPreview, setSearchPreview] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,6 +93,7 @@ export function ReportesView() {
   const [conductorFilter, setConductorFilter] = useState('');
   const [valorMinFilter, setValorMinFilter] = useState('');
   const [valorMaxFilter, setValorMaxFilter] = useState('');
+  const [actaFilter, setActaFilter] = useState('');
 
   // Sorting states
   const [sortField, setSortField] = useState<string>('numero_expediente');
@@ -100,10 +102,10 @@ export function ReportesView() {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    fechaDesde, fechaHasta, tipoFiltro, estadoFiltro, searchPreview,
+    fechaDesde, fechaHasta, tipoFiltro, tipoReclamacionOtroFilter, estadoFiltro, searchPreview,
     culpabilidadFilter, causaRaizFilter, tipoServicioFilter,
     placaFilter, internoFilter, propietarioFilter, conductorFilter,
-    valorMinFilter, valorMaxFilter
+    valorMinFilter, valorMaxFilter, actaFilter
   ]);
 
   const loadData = async () => {
@@ -136,6 +138,7 @@ export function ReportesView() {
     setFechaDesde('');
     setFechaHasta('');
     setTipoFiltro('');
+    setTipoReclamacionOtroFilter('');
     setEstadoFiltro('');
     setCulpabilidadFilter('');
     setCausaRaizFilter('');
@@ -146,6 +149,7 @@ export function ReportesView() {
     setConductorFilter('');
     setValorMinFilter('');
     setValorMaxFilter('');
+    setActaFilter('');
     setSearchPreview('');
     toast.success('Filtros restablecidos');
   };
@@ -157,7 +161,20 @@ export function ReportesView() {
 
     if (dDesde && dIncidente && dIncidente < dDesde) return false;
     if (dHasta && dIncidente && dIncidente > dHasta) return false;
-    if (tipoFiltro && e.tipo_reclamacion !== tipoFiltro) return false;
+    
+    if (tipoFiltro) {
+      if (tipoFiltro === 'Otro') {
+        const standardTypes = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Afectación por orden público'];
+        const isCustom = !standardTypes.includes(e.tipo_reclamacion || '');
+        if (!isCustom) return false;
+        if (tipoReclamacionOtroFilter && !e.tipo_reclamacion?.toLowerCase().includes(tipoReclamacionOtroFilter.toLowerCase())) {
+          return false;
+        }
+      } else {
+        if (e.tipo_reclamacion !== tipoFiltro) return false;
+      }
+    }
+    
     if (estadoFiltro && e.estado !== estadoFiltro) return false;
 
     // Apply new filters
@@ -168,6 +185,7 @@ export function ReportesView() {
     if (internoFilter && !e.numero_interno?.toLowerCase().includes(internoFilter.toLowerCase())) return false;
     if (propietarioFilter && !e.propietario?.toLowerCase().includes(propietarioFilter.toLowerCase())) return false;
     if (conductorFilter && !e.nombre_conductor?.toLowerCase().includes(conductorFilter.toLowerCase())) return false;
+    if (actaFilter && !e.numero_acta?.toLowerCase().includes(actaFilter.toLowerCase())) return false;
     
     if (valorMinFilter && (e.valor_final_aprobado === null || e.valor_final_aprobado === undefined || e.valor_final_aprobado < Number(valorMinFilter))) return false;
     if (valorMaxFilter && (e.valor_final_aprobado === null || e.valor_final_aprobado === undefined || e.valor_final_aprobado > Number(valorMaxFilter))) return false;
@@ -186,6 +204,7 @@ export function ReportesView() {
         e.propietario?.toLowerCase().includes(s) ||
         e.nombre_conductor?.toLowerCase().includes(s) ||
         e.tipo_reclamacion?.toLowerCase().includes(s) ||
+        e.numero_acta?.toLowerCase().includes(s) ||
         e.estado?.toLowerCase().includes(s)
       );
     });
@@ -267,7 +286,26 @@ export function ReportesView() {
         'Tipo Reclamación': e.tipo_reclamacion,
         'Ciudad Origen': e.ciudad_origen || '',
         'Ciudad Destino': e.ciudad_destino || '',
-        'Concepto': e.concepto || '',
+        'Concepto': (() => {
+          if (e.cotizaciones && e.cotizaciones.length > 0) {
+            const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+            const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+            const concepts = activeCots
+              .map((c) => {
+                if (!c) return '';
+                let name = (c.concepto || '').trim();
+                if (name.toUpperCase() === 'OTROS' && c.concepto_otro) {
+                  name = c.concepto_otro.trim();
+                }
+                return name;
+              })
+              .filter(Boolean);
+            if (concepts.length > 0) {
+              return concepts.join(', ');
+            }
+          }
+          return e.concepto || '';
+        })(),
         'Valor Cotización': e.valor_cotizacion || 0,
         'Valor Negociado': e.valor_negociado || 0,
         'Deducible %': e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '0%',
@@ -464,13 +502,29 @@ export function ReportesView() {
               <select
                 className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 value={tipoFiltro}
-                onChange={(e) => setTipoFiltro(e.target.value)}
+                onChange={(e) => {
+                  setTipoFiltro(e.target.value);
+                  if (e.target.value !== 'Otro') {
+                    setTipoReclamacionOtroFilter('');
+                  }
+                }}
                 id="reporte-tipo-filter"
               >
                 <option value="">Todos</option>
                 {TIPOS_RECLAMACION.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+            {tipoFiltro === 'Otro' && (
+              <div className="space-y-1.5">
+                <Label className="text-foreground font-medium text-xs">¿Cuál tipo de reclamación?</Label>
+                <Input
+                  placeholder="Especificar tipo..."
+                  className="bg-background border-border text-xs h-10"
+                  value={tipoReclamacionOtroFilter}
+                  onChange={(e) => setTipoReclamacionOtroFilter(e.target.value)}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label className="text-foreground font-medium text-xs">Estado</Label>
               <select
@@ -536,6 +590,15 @@ export function ReportesView() {
                 <option value="">Todas</option>
                 {CAUSAS_RAIZ_DEFAULT.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground font-medium text-xs">No. de Acta</Label>
+              <Input
+                placeholder="Buscar acta (ej: ACTA 0001)..."
+                className="bg-background border-border text-xs h-10"
+                value={actaFilter}
+                onChange={(e) => setActaFilter(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
@@ -656,6 +719,21 @@ export function ReportesView() {
                             content = formatDate(val as string);
                           } else if (col.isNumeric) {
                             content = formatCOP(val as number);
+                          } else if (col.key === 'concepto') {
+                            const selectedCots = e.cotizaciones?.filter((c) => c.seleccionada) || [];
+                            const activeCots = selectedCots.length > 0 ? selectedCots : (e.cotizaciones?.[0] ? [e.cotizaciones[0]] : []);
+                            const concepts = activeCots
+                              .map((c) => {
+                                if (!c) return '';
+                                let name = (c.concepto || '').trim();
+                                if (name.toUpperCase() === 'OTROS' && c.concepto_otro) {
+                                  name = c.concepto_otro.trim();
+                                }
+                                return name;
+                              })
+                              .filter(Boolean);
+                            const resolvedConcept = concepts.length > 0 ? concepts.join(', ') : (e.concepto || '—');
+                            content = <span className="truncate max-w-[150px] inline-block" title={resolvedConcept}>{resolvedConcept}</span>;
                           } else if (col.key === 'tipo_reclamacion') {
                             content = (
                               <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
@@ -686,7 +764,7 @@ export function ReportesView() {
                             content = <span className="font-mono text-muted-foreground">{String(val || '—')}</span>;
                           } else if (col.key === 'propietario' || col.key === 'nombre_conductor') {
                             content = <span className="truncate max-w-[120px] inline-block" title={String(val || '')}>{String(val || '—')}</span>;
-                          } else if (col.key === 'concepto' || col.key === 'observaciones_comite') {
+                          } else if (col.key === 'observaciones_comite') {
                             content = <span className="truncate max-w-[150px] inline-block" title={String(val || '')}>{String(val || '—')}</span>;
                           }
 
