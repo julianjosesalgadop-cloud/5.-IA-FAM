@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [selectedChartProveedor, setSelectedChartProveedor] = useState('');
   const [selectedChartTipoServicio, setSelectedChartTipoServicio] = useState('');
   const [selectedChartConcepto, setSelectedChartConcepto] = useState('');
+  const [selectedChartActa, setSelectedChartActa] = useState('');
 
   const getExpedienteProveedor = (e: any): string => {
     if (e.cotizaciones && e.cotizaciones.length > 0) {
@@ -190,7 +191,7 @@ export default function DashboardPage() {
     return true;
   });
 
-  // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor & series & route filters (excludes vehicle filter to prevent self-collapsing)
+  // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor & series & route & acta filters (excludes vehicle filter to prevent self-collapsing)
   const expedientesForVehicles = baseFilteredExpedientes.filter((e) => {
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -199,10 +200,11 @@ export default function DashboardPage() {
       if (cat !== selectedChartSerie) return false;
     }
     if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
+    if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
     return true;
   });
 
-  // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor & series & route filters (excludes driver filter to prevent self-collapsing)
+  // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor & series & route & acta filters (excludes driver filter to prevent self-collapsing)
   const expedientesForDrivers = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -211,10 +213,11 @@ export default function DashboardPage() {
       if (cat !== selectedChartSerie) return false;
     }
     if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
+    if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
     return true;
   });
 
-  // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver & series & route filters (excludes proprietor filter to prevent self-collapsing)
+  // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver & series & route & acta filters (excludes proprietor filter to prevent self-collapsing)
   const expedientesForPropietarios = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
@@ -223,19 +226,21 @@ export default function DashboardPage() {
       if (cat !== selectedChartSerie) return false;
     }
     if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
+    if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
     return true;
   });
 
-  // 3c. Array for Series Chart: baseFiltered + vehicle & driver & proprietor & route filters (excludes series filter to prevent self-collapsing)
+  // 3c. Array for Series Chart: baseFiltered + vehicle & driver & proprietor & route & acta filters (excludes series filter to prevent self-collapsing)
   const expedientesForSeries = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
     if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
+    if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
     return true;
   });
 
-  // 3d. Array for Routes Chart: baseFiltered + vehicle & driver & proprietor & series filters (excludes route filter to prevent self-collapsing)
+  // 3d. Array for Routes Chart: baseFiltered + vehicle & driver & proprietor & series & acta filters (excludes route filter to prevent self-collapsing)
   const expedientesForRoutes = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
@@ -244,6 +249,20 @@ export default function DashboardPage() {
       const cat = getInternalNumberCategory(e.numero_interno);
       if (cat !== selectedChartSerie) return false;
     }
+    if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
+    return true;
+  });
+
+  // 3e. Array for Actas Chart: baseFiltered + vehicle & driver & proprietor & series & route filters (excludes acta filter to prevent self-collapsing)
+  const expedientesForActas = baseFilteredExpedientes.filter((e) => {
+    if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
+    if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
+    if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
+    if (selectedChartSerie) {
+      const cat = getInternalNumberCategory(e.numero_interno);
+      if (cat !== selectedChartSerie) return false;
+    }
+    if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
     return true;
   });
 
@@ -257,6 +276,7 @@ export default function DashboardPage() {
       if (cat !== selectedChartSerie) return false;
     }
     if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
+    if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
     return true;
   });
 
@@ -430,6 +450,7 @@ export default function DashboardPage() {
               expedientesForPropietarios={expedientesForPropietarios}
               expedientesForSeries={expedientesForSeries}
               expedientesForRoutes={expedientesForRoutes}
+              expedientesForActas={expedientesForActas}
               onSelectPlaca={(placa) => setSelectedChartPlaca(current => current === placa ? '' : placa)}
               onSelectConductor={(conductor) => setSelectedChartConductor(current => current === conductor ? '' : conductor)}
               onSelectProprietario={(prop) => setSelectedChartProprietario(current => current === prop ? '' : prop)}
@@ -443,6 +464,7 @@ export default function DashboardPage() {
               onSelectProveedor={(prov) => setSelectedChartProveedor(current => current === prov ? '' : prov)}
               onSelectTipoServicio={(tipo) => setSelectedChartTipoServicio(current => current === tipo ? '' : tipo)}
               onSelectConcepto={(concepto) => setSelectedChartConcepto(current => current === concepto ? '' : concepto)}
+              onSelectActa={(acta: string) => setSelectedChartActa(current => current === acta ? '' : acta)}
               selectedPlaca={selectedChartPlaca}
               selectedConductor={selectedChartConductor}
               selectedProprietario={selectedChartProprietario}
@@ -456,6 +478,7 @@ export default function DashboardPage() {
               selectedProveedor={selectedChartProveedor}
               selectedTipoServicio={selectedChartTipoServicio}
               selectedConcepto={selectedChartConcepto}
+              selectedActa={selectedChartActa}
             />
           </>
         )}
@@ -463,7 +486,7 @@ export default function DashboardPage() {
 
       {/* Active Chart Filters Notification */}
       <AnimatePresence>
-        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || customTipoFilter || selectedChartProveedor || selectedChartTipoServicio || selectedChartConcepto) && (
+        {(selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || tipoReclamacion !== 'todos' || customTipoFilter || selectedChartProveedor || selectedChartTipoServicio || selectedChartConcepto || selectedChartActa) && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -491,6 +514,7 @@ export default function DashboardPage() {
                   setSelectedChartProveedor('');
                   setSelectedChartTipoServicio('');
                   setSelectedChartConcepto('');
+                  setSelectedChartActa('');
                   setTipoReclamacion('todos');
                   setCustomTipoFilter('');
                 }}
@@ -709,6 +733,22 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setSelectedChartConcepto('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {selectedChartActa && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Acta de Comité</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{selectedChartActa}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedChartActa('')}
                     className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-3 w-3" />

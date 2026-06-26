@@ -31,6 +31,7 @@ interface DashboardChartsProps {
   expedientesForPropietarios?: Expediente[];
   expedientesForSeries?: Expediente[];
   expedientesForRoutes?: Expediente[];
+  expedientesForActas?: Expediente[];
   onSelectPlaca?: (placa: string) => void;
   onSelectConductor?: (conductor: string) => void;
   selectedPlaca?: string;
@@ -57,6 +58,8 @@ interface DashboardChartsProps {
   selectedTipoServicio?: string;
   onSelectConcepto?: (concepto: string) => void;
   selectedConcepto?: string;
+  onSelectActa?: (acta: string) => void;
+  selectedActa?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -241,6 +244,7 @@ export function DashboardCharts({
   expedientesForPropietarios: rawExpedientesForPropietarios,
   expedientesForSeries: rawExpedientesForSeries,
   expedientesForRoutes: rawExpedientesForRoutes,
+  expedientesForActas: rawExpedientesForActas,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
@@ -267,6 +271,8 @@ export function DashboardCharts({
   selectedTipoServicio,
   onSelectConcepto,
   selectedConcepto,
+  onSelectActa,
+  selectedActa,
 }: DashboardChartsProps) {
   // Filter out 'Rechazado' and 'Inactivo' states for all graphics/charts
   const allowedStates = ['Pendiente', 'Revisado', 'Aprobado'];
@@ -279,6 +285,7 @@ export function DashboardCharts({
   const ep = rawExpedientesForPropietarios ? filterAllowed(rawExpedientesForPropietarios) : expedientes;
   const es = rawExpedientesForSeries ? filterAllowed(rawExpedientesForSeries) : expedientes;
   const er = rawExpedientesForRoutes ? filterAllowed(rawExpedientesForRoutes) : expedientes;
+  const ea = rawExpedientesForActas ? filterAllowed(rawExpedientesForActas) : expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -320,6 +327,7 @@ export function DashboardCharts({
   const [showAllRoutesCant, setShowAllRoutesCant] = useState(false);
   const [showAllRoutesMonto, setShowAllRoutesMonto] = useState(false);
   const [showAllProveedor, setShowAllProveedor] = useState(false);
+  const [showAllActas, setShowAllActas] = useState(false);
   const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
   const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
 
@@ -976,6 +984,43 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
 
   const routesMontoData = allRoutesMontoData.slice(0, 5);
+
+  // 13b. Actas de Comité (Frecuencia y Monto)
+  const actaGroups: Record<string, { total: number; valor: number }> = {};
+  ea.forEach((e) => {
+    if (!e.numero_acta) return;
+    const acta = e.numero_acta.trim().toUpperCase();
+    if (!actaGroups[acta]) {
+      actaGroups[acta] = { total: 0, valor: 0 };
+    }
+    actaGroups[acta].total += 1;
+    actaGroups[acta].valor += e.valor_final_aprobado || 0;
+  });
+
+  const allActasCantData = Object.entries(actaGroups)
+    .map(([name, data]) => ({
+      name,
+      value: data.total,
+      valor: data.valor,
+      totalFilteredCases: ea.length,
+      totalGeneralCases: totalGeneralCount,
+    }))
+    .sort((a, b) => b.value - a.value || b.valor - a.valor);
+
+  const actasCantData = allActasCantData.slice(0, 5);
+
+  const allActasMontoData = Object.entries(actaGroups)
+    .map(([name, data]) => ({
+      name,
+      value: data.valor,
+      cantidad: data.total,
+      totalFilteredApprovedSum: totalFilteredApproved,
+      totalGeneralApprovedSum: totalGeneralApproved,
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const actasMontoData = allActasMontoData.slice(0, 5);
 
   // 14. Ingresos por Taller / Proveedor
   const providerGroups: Record<string, { totalVal: number; count: number }> = {};
@@ -3141,7 +3186,190 @@ export function DashboardCharts({
       </div>
     );
   };
+  const renderActasCantidad = (height: number) => {
+    const dataToUse = showAllActas ? allActasCantData : actasCantData;
+    const isScrollable = showAllActas && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
+    return (
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de actas</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 10, right: 30, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedActa === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectActa) {
+                            onSelectActa(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[10px] transition-colors"
+                        >
+                          {value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={100}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(203, 100%, 50%)"
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectActa) {
+                      onSelectActa(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                    />
+                  ))}
+                  <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
+  const renderActasMonto = (height: number) => {
+    const dataToUse = showAllActas ? allActasMontoData : actasMontoData;
+    const isScrollable = showAllActas && dataToUse.length > 5;
+    const innerHeight = isScrollable ? Math.max(height, dataToUse.length * 40) : height;
+    return (
+      <div style={{ height }} className="w-full overflow-y-auto pr-1">
+        <div style={{ height: innerHeight }} className="w-full">
+          {dataToUse.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de actas</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={dataToUse}
+                margin={{ left: 10, right: 35, top: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={(props: any) => {
+                    const { x, y, payload } = props;
+                    const value = payload?.value || '';
+                    const isSelected = selectedActa === value;
+                    return (
+                      <g 
+                        style={{ pointerEvents: 'auto' }} 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSelectActa) {
+                            onSelectActa(value);
+                          }
+                        }}
+                      >
+                        <text
+                          x={x}
+                          y={y}
+                          dx={-6}
+                          dy={4}
+                          textAnchor="end"
+                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          className="hover:fill-primary font-semibold text-[10px] transition-colors"
+                        >
+                          {value}
+                        </text>
+                      </g>
+                    );
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={100}
+                />
+                <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
+                <Bar 
+                  dataKey="value" 
+                  fill="hsl(142, 71%, 45%)"
+                  radius={[0, 3, 3, 0]} 
+                  barSize={15}
+                  onClick={(data) => {
+                    const val = data?.name || data?.payload?.name;
+                    if (val && onSelectActa) {
+                      onSelectActa(val);
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  {dataToUse.map((d, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                    />
+                  ))}
+                  <LabelList 
+                    dataKey="value" 
+                    position="right" 
+                    formatter={(v: any) => `${(v / 1000000).toFixed(1)}M`}
+                    style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 600 }} 
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
   const getVerTodosButton = () => {
     if (!expandedChart) return null;
     
@@ -3185,6 +3413,11 @@ export function DashboardCharts({
       case 'ruta-monto':
         isShowingAll = showAllRoutesMonto;
         toggleFn = () => setShowAllRoutesMonto(!showAllRoutesMonto);
+        break;
+      case 'actas-cantidad':
+      case 'actas-monto':
+        isShowingAll = showAllActas;
+        toggleFn = () => setShowAllActas(!showAllActas);
         break;
       default:
         return null;
@@ -4126,6 +4359,90 @@ export function DashboardCharts({
             {renderRoutesMonto(240)}
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Actas de Comité — Cantidad y Dinero Aprobado en la misma fila */}
+      <motion.div
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.4, duration: 0.4 }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cantidad de Expedientes por Acta */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Cantidad de Expedientes por Acta</CardTitle>
+                <CardDescription>{showAllActas ? 'Cantidad de expedientes de todas las actas' : 'Expedientes por acta de comité (Top 5)'}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                  onClick={(e) => { e.stopPropagation(); setShowAllActas(!showAllActas); }}
+                >
+                  {showAllActas ? 'Ver Top 5' : 'Ver Todos'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                  title="Expandir gráfico"
+                  onClick={() => setExpandedChart({
+                    id: 'actas-cantidad',
+                    title: 'Cantidad de Expedientes por Acta',
+                    description: 'Cantidad de expedientes tramitados por acta de comité',
+                    render: renderActasCantidad
+                  })}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {renderActasCantidad(240)}
+            </CardContent>
+          </Card>
+
+          {/* Dinero Aprobado por Acta */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Dinero Aprobado por Acta</CardTitle>
+                <CardDescription>{showAllActas ? 'Dinero aprobado de todas las actas' : 'Dinero aprobado por acta de comité (Top 5)'}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                  onClick={(e) => { e.stopPropagation(); setShowAllActas(!showAllActas); }}
+                >
+                  {showAllActas ? 'Ver Top 5' : 'Ver Todos'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                  title="Expandir gráfico"
+                  onClick={() => setExpandedChart({
+                    id: 'actas-monto',
+                    title: 'Dinero Aprobado por Acta',
+                    description: 'Dinero total aprobado por acta de comité',
+                    render: renderActasMonto
+                  })}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {renderActasMonto(240)}
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
 
       {/* Expanded Chart Modal */}
