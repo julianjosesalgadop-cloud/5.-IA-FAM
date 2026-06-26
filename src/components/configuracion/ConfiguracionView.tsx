@@ -1,16 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Tag, Plus, Trash2, Eye, ShieldAlert } from 'lucide-react';
+import { Users, Tag, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ROLES_USUARIO } from '@/lib/constants';
-import type { RolUsuario } from '@/types/database';
-import { getMockUser, setMockUser } from '@/lib/services/dbService';
+import { getMockUser } from '@/lib/services/dbService';
 import { useRouter } from 'next/navigation';
 
 export function ConfiguracionView() {
@@ -76,58 +72,8 @@ export function ConfiguracionView() {
     toast.success('Causa de comité eliminada');
   };
 
-  const handleRoleSimulation = (role: RolUsuario) => {
-    const user = setMockUser(role);
-    setCurrentUser(user);
-    toast.success(`Rol cambiado a: ${ROLES_USUARIO[role].label}`, {
-      description: 'Los permisos de la interfaz se han actualizado.',
-    });
-    // Force refresh navbar or other items if needed
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  };
-
   return (
     <div className="max-w-4xl space-y-6">
-      {/* Role Simulator */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <ShieldAlert className="w-5 h-5 text-primary" />
-              Simulador de Roles de Usuario
-            </CardTitle>
-            <CardDescription>
-              Permite simular diferentes permisos y RLS para ver cómo reacciona la interfaz.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {(['admin', 'analista', 'consultor'] as RolUsuario[]).map((role) => (
-                <button
-                  key={role}
-                  onClick={() => handleRoleSimulation(role)}
-                  className={`flex-1 min-w-[140px] px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
-                    currentUser.rol === role
-                      ? 'gradient-brand text-white border-transparent shadow-glow-brand'
-                      : 'bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-                  }`}
-                >
-                  {ROLES_USUARIO[role].label}
-                </button>
-              ))}
-            </div>
-            <div className="rounded-lg bg-card border border-border p-3 text-xs text-muted-foreground">
-              <p>
-                <strong>Admin:</strong> Acceso completo (Crear, Editar, Eliminar, Configuración).<br />
-                <strong>Analista:</strong> Lectura y escritura. No puede eliminar expedientes ni documentos.<br />
-                <strong>Consultor:</strong> Solo lectura. No puede crear ni editar expedientes, ni subir documentos.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
       {/* Users info */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
