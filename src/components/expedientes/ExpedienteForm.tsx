@@ -1555,7 +1555,7 @@ export function ExpedienteForm({
                           control={control}
                           name="valor_final_aprobado"
                           placeholder={formConfig.campoConfig.valor_final_aprobado.placeholder}
-                          className="bg-amber-500/5 border-amber-500/30 text-amber-600 dark:text-amber-400 focus:border-amber-500 focus:ring-amber-500/20 font-bold text-base number-font shadow-[0_0_12px_rgba(245,158,11,0.06)] transition-all hover:border-amber-500/50 h-10"
+                          className="bg-emerald-500/5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/20 font-bold text-base number-font shadow-[0_0_12px_rgba(16,185,129,0.06)] transition-all hover:border-emerald-500/50 h-10"
                           onChangeCustom={(val) => {
                             if (val === null || val === undefined) {
                               setIsFinalAprobadoManual(false);
