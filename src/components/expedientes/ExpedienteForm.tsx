@@ -334,13 +334,26 @@ function FieldGroup({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>;
 }
 
-function FormField({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+function FormField({ 
+  label, 
+  children, 
+  required,
+  extra
+}: { 
+  label: string; 
+  children: React.ReactNode; 
+  required?: boolean;
+  extra?: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <Label>
-        {label}
-        {required && <span className="text-red-400 ml-1">*</span>}
-      </Label>
+      <div className="flex items-center justify-between w-full h-5">
+        <Label>
+          {label}
+          {required && <span className="text-red-400 ml-1">*</span>}
+        </Label>
+        {extra}
+      </div>
       {children}
     </div>
   );
@@ -1523,10 +1536,11 @@ export function ExpedienteForm({
                       </FormField>
                     )}
                     {formConfig.campoConfig.valor_final_aprobado?.visible && (
-                      <FormField label={formConfig.campoConfig.valor_final_aprobado.label} required={formConfig.campoConfig.valor_final_aprobado.requerido}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[11px] text-muted-foreground">Estado del campo:</span>
-                          {isFinalAprobadoManual ? (
+                      <FormField 
+                        label={formConfig.campoConfig.valor_final_aprobado.label} 
+                        required={formConfig.campoConfig.valor_final_aprobado.requerido}
+                        extra={
+                          isFinalAprobadoManual ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
                               ✍️ Manual
                             </span>
@@ -1534,13 +1548,14 @@ export function ExpedienteForm({
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20">
                               ⚙️ Autocalculado
                             </span>
-                          )}
-                        </div>
+                          )
+                        }
+                      >
                         <CurrencyInputField
                           control={control}
                           name="valor_final_aprobado"
                           placeholder={formConfig.campoConfig.valor_final_aprobado.placeholder}
-                          className="bg-amber-500/5 border-amber-500/30 text-amber-600 dark:text-amber-400 focus:border-amber-500 focus:ring-amber-500/20 font-bold text-base number-font shadow-[0_0_12px_rgba(245,158,11,0.06)] transition-all hover:border-amber-500/50 h-11"
+                          className="bg-amber-500/5 border-amber-500/30 text-amber-600 dark:text-amber-400 focus:border-amber-500 focus:ring-amber-500/20 font-bold text-base number-font shadow-[0_0_12px_rgba(245,158,11,0.06)] transition-all hover:border-amber-500/50 h-10"
                           onChangeCustom={(val) => {
                             if (val === null || val === undefined) {
                               setIsFinalAprobadoManual(false);
