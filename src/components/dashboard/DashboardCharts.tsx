@@ -330,6 +330,7 @@ export function DashboardCharts({
   const [showAllActas, setShowAllActas] = useState(false);
   const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
   const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
+  const [serieMetricFilter, setSerieMetricFilter] = useState<'todos' | 'cantidad' | 'monto'>('todos');
 
   // 1. Monthly trend calculations
   const totalFilteredCount = expedientes.length;
@@ -1422,79 +1423,94 @@ export function DashboardCharts({
               );
             }}
           />
-          <YAxis
-            yAxisId="left"
-            orientation="left"
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
-          />
+          {(serieMetricFilter === 'todos' || serieMetricFilter === 'cantidad') && (
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+              axisLine={false}
+              tickLine={false}
+            />
+          )}
+          {(serieMetricFilter === 'todos' || serieMetricFilter === 'monto') && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+            />
+          )}
           <Tooltip content={<CustomTooltipSeries />} />
           <Legend
             iconSize={8}
+            onClick={(props) => {
+              const { dataKey } = props;
+              setSerieMetricFilter((prev) => {
+                if (prev === dataKey) return 'todos';
+                return dataKey as 'cantidad' | 'monto';
+              });
+            }}
             formatter={(value) => (
-              <span className="text-[10px] text-muted-foreground font-medium uppercase">
+              <span className="text-[10px] text-muted-foreground font-medium uppercase cursor-pointer hover:text-foreground transition-colors select-none">
                 {value === 'monto' ? 'Monto Aprobado ($)' : 'Cantidad de Expedientes'}
               </span>
             )}
           />
-          <Bar 
-            yAxisId="left" 
-            dataKey="cantidad" 
-            name="cantidad" 
-            fill="hsl(203, 100%, 50%)" 
-            radius={[2, 2, 0, 0]}
-            onClick={(data) => {
-              const val = data?.name || data?.payload?.name;
-              if (val && onSelectSerie) {
-                onSelectSerie(val);
-              }
-            }}
-            className="cursor-pointer"
-          >
-            {internalCategoriesData.map((d, index) => (
-              <Cell 
-                key={index} 
-                fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+          {(serieMetricFilter === 'todos' || serieMetricFilter === 'cantidad') && (
+            <Bar 
+              yAxisId="left" 
+              dataKey="cantidad" 
+              name="cantidad" 
+              fill="hsl(203, 100%, 50%)" 
+              radius={[2, 2, 0, 0]}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectSerie) {
+                  onSelectSerie(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {internalCategoriesData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                />
+              ))}
+              <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
+            </Bar>
+          )}
+          {(serieMetricFilter === 'todos' || serieMetricFilter === 'monto') && (
+            <Bar 
+              yAxisId="right" 
+              dataKey="monto" 
+              name="monto" 
+              fill="hsl(142, 71%, 45%)" 
+              radius={[2, 2, 0, 0]}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectSerie) {
+                  onSelectSerie(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {internalCategoriesData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                />
+              ))}
+              <LabelList
+                dataKey="monto"
+                position="top"
+                formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
               />
-            ))}
-            <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
-          </Bar>
-          <Bar 
-            yAxisId="right" 
-            dataKey="monto" 
-            name="monto" 
-            fill="hsl(142, 71%, 45%)" 
-            radius={[2, 2, 0, 0]}
-            onClick={(data) => {
-              const val = data?.name || data?.payload?.name;
-              if (val && onSelectSerie) {
-                onSelectSerie(val);
-              }
-            }}
-            className="cursor-pointer"
-          >
-            {internalCategoriesData.map((d, index) => (
-              <Cell 
-                key={index} 
-                fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
-              />
-            ))}
-            <LabelList
-              dataKey="monto"
-              position="top"
-              formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
-              style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
-            />
-          </Bar>
+            </Bar>
+          )}
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -4032,20 +4048,60 @@ export function DashboardCharts({
               <CardTitle>Siniestralidad por Serie de Vehículo</CardTitle>
               <CardDescription>Cantidad de reclamaciones y monto $ por prefijo de número interno</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'serie-vehiculos',
-                title: 'Siniestralidad por Serie de Vehículo',
-                description: 'Cantidad de reclamaciones y monto $ por prefijo de número interno',
-                render: renderVehiculosInterno
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setSerieMetricFilter('todos')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    serieMetricFilter === 'todos'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Ambos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSerieMetricFilter('cantidad')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    serieMetricFilter === 'cantidad'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Cantidad
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSerieMetricFilter('monto')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    serieMetricFilter === 'monto'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Monto
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'serie-vehiculos',
+                  title: 'Siniestralidad por Serie de Vehículo',
+                  description: 'Cantidad de reclamaciones y monto $ por prefijo de número interno',
+                  render: renderVehiculosInterno
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {renderVehiculosInterno(240)}
@@ -4501,6 +4557,46 @@ export function DashboardCharts({
                         )}
                       >
                         Día
+                      </button>
+                    </div>
+                  )}
+                  {expandedChart.id === 'serie-vehiculos' && (
+                    <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
+                      <button
+                        type="button"
+                        onClick={() => setSerieMetricFilter('todos')}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                          serieMetricFilter === 'todos'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Ambos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSerieMetricFilter('cantidad')}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                          serieMetricFilter === 'cantidad'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Cantidad
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSerieMetricFilter('monto')}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200",
+                          serieMetricFilter === 'monto'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Monto
                       </button>
                     </div>
                   )}
