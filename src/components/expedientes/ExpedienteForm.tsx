@@ -433,7 +433,6 @@ export function ExpedienteForm({
   });
 
   const [existingActas, setExistingActas] = useState<string[]>([]);
-  const [actaMode, setActaMode] = useState<'select' | 'new'>('select');
 
   useEffect(() => {
     const fetchActas = async () => {
@@ -447,16 +446,6 @@ export function ExpedienteForm({
           )
         ).sort();
         setExistingActas(actas);
-        
-        if (actas.length === 0) {
-          setActaMode('new');
-        } else if (defaultValues?.numero_acta) {
-          if (actas.includes(defaultValues.numero_acta)) {
-            setActaMode('select');
-          } else {
-            setActaMode('new');
-          }
-        }
       } catch (err) {
         console.error('Error fetching existing actas:', err);
       }
@@ -1706,65 +1695,33 @@ export function ExpedienteForm({
                   )}
                   {formConfig.campoConfig.numero_acta?.visible && (
                     <FormField label={formConfig.campoConfig.numero_acta.label} required={formConfig.campoConfig.numero_acta.requerido}>
-                      {actaMode === 'select' ? (
-                        <div className="space-y-2">
-                          <select
-                            {...register('numero_acta')}
-                            className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                          >
-                            <option value="">Seleccionar acta...</option>
-                            {existingActas.map((acta) => (
-                              <option key={acta} value={acta}>
-                                {acta}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActaMode('new');
-                              setValue('numero_acta', '');
-                            }}
-                            className="text-xs text-brand-400 hover:text-brand-500 underline flex items-center gap-1 mt-1 font-semibold"
-                          >
-                            + Registrar nueva acta
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Input 
-                            placeholder={formConfig.campoConfig.numero_acta.placeholder} 
-                            {...register('numero_acta')} 
-                            className={`${inputClass} font-mono`}
-                            onBlur={(e) => {
-                              const val = e.target.value.trim();
-                              if (val) {
-                                const numOnly = val.replace(/\D/g, '');
-                                if (numOnly) {
-                                  setValue('numero_acta', `ACTA ${numOnly.padStart(4, '0')}`);
-                                } else {
-                                  const match = val.match(/acta\s*(\d+)/i);
-                                  if (match && match[1]) {
-                                    setValue('numero_acta', `ACTA ${match[1].padStart(4, '0')}`);
-                                  }
+                      <div className="space-y-1">
+                        <Input 
+                          placeholder={formConfig.campoConfig.numero_acta.placeholder || "Buscar o registrar acta (ej: ACTA 0001)..."} 
+                          {...register('numero_acta')} 
+                          className={`${inputClass} font-mono`}
+                          list="form-actas-list"
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val) {
+                              const numOnly = val.replace(/\D/g, '');
+                              if (numOnly) {
+                                setValue('numero_acta', `ACTA ${numOnly.padStart(4, '0')}`);
+                              } else {
+                                const match = val.match(/acta\s*(\d+)/i);
+                                if (match && match[1]) {
+                                  setValue('numero_acta', `ACTA ${match[1].padStart(4, '0')}`);
                                 }
                               }
-                            }}
-                          />
-                          {existingActas.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActaMode('select');
-                                setValue('numero_acta', '');
-                              }}
-                              className="text-xs text-brand-400 hover:text-brand-500 underline flex items-center gap-1 mt-1 font-semibold"
-                            >
-                              Seleccionar acta existente
-                            </button>
-                          )}
-                        </div>
-                      )}
+                            }
+                          }}
+                        />
+                        <datalist id="form-actas-list">
+                          {existingActas.map((acta) => (
+                            <option key={acta} value={acta} />
+                          ))}
+                        </datalist>
+                      </div>
                       {errors.numero_acta && (
                         <p className="text-red-400 text-xs mt-1">{errors.numero_acta.message}</p>
                       )}

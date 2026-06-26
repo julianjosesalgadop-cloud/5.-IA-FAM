@@ -95,6 +95,16 @@ export function ReportesView() {
   const [valorMaxFilter, setValorMaxFilter] = useState('');
   const [actaFilter, setActaFilter] = useState('');
 
+  const existingActas = React.useMemo(() => {
+    const actasSet = new Set<string>();
+    expedientes.forEach((e) => {
+      if (e.numero_acta && e.numero_acta.trim()) {
+        actasSet.add(e.numero_acta.trim().toUpperCase());
+      }
+    });
+    return Array.from(actasSet).sort();
+  }, [expedientes]);
+
   // Sorting states
   const [sortField, setSortField] = useState<string>('numero_expediente');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -594,11 +604,17 @@ export function ReportesView() {
             <div className="space-y-1.5">
               <Label className="text-foreground font-medium text-xs">No. de Acta</Label>
               <Input
-                placeholder="Buscar acta (ej: ACTA 0001)..."
+                placeholder="Buscar o seleccionar acta..."
                 className="bg-background border-border text-xs h-10"
                 value={actaFilter}
                 onChange={(e) => setActaFilter(e.target.value)}
+                list="reportes-actas-list"
               />
+              <datalist id="reportes-actas-list">
+                {existingActas.map((acta) => (
+                  <option key={acta} value={acta} />
+                ))}
+              </datalist>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
