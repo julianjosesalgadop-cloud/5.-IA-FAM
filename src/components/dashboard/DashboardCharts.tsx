@@ -3771,42 +3771,9 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Detalle de Tipo de Reclamación (Conceptos) */}
-      <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.26, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Detalle de Tipo de Reclamación</CardTitle>
-              <CardDescription>Distribución por concepto de cotización</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'detalle-tipo-reclamacion',
-                title: 'Detalle de Tipo de Reclamación',
-                description: 'Distribución por concepto de cotización',
-                render: renderDetalleTipoReclamacion
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {renderDetalleTipoReclamacion(260)}
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Detalle de Gasto por Tipo de Reclamo (Conceptos) */}
       <motion.div
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.27, duration: 0.4 }}
@@ -3834,6 +3801,40 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderDetalleGastosTipoReclamacion(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Detalle de Tipo de Reclamación (Conceptos) */}
+      <motion.div
+        
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.26, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Detalle de Tipo de Reclamación</CardTitle>
+              <CardDescription>Distribución por concepto de cotización</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'detalle-tipo-reclamacion',
+                title: 'Detalle de Tipo de Reclamación',
+                description: 'Distribución por concepto de cotización',
+                render: renderDetalleTipoReclamacion
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderDetalleTipoReclamacion(260)}
           </CardContent>
         </Card>
       </motion.div>
@@ -4070,33 +4071,6 @@ export function DashboardCharts({
           <Card className="border-border bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>Tipo de Servicio (Cantidad)</CardTitle>
-                <CardDescription>Expedientes por tipo de servicio</CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
-                onClick={() => setExpandedChart({
-                  id: 'tipo-servicio-cantidad',
-                  title: 'Tipo de Servicio (Cantidad)',
-                  description: 'Expedientes por tipo de servicio',
-                  render: renderTipoServicioCantidad
-                })}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {renderTipoServicioCantidad(260)}
-            </CardContent>
-          </Card>
-
-          {/* Monto */}
-          <Card className="border-border bg-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div>
                 <CardTitle>Tipo de Servicio (Monto $)</CardTitle>
                 <CardDescription>Monto aprobado por tipo de servicio</CardDescription>
               </div>
@@ -4117,6 +4091,33 @@ export function DashboardCharts({
             </CardHeader>
             <CardContent>
               {renderTipoServicioMonto(260)}
+            </CardContent>
+          </Card>
+
+          {/* Monto */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Tipo de Servicio (Cantidad)</CardTitle>
+                <CardDescription>Expedientes por tipo de servicio</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'tipo-servicio-cantidad',
+                  title: 'Tipo de Servicio (Cantidad)',
+                  description: 'Expedientes por tipo de servicio',
+                  render: renderTipoServicioCantidad
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {renderTipoServicioCantidad(260)}
             </CardContent>
           </Card>
         </div>
@@ -4243,7 +4244,7 @@ export function DashboardCharts({
 
       {/* Afectación FAM por Propietario */}
       <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7, duration: 0.4 }}
@@ -4287,7 +4288,7 @@ export function DashboardCharts({
 
       {/* Afectación FAM por Conductor */}
       <motion.div
-        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 0.4 }}
@@ -4325,6 +4326,50 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderAfectacionConductor(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Top 5 Conductores por Reclamaciones */}
+      <motion.div
+        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Top Conductores</CardTitle>
+              <CardDescription>{showAllTopConductores ? 'Recurrencia de reportes de todos los conductores' : 'Conductores con mayor recurrencia de reportes (Top 5)'}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllTopConductores(!showAllTopConductores); }}
+              >
+                {showAllTopConductores ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'top-conductores',
+                  title: 'Top Conductores',
+                  description: 'Conductores con mayor recurrencia de reportes',
+                  render: renderTopConductores
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderTopConductores(240)}
           </CardContent>
         </Card>
       </motion.div>
@@ -4375,7 +4420,7 @@ export function DashboardCharts({
 
       {/* Top 5 Vehículos por Reclamaciones */}
       <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.0, duration: 0.4 }}
@@ -4417,97 +4462,11 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Top 5 Conductores por Reclamaciones */}
-      <motion.div
-        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.1, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Top Conductores</CardTitle>
-              <CardDescription>{showAllTopConductores ? 'Recurrencia de reportes de todos los conductores' : 'Conductores con mayor recurrencia de reportes (Top 5)'}</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
-                onClick={(e) => { e.stopPropagation(); setShowAllTopConductores(!showAllTopConductores); }}
-              >
-                {showAllTopConductores ? 'Ver Top 5' : 'Ver Todos'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
-                onClick={() => setExpandedChart({
-                  id: 'top-conductores',
-                  title: 'Top Conductores',
-                  description: 'Conductores con mayor recurrencia de reportes',
-                  render: renderTopConductores
-                })}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {renderTopConductores(240)}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Siniestralidad por Ruta (Cantidad) */}
-      <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.2, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Siniestralidad por Ruta</CardTitle>
-              <CardDescription>{showAllRoutesCant ? 'Frecuencia de incidentes en todos los trayectos' : 'Rutas con mayor frecuencia de incidentes (Top 5)'}</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
-                onClick={(e) => { e.stopPropagation(); setShowAllRoutesCant(!showAllRoutesCant); }}
-              >
-                {showAllRoutesCant ? 'Ver Top 5' : 'Ver Todos'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
-                onClick={() => setExpandedChart({
-                  id: 'ruta-cantidad',
-                  title: 'Siniestralidad por Ruta (Cantidad)',
-                  description: 'Frecuencia de incidentes por trayecto origen - destino',
-                  render: renderRoutesCant
-                })}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {renderRoutesCant(240)}
-          </CardContent>
-        </Card>
-      </motion.div>
+      
 
       {/* Afectación FAM por Ruta (Monto $) */}
       <motion.div
-        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3, duration: 0.4 }}
@@ -4549,6 +4508,50 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
+      {/* Siniestralidad por Ruta (Cantidad) */}
+      <motion.div
+        className="lg:col-span-1 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Siniestralidad por Ruta</CardTitle>
+              <CardDescription>{showAllRoutesCant ? 'Frecuencia de incidentes en todos los trayectos' : 'Rutas con mayor frecuencia de incidentes (Top 5)'}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                onClick={(e) => { e.stopPropagation(); setShowAllRoutesCant(!showAllRoutesCant); }}
+              >
+                {showAllRoutesCant ? 'Ver Top 5' : 'Ver Todos'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'ruta-cantidad',
+                  title: 'Siniestralidad por Ruta (Cantidad)',
+                  description: 'Frecuencia de incidentes por trayecto origen - destino',
+                  render: renderRoutesCant
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderRoutesCant(240)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Actas de Comité — Cantidad y Dinero Aprobado en la misma fila */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
@@ -4558,43 +4561,6 @@ export function DashboardCharts({
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Cantidad de Expedientes por Acta */}
-          <Card className="border-border bg-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div>
-                <CardTitle>Cantidad de Expedientes por Acta</CardTitle>
-                <CardDescription>{showAllActas ? 'Cantidad de expedientes de todas las actas' : 'Expedientes por acta de comité (Top 5)'}</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
-                  onClick={(e) => { e.stopPropagation(); setShowAllActas(!showAllActas); }}
-                >
-                  {showAllActas ? 'Ver Top 5' : 'Ver Todos'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                  title="Expandir gráfico"
-                  onClick={() => setExpandedChart({
-                    id: 'actas-cantidad',
-                    title: 'Cantidad de Expedientes por Acta',
-                    description: 'Cantidad de expedientes tramitados por acta de comité',
-                    render: renderActasCantidad
-                  })}
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {renderActasCantidad(240)}
-            </CardContent>
-          </Card>
-
-          {/* Dinero Aprobado por Acta */}
           <Card className="border-border bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
@@ -4628,6 +4594,43 @@ export function DashboardCharts({
             </CardHeader>
             <CardContent>
               {renderActasMonto(240)}
+            </CardContent>
+          </Card>
+
+          {/* Dinero Aprobado por Acta */}
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Cantidad de Expedientes por Acta</CardTitle>
+                <CardDescription>{showAllActas ? 'Cantidad de expedientes de todas las actas' : 'Expedientes por acta de comité (Top 5)'}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7 px-2 hover:bg-secondary/40 text-foreground"
+                  onClick={(e) => { e.stopPropagation(); setShowAllActas(!showAllActas); }}
+                >
+                  {showAllActas ? 'Ver Top 5' : 'Ver Todos'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                  title="Expandir gráfico"
+                  onClick={() => setExpandedChart({
+                    id: 'actas-cantidad',
+                    title: 'Cantidad de Expedientes por Acta',
+                    description: 'Cantidad de expedientes tramitados por acta de comité',
+                    render: renderActasCantidad
+                  })}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {renderActasCantidad(240)}
             </CardContent>
           </Card>
         </div>
