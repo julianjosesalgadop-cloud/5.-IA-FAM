@@ -345,6 +345,8 @@ export function DashboardCharts({
   useEffect(() => {
     if (presetRange === 'todo') {
       setTimeUnit('year');
+    } else if (presetRange === 'este-anio') {
+      setTimeUnit('month');
     }
   }, [presetRange]);
 
@@ -353,6 +355,26 @@ export function DashboardCharts({
   const totalGeneralCount = unfilteredExpedientes.length;
   const totalFilteredApproved = expedientes.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
   const totalGeneralApproved = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
+
+  // Concept calculation for summary
+  const conceptExpenses = expedientes.reduce((acc, e) => {
+    const conceptName = (e.concepto || 'SIN ESPECIFICAR').trim();
+    const approvedVal = e.valor_final_aprobado || 0;
+    acc[conceptName] = (acc[conceptName] || 0) + approvedVal;
+    return acc;
+  }, {} as Record<string, number>);
+
+  let topConceptName = 'N/A';
+  let topConceptValue = 0;
+  let topConceptPercentage = 0;
+
+  const conceptEntries = Object.entries(conceptExpenses);
+  if (conceptEntries.length > 0 && totalFilteredApproved > 0) {
+    conceptEntries.sort((a, b) => b[1] - a[1]);
+    topConceptName = conceptEntries[0][0];
+    topConceptValue = conceptEntries[0][1];
+    topConceptPercentage = Math.round((topConceptValue / totalFilteredApproved) * 100);
+  }
   const totalFilteredCotizado = expedientes.reduce((acc, e) => acc + (e.valor_cotizacion || 0), 0);
   const totalGeneralCotizado = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_cotizacion || 0), 0);
   const totalFilteredNegociado = expedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
@@ -4659,7 +4681,7 @@ export function DashboardCharts({
               • <strong className="text-slate-900 dark:text-slate-900">Resumen General de Siniestralidad</strong>: Para el conjunto de datos y filtros activos en el dashboard, se han gestionado un total de <strong className="text-slate-900 dark:text-slate-900">{expedientes.length} expedientes</strong>, registrando un valor total aprobado de desembolsos de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(expedientes.reduce((sum, e) => sum + (e.valor_final_aprobado || 0), 0))}</strong>. Esto representa un costo promedio de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(expedientes.length ? Math.round(expedientes.reduce((sum, e) => sum + (e.valor_final_aprobado || 0), 0) / expedientes.length) : 0)}</strong> por incidente, distribuido entre <strong className="text-slate-900 dark:text-slate-900">{new Set(expedientes.map(e => e.placa).filter(Boolean)).size} vehículos únicos</strong>.
             </p>
             <p>
-              • <strong className="text-slate-900 dark:text-slate-900">Gestión de Afectaciones por Incidentes</strong>: El análisis detallado de la distribución de siniestralidad por ruta, serie de vehículo y actas del comité permite evaluar y mitigar los puntos críticos de mayor frecuencia, así como optimizar las cotizaciones individuales con los talleres asignados para el Fondo de Auxilio Mutuo (FAM).
+              • <strong className="text-slate-900 dark:text-slate-900">Gestión de Afectaciones por Incidentes</strong>: El concepto que más gasto generó para este grupo de datos fue <strong className="text-slate-900 dark:text-slate-900">"{topConceptName}"</strong> con un monto aprobado de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(topConceptValue)}</strong>, representando el <strong className="text-primary font-bold">{topConceptPercentage}%</strong> del total de afectación.
             </p>
             <p>
               • <strong className="text-slate-900 dark:text-slate-900">Mitigación de Pérdidas y Recobros</strong>: Se ha consolidado una recuperación total de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(expedientes.reduce((sum, e) => sum + (e.valor_recobro_vehiculo || 0) + (e.valor_recobro_abogado || 0) + (e.valor_recobro_empresa || 0) + (e.valor_descuento_conductor || 0), 0))}</strong> a través de gestiones activas de recobros a terceros y de descuentos a conductores responsables, lo cual reduce significativamente el impacto neto sobre el presupuesto del fondo.
