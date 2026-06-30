@@ -722,9 +722,9 @@ export default function ComparativoPage() {
               >
                 Limpiar Selección
               </Button>
-              <Button variant="outline" size="sm" onClick={loadData} className="gap-2 h-7 px-3 text-[11px]">
-                <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                Actualizar
+              <Button variant="outline" size="sm" onClick={loadData} className="h-7 px-2.5 sm:px-3 text-[11px] flex items-center gap-1.5">
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Actualizar</span>
               </Button>
             </div>
           </div>
@@ -760,7 +760,7 @@ export default function ComparativoPage() {
           </div>
         ) : (
           <>
-            {/* KPI Cards Grid - Beautiful side-by-side integrated 2026 vs 2025 comparison */}
+            {/* KPI Cards Grid - Beautiful stacked YTD comparison to prevent truncation */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
               {/* Card 1: Total Cases YTD */}
               <motion.div
@@ -769,41 +769,31 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
-                  <CardHeader className="pb-1">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
+                  <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Expedientes Acumulados</span>
+                      <span>Expedientes YTD (2026)</span>
                       <GitCompare className="w-4 h-4 text-slate-400" />
                     </CardDescription>
+                    <CardTitle className="text-3xl font-bold font-mono tracking-tight text-primary mt-1">
+                      {totals.ytdCases2026}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2026 (YTD)</span>
-                        <div className="text-2xl font-bold font-mono text-primary">{totals.ytdCases2026}</div>
-                      </div>
-                      <div className="h-8 w-px bg-border mx-4" />
-                      <div>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2025 (YTD)</span>
-                        <div className="text-2xl font-bold font-mono text-slate-500">{totals.ytdCases2025}</div>
-                      </div>
-                      <div className="ml-auto">
-                        {casesVariationYTD > 0 ? (
-                          <div className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                            <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
-                            +{casesVariationYTD.toFixed(1)}%
-                          </div>
-                        ) : (
-                          <div className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
-                            {casesVariationYTD.toFixed(1)}%
-                          </div>
-                        )}
-                      </div>
+                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
+                      <span className="text-muted-foreground">vs <span className="font-semibold text-foreground font-mono">{totals.ytdCases2025}</span> en 2025</span>
+                      {casesVariationYTD > 0 ? (
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                          <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                          +{casesVariationYTD.toFixed(1)}%
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                          {casesVariationYTD.toFixed(1)}%
+                        </div>
+                      )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
-                      Comparativa YTD acumulada del período
-                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -815,45 +805,33 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.05 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
-                  <CardHeader className="pb-1">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
+                  <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Monto Aprobado Acumulado</span>
+                      <span>Monto Aprobado YTD (2026)</span>
                       <DollarSign className="w-4 h-4 text-slate-400" />
                     </CardDescription>
+                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(totals.ytdAmount2026)}>
+                      {formatCOP(totals.ytdAmount2026)}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center">
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2026 (YTD)</span>
-                        <div className="text-base sm:text-lg font-bold font-mono text-primary truncate" title={formatCOP(totals.ytdAmount2026)}>
-                          {formatCOP(totals.ytdAmount2026)}
+                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
+                      <span className="text-muted-foreground truncate mr-2" title={formatCOP(totals.ytdAmount2025)}>
+                        vs <span className="font-semibold text-foreground font-mono">{formatCOP(totals.ytdAmount2025)}</span> en 25
+                      </span>
+                      {amountVariationYTD > 0 ? (
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                          <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                          +{amountVariationYTD.toFixed(1)}%
                         </div>
-                      </div>
-                      <div className="h-8 w-px bg-border mx-3" />
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2025 (YTD)</span>
-                        <div className="text-base sm:text-lg font-bold font-mono text-slate-500 truncate" title={formatCOP(totals.ytdAmount2025)}>
-                          {formatCOP(totals.ytdAmount2025)}
+                      ) : (
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                          <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                          {amountVariationYTD.toFixed(1)}%
                         </div>
-                      </div>
-                      <div className="ml-2">
-                        {amountVariationYTD > 0 ? (
-                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                            <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                            +{amountVariationYTD.toFixed(0)}%
-                          </div>
-                        ) : (
-                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                            {amountVariationYTD.toFixed(0)}%
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
-                      Comparativa YTD acumulada del período
-                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -865,45 +843,33 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.1 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
-                  <CardHeader className="pb-1">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
+                  <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Costo Medio por Caso</span>
+                      <span>Costo Medio por Caso (2026)</span>
                       <FileText className="w-4 h-4 text-slate-400" />
                     </CardDescription>
+                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(avgCost2026)}>
+                      {formatCOP(avgCost2026)}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center">
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2026</span>
-                        <div className="text-base sm:text-lg font-bold font-mono text-primary truncate" title={formatCOP(avgCost2026)}>
-                          {formatCOP(avgCost2026)}
+                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
+                      <span className="text-muted-foreground truncate mr-2" title={formatCOP(avgCost2025)}>
+                        vs <span className="font-semibold text-foreground font-mono">{formatCOP(avgCost2025)}</span> en 25
+                      </span>
+                      {avgCostVariation > 0 ? (
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                          <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                          +{avgCostVariation.toFixed(1)}%
                         </div>
-                      </div>
-                      <div className="h-8 w-px bg-border mx-3" />
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2025</span>
-                        <div className="text-base sm:text-lg font-bold font-mono text-slate-500 truncate" title={formatCOP(avgCost2025)}>
-                          {formatCOP(avgCost2025)}
+                      ) : (
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                          <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                          {avgCostVariation.toFixed(1)}%
                         </div>
-                      </div>
-                      <div className="ml-2">
-                        {avgCostVariation > 0 ? (
-                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                            <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                            +{avgCostVariation.toFixed(0)}%
-                          </div>
-                        ) : (
-                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                            {avgCostVariation.toFixed(0)}%
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
-                      Costo medio aprobado por siniestro
-                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -915,36 +881,26 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.15 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
-                  <CardHeader className="pb-1">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
+                  <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Eficiencia Ahorro</span>
+                      <span>Eficiencia Ahorro (2026)</span>
                       <TrendingUp className="w-4 h-4 text-slate-400" />
                     </CardDescription>
+                    <CardTitle className="text-3xl font-bold font-mono tracking-tight text-primary mt-1">
+                      {saving2026.toFixed(1)}%
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2026</span>
-                        <div className="text-2xl font-bold font-mono text-primary">{saving2026.toFixed(1)}%</div>
-                      </div>
-                      <div className="h-8 w-px bg-border mx-4" />
-                      <div>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2025</span>
-                        <div className="text-2xl font-bold font-mono text-slate-500">{saving2025.toFixed(1)}%</div>
-                      </div>
-                      <div className="ml-auto">
-                        <div className={cn(
-                          "inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold",
-                          saving2026 > saving2025 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"
-                        )}>
-                          {saving2026 > saving2025 ? 'Mejoró' : 'Estable'}
-                        </div>
+                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
+                      <span className="text-muted-foreground">vs <span className="font-semibold text-foreground font-mono">{saving2025.toFixed(1)}%</span> en 2025</span>
+                      <div className={cn(
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold",
+                        saving2026 > saving2025 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"
+                      )}>
+                        {saving2026 > saving2025 ? 'Mejoró' : 'Estable'}
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
-                      Porcentaje global de ahorro negociado
-                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
