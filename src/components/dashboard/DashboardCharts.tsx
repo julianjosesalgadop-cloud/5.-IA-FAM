@@ -32,6 +32,7 @@ interface DashboardChartsProps {
   expedientesForSeries?: Expediente[];
   expedientesForRoutes?: Expediente[];
   expedientesForActas?: Expediente[];
+  expedientesForMonths?: Expediente[];
   onSelectPlaca?: (placa: string) => void;
   onSelectConductor?: (conductor: string) => void;
   selectedPlaca?: string;
@@ -233,8 +234,8 @@ function CustomTooltipSeries({ active, payload }: any) {
       <div style={{ backgroundColor: 'hsla(var(--card), 0.85)', backdropFilter: 'blur(8px)', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} className="p-2 text-[10px] space-y-1 shadow-lg max-w-[200px]">
         <p className="font-bold text-foreground mb-0.5">{d.name}</p>
         <div className="space-y-0.5 text-foreground">
-          <div>Casos: <span className="font-bold">{d.cantidad}</span> ({pctQty}%)</div>
-          <div>Monto: <span className="font-bold">{formatCOP(d.monto)}</span> ({pctVal}%)</div>
+          <div>Cantidad de Expedientes: <span className="font-bold">{d.cantidad}</span> ({pctQty}%)</div>
+          <div>Monto Aprobado: <span className="font-bold">{formatCOP(d.monto)}</span> ({pctVal}%)</div>
         </div>
       </div>
     );
@@ -251,6 +252,7 @@ export function DashboardCharts({
   expedientesForSeries: rawExpedientesForSeries,
   expedientesForRoutes: rawExpedientesForRoutes,
   expedientesForActas: rawExpedientesForActas,
+  expedientesForMonths: rawExpedientesForMonths,
   onSelectPlaca,
   onSelectConductor,
   selectedPlaca,
@@ -293,6 +295,7 @@ export function DashboardCharts({
   const es = rawExpedientesForSeries ? filterAllowed(rawExpedientesForSeries) : expedientes;
   const er = rawExpedientesForRoutes ? filterAllowed(rawExpedientesForRoutes) : expedientes;
   const ea = rawExpedientesForActas ? filterAllowed(rawExpedientesForActas) : expedientes;
+  const em = rawExpedientesForMonths ? filterAllowed(rawExpedientesForMonths) : expedientes;
   const [expandedChart, setExpandedChart] = useState<{
     id: string;
     title: string;
@@ -355,10 +358,10 @@ export function DashboardCharts({
   const totalFilteredNegociado = expedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
   const totalGeneralNegociado = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
 
-  // Find all unique years in expedientes
+  // Find all unique years in em
   const yearsWithData = Array.from(
     new Set(
-      expedientes
+      em
         .map((e) => {
           if (!e.fecha_incidente) return null;
           const d = new Date(e.fecha_incidente + 'T00:00:00');
@@ -387,7 +390,7 @@ export function DashboardCharts({
     });
 
     allMonthlyData = combinations.map(({ year, month, name }) => {
-      const cases = expedientes.filter((e) => {
+      const cases = em.filter((e) => {
         if (!e.fecha_incidente) return false;
         const d = new Date(e.fecha_incidente + 'T00:00:00');
         return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month;
@@ -421,7 +424,7 @@ export function DashboardCharts({
   } else {
     // Single year (default behavior)
     allMonthlyData = MONTH_NAMES.map((name, index) => {
-      const cases = expedientes.filter((e) => {
+      const cases = em.filter((e) => {
         if (!e.fecha_incidente) return false;
         const d = new Date(e.fecha_incidente + 'T00:00:00');
         return !isNaN(d.getTime()) && d.getMonth() === index;
@@ -1580,7 +1583,7 @@ export function DashboardCharts({
             }}
             formatter={(value) => (
               <span className="text-[10px] text-muted-foreground font-medium uppercase cursor-pointer hover:text-foreground transition-colors select-none">
-                {value === 'monto' ? 'Monto Aprobado ($)' : 'Cantidad de Expedientes'}
+                {value === 'monto' ? 'MONTO APROBADO' : 'CANTIDAD DE EXPEDIENTES'}
               </span>
             )}
           />
@@ -1589,7 +1592,7 @@ export function DashboardCharts({
               yAxisId="left" 
               dataKey="cantidad" 
               name="cantidad" 
-              fill="hsl(203, 100%, 50%)" 
+              fill="#94a3b8" 
               radius={[2, 2, 0, 0]}
               onClick={(data) => {
                 const val = data?.name || data?.payload?.name;
@@ -2086,7 +2089,7 @@ export function DashboardCharts({
                 />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="#94a3b8" 
                   radius={[0, 4, 4, 0]}
                   onClick={(data) => {
                     const val = data?.name || data?.payload?.name;
@@ -2638,7 +2641,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(203, 100%, 50%)" 
+                  fill="#94a3b8" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2732,7 +2735,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="#94a3b8" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2827,7 +2830,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="#94a3b8" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2841,7 +2844,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedConductor === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
                     />
                   ))}
                   <LabelList
@@ -2924,7 +2927,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -3227,7 +3230,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
                     />
                   ))}
                   <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
@@ -3317,7 +3320,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
+                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -3411,7 +3414,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
                     />
                   ))}
                   <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
@@ -3501,7 +3504,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
+                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList 
@@ -3704,42 +3707,9 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* By type */}
-      <motion.div
-        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Tipo de Reclamación</CardTitle>
-              <CardDescription>Distribución por categoría de reclamo</CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
-              onClick={() => setExpandedChart({
-                id: 'tipo-reclamacion',
-                title: 'Tipo de Reclamación',
-                description: 'Distribución por categoría de reclamo',
-                render: renderTipoReclamacion
-              })}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {renderTipoReclamacion(260)}
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Gastos por Tipo de Reclamación */}
       <motion.div
+        className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25, duration: 0.4 }}
@@ -3767,6 +3737,40 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderGastosTipoReclamacion(260)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* By type */}
+      <motion.div
+        
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Tipo de Reclamación</CardTitle>
+              <CardDescription>Distribución por categoría de reclamo</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+              title="Expandir gráfico"
+              onClick={() => setExpandedChart({
+                id: 'tipo-reclamacion',
+                title: 'Tipo de Reclamación',
+                description: 'Distribución por categoría de reclamo',
+                render: renderTipoReclamacion
+              })}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {renderTipoReclamacion(260)}
           </CardContent>
         </Card>
       </motion.div>

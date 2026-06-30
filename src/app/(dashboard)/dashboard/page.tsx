@@ -182,17 +182,23 @@ export default function DashboardPage() {
       if (!hasConcepto) return false;
     }
     
+
+
+    return true;
+  });
+
+  const hasMonthFilter = (e: Expediente) => {
     if (selectedChartMonth !== null) {
       if (!e.fecha_incidente) return false;
       const d = new Date(e.fecha_incidente + 'T00:00:00');
       if (isNaN(d.getTime()) || d.getMonth() !== selectedChartMonth) return false;
     }
-
     return true;
-  });
+  };
 
   // 2. Array for Vehicles Chart: baseFiltered + driver & proprietor & series & route & acta filters (excludes vehicle filter to prevent self-collapsing)
   const expedientesForVehicles = baseFilteredExpedientes.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
     if (selectedChartSerie) {
@@ -206,6 +212,7 @@ export default function DashboardPage() {
 
   // 3. Array for Drivers Chart: baseFiltered + vehicle & proprietor & series & route & acta filters (excludes driver filter to prevent self-collapsing)
   const expedientesForDrivers = baseFilteredExpedientes.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
     if (selectedChartSerie) {
@@ -219,6 +226,7 @@ export default function DashboardPage() {
 
   // 3b. Array for Proprietors Chart: baseFiltered + vehicle & driver & series & route & acta filters (excludes proprietor filter to prevent self-collapsing)
   const expedientesForPropietarios = baseFilteredExpedientes.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartSerie) {
@@ -232,6 +240,7 @@ export default function DashboardPage() {
 
   // 3c. Array for Series Chart: baseFiltered + vehicle & driver & proprietor & route & acta filters (excludes series filter to prevent self-collapsing)
   const expedientesForSeries = baseFilteredExpedientes.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -242,6 +251,7 @@ export default function DashboardPage() {
 
   // 3d. Array for Routes Chart: baseFiltered + vehicle & driver & proprietor & series & acta filters (excludes route filter to prevent self-collapsing)
   const expedientesForRoutes = baseFilteredExpedientes.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -255,6 +265,7 @@ export default function DashboardPage() {
 
   // 3e. Array for Actas Chart: baseFiltered + vehicle & driver & proprietor & series & route filters (excludes acta filter to prevent self-collapsing)
   const expedientesForActas = baseFilteredExpedientes.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -266,8 +277,8 @@ export default function DashboardPage() {
     return true;
   });
 
-  // 4. Final Filtered Array for KPIs and general charts (includes all selected charts filters)
-  const filteredExpedientes = baseFilteredExpedientes.filter((e) => {
+  // 3f. Array for Months Chart: baseFiltered + vehicle & driver & proprietor & series & route & acta filters (excludes month filter to prevent self-collapsing)
+  const expedientesForMonths = baseFilteredExpedientes.filter((e) => {
     if (selectedChartPlaca && e.placa?.toLowerCase() !== selectedChartPlaca.toLowerCase()) return false;
     if (selectedChartConductor && e.nombre_conductor?.toLowerCase() !== selectedChartConductor.toLowerCase()) return false;
     if (selectedChartProprietario && e.propietario?.toLowerCase() !== selectedChartProprietario.toLowerCase()) return false;
@@ -277,6 +288,12 @@ export default function DashboardPage() {
     }
     if (selectedChartRoute && getRouteKey(e) !== selectedChartRoute) return false;
     if (selectedChartActa && e.numero_acta?.toUpperCase() !== selectedChartActa.toUpperCase()) return false;
+    return true;
+  });
+
+  // 4. Final Filtered Array for KPIs and general charts (includes all selected charts filters)
+  const filteredExpedientes = expedientesForMonths.filter((e) => {
+    if (!hasMonthFilter(e)) return false;
     return true;
   });
 
@@ -451,6 +468,7 @@ export default function DashboardPage() {
               expedientesForSeries={expedientesForSeries}
               expedientesForRoutes={expedientesForRoutes}
               expedientesForActas={expedientesForActas}
+              expedientesForMonths={expedientesForMonths}
               onSelectPlaca={(placa) => setSelectedChartPlaca(current => current === placa ? '' : placa)}
               onSelectConductor={(conductor) => setSelectedChartConductor(current => current === conductor ? '' : conductor)}
               onSelectProprietario={(prop) => setSelectedChartProprietario(current => current === prop ? '' : prop)}
