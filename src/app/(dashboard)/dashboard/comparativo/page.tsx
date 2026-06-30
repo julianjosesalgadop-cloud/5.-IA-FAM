@@ -57,6 +57,10 @@ export default function ComparativoPage() {
   const [filterCulpabilidad, setFilterCulpabilidad] = useState('');
   const [filterSerie, setFilterSerie] = useState('');
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
+  const [filterTipoServicio, setFilterTipoServicio] = useState('');
+  const [filterActa, setFilterActa] = useState('');
+  const [filterPropietario, setFilterPropietario] = useState('');
+  const [filterConductor, setFilterConductor] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -125,29 +129,34 @@ export default function ComparativoPage() {
     return expedientes.filter((e) => e.deleted_at === null);
   }, [expedientes]);
 
-  // Current year & month for YTD limits (assume 2026-06-30 as per current timestamp)
+  // Current year & month for YTD limits
   const currentYear = 2026;
   const currentMonthIndex = 5; // Junio
 
   // Dynamic filter application (exactly like Dashboard)
   const filteredActiveExpedientes = React.useMemo(() => {
     return activeExpedientes.filter((e) => {
-      const yr = getYear(e);
       const mo = getMonth(e);
-      const approved = e.valor_final_aprobado || 0;
-      const cotizado = e.valor_cotizacion || 0;
       const tipo = e.tipo_reclamacion || 'Otro';
       const culp = e.culpabilidad || 'Sin definir';
       const serie = getInternalNumberCategory(e.numero_interno);
+      const tipoServ = e.tipo_servicio || 'No especificado';
+      const acta = e.numero_acta || 'Sin acta';
+      const prop = e.propietario || '';
+      const cond = e.nombre_conductor || '';
 
       if (filterReclamacion && tipo !== filterReclamacion) return false;
       if (filterCulpabilidad && culp !== filterCulpabilidad) return false;
       if (filterSerie && serie !== filterSerie) return false;
       if (filterMonth !== null && mo !== filterMonth) return false;
+      if (filterTipoServicio && tipoServ !== filterTipoServicio) return false;
+      if (filterActa && acta !== filterActa) return false;
+      if (filterPropietario && prop !== filterPropietario) return false;
+      if (filterConductor && cond !== filterConductor) return false;
 
       return true;
     });
-  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterMonth]);
+  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterMonth, filterTipoServicio, filterActa, filterPropietario, filterConductor]);
 
   // Process data for monthly charts based on dynamic filters
   const { 
@@ -155,7 +164,11 @@ export default function ComparativoPage() {
     totals,
     claimsTypeData,
     culpabilidadData,
-    seriesData
+    seriesData,
+    tipoServicioData,
+    actaData,
+    propietarioData,
+    conductorData,
   } = React.useMemo(() => {
     // 1. Monthly data structure
     const months = Array.from({ length: 12 }).map((_, i) => ({
@@ -180,8 +193,6 @@ export default function ComparativoPage() {
       amount2026: 0,
       cotizado2025: 0,
       cotizado2026: 0,
-      
-      // YTD metrics (up to June)
       ytdCases2025: 0,
       ytdCases2026: 0,
       ytdAmount2025: 0,
@@ -192,6 +203,10 @@ export default function ComparativoPage() {
     const claimsMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
     const culpabilidadMap: Record<string, { name: string; cases2025: number; cases2026: number }> = {};
     const seriesMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
+    const tipoServicioMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
+    const actaMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
+    const propietarioMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
+    const conductorMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
 
     filteredActiveExpedientes.forEach((e) => {
       const yr = getYear(e);
@@ -201,6 +216,10 @@ export default function ComparativoPage() {
       const tipo = e.tipo_reclamacion || 'Otro';
       const culp = e.culpabilidad || 'Sin definir';
       const serie = getInternalNumberCategory(e.numero_interno);
+      const tipoServ = e.tipo_servicio || 'No especificado';
+      const acta = e.numero_acta || '';
+      const prop = e.propietario || '';
+      const cond = e.nombre_conductor || '';
 
       // Monthly aggregation
       if (mo !== null && mo >= 0 && mo < 12) {
@@ -233,40 +252,61 @@ export default function ComparativoPage() {
         }
       }
 
-      // Group by Claim Type, Culpability, Series (only if the claim month is selected!)
+      // Group by dimension maps (only if the claim month is selected!)
       if ((yr === 2025 || yr === 2026) && mo !== null && selectedMonths.includes(mo)) {
         // Group by Claim Type
         if (!claimsMap[tipo]) {
           claimsMap[tipo] = { name: tipo, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
         }
-        if (yr === 2025) {
-          claimsMap[tipo].cases2025 += 1;
-          claimsMap[tipo].amount2025 += approved;
-        } else {
-          claimsMap[tipo].cases2026 += 1;
-          claimsMap[tipo].amount2026 += approved;
-        }
+        if (yr === 2025) { claimsMap[tipo].cases2025 += 1; claimsMap[tipo].amount2025 += approved; }
+        else { claimsMap[tipo].cases2026 += 1; claimsMap[tipo].amount2026 += approved; }
 
         // Group by Culpability
         if (!culpabilidadMap[culp]) {
           culpabilidadMap[culp] = { name: culp, cases2025: 0, cases2026: 0 };
         }
-        if (yr === 2025) {
-          culpabilidadMap[culp].cases2025 += 1;
-        } else {
-          culpabilidadMap[culp].cases2026 += 1;
-        }
+        if (yr === 2025) culpabilidadMap[culp].cases2025 += 1;
+        else culpabilidadMap[culp].cases2026 += 1;
 
         // Group by Vehicle Series
         if (!seriesMap[serie]) {
           seriesMap[serie] = { name: serie, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
         }
-        if (yr === 2025) {
-          seriesMap[serie].cases2025 += 1;
-          seriesMap[serie].amount2025 += approved;
-        } else {
-          seriesMap[serie].cases2026 += 1;
-          seriesMap[serie].amount2026 += approved;
+        if (yr === 2025) { seriesMap[serie].cases2025 += 1; seriesMap[serie].amount2025 += approved; }
+        else { seriesMap[serie].cases2026 += 1; seriesMap[serie].amount2026 += approved; }
+
+        // Group by Tipo Servicio
+        if (!tipoServicioMap[tipoServ]) {
+          tipoServicioMap[tipoServ] = { name: tipoServ, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+        }
+        if (yr === 2025) { tipoServicioMap[tipoServ].cases2025 += 1; tipoServicioMap[tipoServ].amount2025 += approved; }
+        else { tipoServicioMap[tipoServ].cases2026 += 1; tipoServicioMap[tipoServ].amount2026 += approved; }
+
+        // Group by Acta
+        if (acta) {
+          if (!actaMap[acta]) {
+            actaMap[acta] = { name: acta, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+          }
+          if (yr === 2025) { actaMap[acta].cases2025 += 1; actaMap[acta].amount2025 += approved; }
+          else { actaMap[acta].cases2026 += 1; actaMap[acta].amount2026 += approved; }
+        }
+
+        // Group by Propietario
+        if (prop) {
+          if (!propietarioMap[prop]) {
+            propietarioMap[prop] = { name: prop, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+          }
+          if (yr === 2025) { propietarioMap[prop].cases2025 += 1; propietarioMap[prop].amount2025 += approved; }
+          else { propietarioMap[prop].cases2026 += 1; propietarioMap[prop].amount2026 += approved; }
+        }
+
+        // Group by Conductor
+        if (cond) {
+          if (!conductorMap[cond]) {
+            conductorMap[cond] = { name: cond, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+          }
+          if (yr === 2025) { conductorMap[cond].cases2025 += 1; conductorMap[cond].amount2025 += approved; }
+          else { conductorMap[cond].cases2026 += 1; conductorMap[cond].amount2026 += approved; }
         }
       }
     });
@@ -302,6 +342,10 @@ export default function ComparativoPage() {
       claimsTypeData: Object.values(claimsMap).sort((a, b) => b.amount2026 - a.amount2026),
       culpabilidadData: Object.values(culpabilidadMap).sort((a, b) => b.cases2026 - a.cases2026),
       seriesData: Object.values(seriesMap).sort((a, b) => b.amount2026 - a.amount2026),
+      tipoServicioData: Object.values(tipoServicioMap).sort((a, b) => b.amount2026 - a.amount2026),
+      actaData: Object.values(actaMap).sort((a, b) => b.amount2026 - a.amount2026),
+      propietarioData: Object.values(propietarioMap).sort((a, b) => b.amount2026 - a.amount2026),
+      conductorData: Object.values(conductorMap).sort((a, b) => b.cases2026 - a.cases2026),
     };
   }, [filteredActiveExpedientes, selectedMonths]);
 
@@ -337,7 +381,7 @@ export default function ComparativoPage() {
     return `${sign}${diff.toFixed(1)}%`;
   };
 
-  // Custom tooltips with high contrast slate/blue styles to ensure visibility in all themes
+  // Custom tooltips with high contrast slate/blue styles
   const CustomAmountTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const val2025 = payload.find((p: any) => {
@@ -442,7 +486,7 @@ export default function ComparativoPage() {
     return null;
   };
 
-  // --- Chart Renderers for normal grid & maximized modal ---
+  // --- Chart Renderers ---
   const renderCasesMonthlyChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
@@ -596,17 +640,147 @@ export default function ComparativoPage() {
     );
   };
 
+  // Detalle de Tipo de Reclamación (CANTIDAD)
   const renderClaimsTypeChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
         <BarChart 
-          data={claimsTypeData.slice(0, 5)} 
+          data={claimsTypeData.slice(0, 8)} 
           layout="vertical" 
           margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
           onClick={(state) => {
             if (state && state.activeLabel) {
               const label = String(state.activeLabel);
               setFilterReclamacion(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={90} tickLine={false} />
+          <Tooltip content={<CustomCountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+          <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Detalle de Gasto por Tipo de Reclamo (MONTO)
+  const renderClaimsAmountChart = (isMaximized = false) => {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={claimsTypeData.slice(0, 8)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterReclamacion(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={90} tickLine={false} />
+          <Tooltip content={<CustomAmountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Tipo de Servicio — CANTIDAD
+  const renderTipoServicioCantidadChart = (isMaximized = false) => {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={tipoServicioData.slice(0, 8)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterTipoServicio(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={90} tickLine={false} />
+          <Tooltip content={<CustomCountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+          <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Tipo de Servicio — MONTO
+  const renderTipoServicioMontoChart = (isMaximized = false) => {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={tipoServicioData.slice(0, 8)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterTipoServicio(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={90} tickLine={false} />
+          <Tooltip content={<CustomAmountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Actas — CANTIDAD
+  const renderActasCantidadChart = (isMaximized = false) => {
+    const data = actaData.slice(0, 10);
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={data} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterActa(current => current === label ? '' : label);
             }
           }}
           className="cursor-pointer"
@@ -621,6 +795,39 @@ export default function ComparativoPage() {
           </Bar>
           <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
             <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Actas — MONTO
+  const renderActasMontoChart = (isMaximized = false) => {
+    const data = actaData.slice(0, 10);
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={data} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterActa(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={80} tickLine={false} />
+          <Tooltip content={<CustomAmountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -687,6 +894,108 @@ export default function ComparativoPage() {
       </ResponsiveContainer>
     );
   };
+
+  // Afectación FAM por Propietario (MONTO)
+  const renderAfectacionPropietarioChart = (isMaximized = false) => {
+    const data = propietarioData.slice(0, 10);
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={data} 
+          layout="vertical" 
+          margin={{ top: 15, right: 50, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterPropietario(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={130} tickLine={false} />
+          <Tooltip content={<CustomAmountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Afectación FAM por Conductor (MONTO)
+  const renderAfectacionConductorChart = (isMaximized = false) => {
+    const data = conductorData.slice(0, 10).sort((a, b) => b.amount2026 - a.amount2026);
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={data} 
+          layout="vertical" 
+          margin={{ top: 15, right: 50, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterConductor(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={130} tickLine={false} />
+          <Tooltip content={<CustomAmountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // TOP CONDUCTORES (CANTIDAD)
+  const renderTopConductoresChart = (isMaximized = false) => {
+    const data = conductorData.slice(0, 10);
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={data} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterConductor(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={130} tickLine={false} />
+          <Tooltip content={<CustomCountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+          <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const hasActiveFilters = filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null 
+    || filterTipoServicio || filterActa || filterPropietario || filterConductor;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -760,7 +1069,7 @@ export default function ComparativoPage() {
           </div>
         ) : (
           <>
-            {/* KPI Cards Grid - Beautiful stacked YTD comparison to prevent truncation */}
+            {/* KPI Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
               {/* Card 1: Total Cases YTD */}
               <motion.div
@@ -818,7 +1127,7 @@ export default function ComparativoPage() {
                   <CardContent className="pb-3 pt-0">
                     <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
                       <span className="text-muted-foreground truncate mr-2" title={formatCOP(totals.ytdAmount2025)}>
-                        vs <span className="font-semibold text-foreground font-mono">{formatCOP(totals.ytdAmount2025)}</span> en 25
+                        vs <span className="font-semibold text-foreground font-mono">{formatCOP(totals.ytdAmount2025)}</span> en 2025
                       </span>
                       {amountVariationYTD > 0 ? (
                         <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
@@ -856,7 +1165,7 @@ export default function ComparativoPage() {
                   <CardContent className="pb-3 pt-0">
                     <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
                       <span className="text-muted-foreground truncate mr-2" title={formatCOP(avgCost2025)}>
-                        vs <span className="font-semibold text-foreground font-mono">{formatCOP(avgCost2025)}</span> en 25
+                        vs <span className="font-semibold text-foreground font-mono">{formatCOP(avgCost2025)}</span> en 2025
                       </span>
                       {avgCostVariation > 0 ? (
                         <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
@@ -906,9 +1215,8 @@ export default function ComparativoPage() {
               </motion.div>
             </div>
 
-            {/* Charts Section 1: Monthly comparison */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Chart 1: Monthly cases count */}
+            {/* Row 1: Cantidad de Expedientes por Mes — full width */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex flex-col gap-1">
@@ -935,17 +1243,53 @@ export default function ComparativoPage() {
                     <Maximize2 className="h-4 w-4" />
                   </Button>
                 </CardHeader>
-                <CardContent className="h-[320px]">
+                <CardContent className="h-[300px]">
                   {renderCasesMonthlyChart(false)}
                 </CardContent>
               </Card>
+            </motion.div>
 
-              {/* Chart 2: Monthly approved spend */}
+            {/* Row 2: Gasto Acumulado YTD — full width */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.25 }}>
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm font-bold text-foreground">Monto Aprobado por Mes (2025 vs 2026)</CardTitle>
+                      <CardTitle className="text-sm font-bold text-foreground">Gastos por Tipo de Reclamo — Curva YTD (2025 vs 2026)</CardTitle>
+                      {filterMonth !== null && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {MONTHS_NAMES[filterMonth]}
+                        </span>
+                      )}
+                    </div>
+                    <CardDescription>Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    onClick={() => setExpandedChart({
+                      id: 'cum-spend',
+                      title: 'Gastos por Tipo de Reclamo — Curva YTD (2025 vs 2026)',
+                      description: 'Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado'
+                    })}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="h-[320px]">
+                  {renderCumSpendChart(false)}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Row 3: Monto Aprobado Mensual — full width */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
+              <Card className="bg-card border-border shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Monto Aprobado Mensual (2025 vs 2026)</CardTitle>
                       {filterMonth !== null && (
                         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                           Filtro: {MONTHS_NAMES[filterMonth]}
@@ -960,148 +1304,396 @@ export default function ComparativoPage() {
                     className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                     onClick={() => setExpandedChart({
                       id: 'amount-monthly',
-                      title: 'Monto Aprobado por Mes (2025 vs 2026)',
+                      title: 'Monto Aprobado Mensual (2025 vs 2026)',
                       description: 'Comparativa mensual de costo de auxilio aprobado'
                     })}
                   >
                     <Maximize2 className="h-4 w-4" />
                   </Button>
                 </CardHeader>
-                <CardContent className="h-[320px]">
+                <CardContent className="h-[300px]">
                   {renderAmountMonthlyChart(false)}
                 </CardContent>
               </Card>
+            </motion.div>
+
+            {/* Row 4: Detalle Tipo Reclamación (Cant.) | Detalle Gasto por Tipo Reclamo (Monto) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.35 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Detalle de Tipo de Reclamación</CardTitle>
+                        {filterReclamacion && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterReclamacion}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Comparativa de cantidad de casos por categoría de reclamo</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'reclamaciones-count',
+                        title: 'Detalle de Tipo de Reclamación (2025 vs 2026)',
+                        description: 'Comparativa de cantidad de casos por categoría de reclamo'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    {renderClaimsTypeChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Detalle de Gasto por Tipo de Reclamo</CardTitle>
+                        {filterReclamacion && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterReclamacion}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Comparativa de monto aprobado por categoría de reclamo</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'reclamaciones-amount',
+                        title: 'Detalle de Gasto por Tipo de Reclamo (2025 vs 2026)',
+                        description: 'Comparativa de monto aprobado por categoría de reclamo'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    {renderClaimsAmountChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
-            {/* Charts Section 2: YTD Cumulative Spend Progress */}
-            <Card className="bg-card border-border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-sm font-bold text-foreground">Gasto Acumulado Mensual — Curva YTD (2025 vs 2026)</CardTitle>
-                    {filterMonth !== null && (
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                        Filtro: {MONTHS_NAMES[filterMonth]}
-                      </span>
-                    )}
-                  </div>
-                  <CardDescription>Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado</CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                  onClick={() => setExpandedChart({
-                    id: 'cum-spend',
-                    title: 'Gasto Acumulado Mensual — Curva YTD (2025 vs 2026)',
-                    description: 'Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado'
-                  })}
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="h-[340px]">
-                {renderCumSpendChart(false)}
-              </CardContent>
-            </Card>
+            {/* Row 5: Tipo de Servicio (Cantidad) | Tipo de Servicio (Monto) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.45 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Tipo de Servicio (Cantidad)</CardTitle>
+                        {filterTipoServicio && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterTipoServicio}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Casos por tipo de servicio contratado</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'tipo-servicio-cant',
+                        title: 'Tipo de Servicio (Cantidad) — 2025 vs 2026',
+                        description: 'Casos por tipo de servicio contratado'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    {renderTipoServicioCantidadChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-            {/* Charts Section 3: Distribution Segmentations */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Distribution by Claim Type */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Tipo de Servicio (Monto)</CardTitle>
+                        {filterTipoServicio && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterTipoServicio}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Monto aprobado por tipo de servicio contratado</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'tipo-servicio-monto',
+                        title: 'Tipo de Servicio (Monto) — 2025 vs 2026',
+                        description: 'Monto aprobado por tipo de servicio contratado'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    {renderTipoServicioMontoChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Row 6: Cantidad de Expedientes por Acta | Dinero Aprobado por Acta */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.55 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Cantidad de Expedientes por Acta</CardTitle>
+                        {filterActa && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterActa}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Frecuencia de incidentes agrupados por número de acta</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'actas-cant',
+                        title: 'Cantidad de Expedientes por Acta — 2025 vs 2026',
+                        description: 'Frecuencia de incidentes agrupados por número de acta'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    {renderActasCantidadChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.6 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Dinero Aprobado por Acta</CardTitle>
+                        {filterActa && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterActa}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Monto aprobado agrupado por número de acta</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'actas-monto',
+                        title: 'Dinero Aprobado por Acta — 2025 vs 2026',
+                        description: 'Monto aprobado agrupado por número de acta'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    {renderActasMontoChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Row 7: Culpabilidad | Serie */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.65 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
+                        {filterCulpabilidad && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterCulpabilidad}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Comparativa del nivel de responsabilidad</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'culpabilidad',
+                        title: 'Siniestros por Culpabilidad (2025 vs 2026)',
+                        description: 'Comparativa de culpabilidad e imputación de siniestros'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[260px]">
+                    {renderCulpabilidadChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.7 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Costo Aprobado por Serie de Vehículo</CardTitle>
+                        {filterSerie && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterSerie}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Comparativa financiera de afectación por series</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'series',
+                        title: 'Costo Aprobado por Serie de Vehículo (2025 vs 2026)',
+                        description: 'Comparativa financiera de afectación según la serie del vehículo'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[260px]">
+                    {renderSeriesChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Row 8: Afectación FAM por Propietario — full width */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.75 }}>
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm font-bold text-foreground">Siniestros por Tipo de Reclamación</CardTitle>
-                      {filterReclamacion && (
+                      <CardTitle className="text-sm font-bold text-foreground">Afectación FAM por Propietario</CardTitle>
+                      {filterPropietario && (
                         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                          Filtro: {filterReclamacion}
+                          Filtro: {filterPropietario}
                         </span>
                       )}
                     </div>
-                    <CardDescription>Comparativa de cantidad de casos</CardDescription>
+                    <CardDescription>Costo total acumulado de afectación al Fondo por propietario de vehículo</CardDescription>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                     onClick={() => setExpandedChart({
-                      id: 'reclamaciones',
-                      title: 'Siniestros por Tipo de Reclamación (2025 vs 2026)',
-                      description: 'Comparativa de cantidad de casos por categoría de reclamo'
+                      id: 'afectacion-propietario',
+                      title: 'Afectación FAM por Propietario — 2025 vs 2026',
+                      description: 'Costo total acumulado de afectación al Fondo por propietario de vehículo'
                     })}
                   >
                     <Maximize2 className="h-4 w-4" />
                   </Button>
                 </CardHeader>
-                <CardContent className="h-[280px]">
-                  {renderClaimsTypeChart(false)}
+                <CardContent className="h-[340px]">
+                  {renderAfectacionPropietarioChart(false)}
                 </CardContent>
               </Card>
+            </motion.div>
 
-              {/* Distribution by Culpability */}
-              <Card className="bg-card border-border shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
-                      {filterCulpabilidad && (
-                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                          Filtro: {filterCulpabilidad}
-                        </span>
-                      )}
+            {/* Row 9: Afectación FAM por Conductor | TOP CONDUCTORES */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.8 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Afectación FAM por Conductor</CardTitle>
+                        {filterConductor && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterConductor}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Costo total acumulado de afectación al Fondo por conductor</CardDescription>
                     </div>
-                    <CardDescription>Comparativa del nivel de responsabilidad</CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                    onClick={() => setExpandedChart({
-                      id: 'culpabilidad',
-                      title: 'Siniestros por Culpabilidad (2025 vs 2026)',
-                      description: 'Comparativa de culpabilidad e imputación de siniestros'
-                    })}
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="h-[280px]">
-                  {renderCulpabilidadChart(false)}
-                </CardContent>
-              </Card>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'afectacion-conductor',
+                        title: 'Afectación FAM por Conductor — 2025 vs 2026',
+                        description: 'Costo total acumulado de afectación al Fondo por conductor'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[320px]">
+                    {renderAfectacionConductorChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-              {/* Distribution by Vehicle Series */}
-              <Card className="bg-card border-border shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm font-bold text-foreground">Costo Aprobado por Serie de Vehículo</CardTitle>
-                      {filterSerie && (
-                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                          Filtro: {filterSerie}
-                        </span>
-                      )}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.85 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Top Conductores por Reclamaciones</CardTitle>
+                        {filterConductor && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterConductor}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Conductores con mayor frecuencia de incidentes</CardDescription>
                     </div>
-                    <CardDescription>Comparativa financiera de afectación por series</CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                    onClick={() => setExpandedChart({
-                      id: 'series',
-                      title: 'Costo Aprobado por Serie de Vehículo (2025 vs 2026)',
-                      description: 'Comparativa financiera de afectación según la serie del vehículo'
-                    })}
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="h-[280px]">
-                  {renderSeriesChart(false)}
-                </CardContent>
-              </Card>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'top-conductores',
+                        title: 'Top Conductores por Reclamaciones — 2025 vs 2026',
+                        description: 'Conductores con mayor frecuencia de incidentes'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[320px]">
+                    {renderTopConductoresChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
             {/* Manager Insights Card */}
@@ -1128,9 +1720,9 @@ export default function ComparativoPage() {
         )}
       </div>
 
-      {/* Floating Active Chart Filters Notification Card (exactly like Dashboard) */}
+      {/* Floating Active Chart Filters Notification Card */}
       <AnimatePresence>
-        {(filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null) && (
+        {hasActiveFilters && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1150,6 +1742,10 @@ export default function ComparativoPage() {
                   setFilterCulpabilidad('');
                   setFilterSerie('');
                   setFilterMonth(null);
+                  setFilterTipoServicio('');
+                  setFilterActa('');
+                  setFilterPropietario('');
+                  setFilterConductor('');
                 }}
                 className="text-[10px] text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-semibold p-0 h-auto"
               >
@@ -1164,63 +1760,84 @@ export default function ComparativoPage() {
                     <p className="text-[10px] text-muted-foreground font-semibold uppercase">Mes Filtrado</p>
                     <p className="text-xs font-bold text-foreground truncate">{MONTHS_NAMES[filterMonth]}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFilterMonth(null)}
-                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => setFilterMonth(null)} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
               )}
-
               {filterReclamacion && (
                 <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
                   <div className="min-w-0">
                     <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo Reclamación</p>
                     <p className="text-xs font-bold text-foreground truncate">{filterReclamacion}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFilterReclamacion('')}
-                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => setFilterReclamacion('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
               )}
-
               {filterCulpabilidad && (
                 <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
                   <div className="min-w-0">
                     <p className="text-[10px] text-muted-foreground font-semibold uppercase">Culpabilidad</p>
                     <p className="text-xs font-bold text-foreground truncate">{filterCulpabilidad}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFilterCulpabilidad('')}
-                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => setFilterCulpabilidad('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
               )}
-
               {filterSerie && (
                 <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
                   <div className="min-w-0">
                     <p className="text-[10px] text-muted-foreground font-semibold uppercase">Serie Vehículo</p>
                     <p className="text-xs font-bold text-foreground truncate">{filterSerie}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFilterSerie('')}
-                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => setFilterSerie('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {filterTipoServicio && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo Servicio</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterTipoServicio}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFilterTipoServicio('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {filterActa && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Acta</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterActa}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFilterActa('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {filterPropietario && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Propietario</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterPropietario}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFilterPropietario('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {filterConductor && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Conductor</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterConductor}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFilterConductor('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
@@ -1262,9 +1879,17 @@ export default function ComparativoPage() {
                   {expandedChart.id === 'cases-monthly' && renderCasesMonthlyChart(true)}
                   {expandedChart.id === 'amount-monthly' && renderAmountMonthlyChart(true)}
                   {expandedChart.id === 'cum-spend' && renderCumSpendChart(true)}
-                  {expandedChart.id === 'reclamaciones' && renderClaimsTypeChart(true)}
+                  {expandedChart.id === 'reclamaciones-count' && renderClaimsTypeChart(true)}
+                  {expandedChart.id === 'reclamaciones-amount' && renderClaimsAmountChart(true)}
+                  {expandedChart.id === 'tipo-servicio-cant' && renderTipoServicioCantidadChart(true)}
+                  {expandedChart.id === 'tipo-servicio-monto' && renderTipoServicioMontoChart(true)}
+                  {expandedChart.id === 'actas-cant' && renderActasCantidadChart(true)}
+                  {expandedChart.id === 'actas-monto' && renderActasMontoChart(true)}
                   {expandedChart.id === 'culpabilidad' && renderCulpabilidadChart(true)}
                   {expandedChart.id === 'series' && renderSeriesChart(true)}
+                  {expandedChart.id === 'afectacion-propietario' && renderAfectacionPropietarioChart(true)}
+                  {expandedChart.id === 'afectacion-conductor' && renderAfectacionConductorChart(true)}
+                  {expandedChart.id === 'top-conductores' && renderTopConductoresChart(true)}
                 </div>
               </div>
             </motion.div>
