@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   X,
   Users,
+  GitCompare,
 } from 'lucide-react';
 import { getMockUser } from '@/lib/services/dbService';
 import { useRouter } from 'next/navigation';
@@ -30,6 +31,7 @@ const NAV_GROUPS = [
     title: 'Principal',
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
+      { href: '/dashboard/comparativo', label: 'Comparativo', icon: 'GitCompare', roles: ['admin', 'analista', 'consultor'] },
     ],
   },
   {
@@ -60,6 +62,7 @@ const ICONS: Record<string, React.ElementType> = {
   SlidersHorizontal,
   Shield,
   Users,
+  GitCompare,
 };
 
 export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
@@ -186,7 +189,9 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
               {group.items.map((item) => {
                 const Icon = ICONS[item.icon];
                 const isActive =
-                  item.href === '/expedientes'
+                  item.href === '/dashboard'
+                    ? pathname === '/dashboard'
+                    : item.href === '/expedientes'
                     ? pathname === '/expedientes' || (pathname.startsWith('/expedientes/') && !pathname.startsWith('/expedientes/nuevo'))
                     : pathname === item.href || pathname.startsWith(item.href + '/');
                 return (

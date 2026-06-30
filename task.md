@@ -13,4 +13,9 @@
 - [x] Eliminar los expedientes FAM-2026-112 y FAM-2026-113 de la base de datos y sus registros vinculados
 - [x] Actualizar dbService.ts para usar la lógica de consecutivo max + 1 y prefijo FAM- en mock mode
 - [x] Permitir al rol de Analista editar expedientes y subir documentos en la vista de detalles
-- [x] Compilación y verificación del build de Next.js
+- [x] Modificar `src/components/layout/Sidebar.tsx` para agregar el submódulo Comparativo e impedir el sombreado doble del Dashboard.
+- [x] Crear la página `src/app/(dashboard)/dashboard/comparativo/page.tsx` para calcular las métricas e implementar los gráficos comparativos 2025 vs 2026.
+- [x] Verificar el funcionamiento de la interfaz y la responsividad.
+- [x] Validar que el proyecto compile sin errores de tipado de TypeScript.
+- [x] Validar la compilación de producción con Next.js.
+- [/] Realizar el commit y push de los cambios.
