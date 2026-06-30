@@ -1311,22 +1311,22 @@ export default function ComparativoPage() {
             </div>
 
             {/* Manager Insights Card */}
-            <Card className="bg-slate-950/20 border border-primary/10">
+            <Card className="bg-white dark:bg-white border-2 border-primary/20 shadow-lg transition-all duration-200">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-900 flex items-center gap-2">
                   <Info className="w-4 h-4 text-primary" />
-                  Observaciones de Gestión para Jefatura
+                  Observaciones de Gestión para Gerencia
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
+              <CardContent className="text-xs text-slate-700 dark:text-slate-700 space-y-2">
                 <p>
-                  • <strong>Progreso del Gasto (YTD)</strong>: En el conjunto de meses seleccionados, el costo total aprobado del Fondo de Auxilio Mutuo para 2026 es de <strong>{formatCOP(totals.ytdAmount2026)}</strong>, comparado con <strong>{formatCOP(totals.ytdAmount2025)}</strong> en el mismo periodo del año anterior. Esto representa una variación en costo del <strong className={amountVariationYTD > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>{amountVariationYTD > 0 ? '+' : ''}{amountVariationYTD.toFixed(1)}%</strong>.
+                  • <strong className="text-slate-900 dark:text-slate-900">Progreso del Gasto (YTD)</strong>: En el conjunto de meses seleccionados, el costo total aprobado del Fondo de Auxilio Mutuo para 2026 es de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(totals.ytdAmount2026)}</strong>, comparado con <strong className="text-slate-900 dark:text-slate-900">{formatCOP(totals.ytdAmount2025)}</strong> en el mismo periodo del año anterior. Esto representa una variación en costo del <strong className={amountVariationYTD > 0 ? 'text-rose-600 dark:text-rose-600 font-bold' : 'text-emerald-600 dark:text-emerald-600 font-bold'}>{amountVariationYTD > 0 ? '+' : ''}{amountVariationYTD.toFixed(1)}%</strong>.
                 </p>
                 <p>
-                  • <strong>Frecuencia de Incidentes</strong>: En cuanto a la cantidad de casos presentados YTD para el rango activo de meses, en 2026 se han registrado <strong>{totals.ytdCases2026}</strong> incidentes frente a <strong>{totals.ytdCases2025}</strong> en 2025, variando en un <strong className={casesVariationYTD > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>{casesVariationYTD > 0 ? '+' : ''}{casesVariationYTD.toFixed(1)}%</strong>.
+                  • <strong className="text-slate-900 dark:text-slate-900">Frecuencia de Incidentes</strong>: En cuanto a la cantidad de casos presentados YTD para el rango activo de meses, en 2026 se han registrado <strong className="text-slate-900 dark:text-slate-900">{totals.ytdCases2026}</strong> incidentes frente a <strong className="text-slate-900 dark:text-slate-900">{totals.ytdCases2025}</strong> en 2025, variando en un <strong className={casesVariationYTD > 0 ? 'text-rose-600 dark:text-rose-600 font-bold' : 'text-emerald-600 dark:text-emerald-600 font-bold'}>{casesVariationYTD > 0 ? '+' : ''}{casesVariationYTD.toFixed(1)}%</strong>.
                 </p>
                 <p>
-                  • <strong>Costo Medio por Caso</strong>: El costo medio por incidente aprobado para este conjunto de meses ha cambiado de <strong>{formatCOP(avgCost2025)}</strong> en 2025 a <strong>{formatCOP(avgCost2026)}</strong> en 2026 (<strong className={avgCostVariation > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>{avgCostVariation > 0 ? '+' : ''}{avgCostVariation.toFixed(1)}%</strong>). Un costo medio más bajo indica una mejor contención y negociación de los talleres y cotizaciones individuales.
+                  • <strong className="text-slate-900 dark:text-slate-900">Costo Medio por Caso</strong>: El costo medio por incidente aprobado para este conjunto de meses ha cambiado de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(avgCost2025)}</strong> en 2025 a <strong className="text-slate-900 dark:text-slate-900">{formatCOP(avgCost2026)}</strong> en 2026 (<strong className={avgCostVariation > 0 ? 'text-rose-600 dark:text-rose-600 font-bold' : 'text-emerald-600 dark:text-emerald-600 font-bold'}>{avgCostVariation > 0 ? '+' : ''}{avgCostVariation.toFixed(1)}%</strong>). Un costo medio más bajo indica una mejor contención y negociación de los talleres y cotizaciones individuales.
                 </p>
               </CardContent>
             </Card>
