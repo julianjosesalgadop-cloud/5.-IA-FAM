@@ -18,4 +18,4 @@
 - [x] Verificar el funcionamiento de la interfaz y la responsividad.
 - [x] Validar que el proyecto compile sin errores de tipado de TypeScript.
 - [x] Validar la compilación de producción con Next.js.
-- [/] Realizar el commit y push de los cambios.
+- [x] Realizar el commit y push de los cambios.
