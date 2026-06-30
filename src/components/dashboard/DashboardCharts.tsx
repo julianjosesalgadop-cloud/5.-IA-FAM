@@ -357,12 +357,23 @@ export function DashboardCharts({
   const totalGeneralApproved = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
 
   // Concept calculation for summary
-  const conceptExpenses = expedientes.reduce((acc, e) => {
-    const conceptName = (e.concepto || 'SIN ESPECIFICAR').trim();
-    const approvedVal = e.valor_final_aprobado || 0;
-    acc[conceptName] = (acc[conceptName] || 0) + approvedVal;
-    return acc;
-  }, {} as Record<string, number>);
+  const conceptExpenses: Record<string, number> = {};
+  expedientes.forEach((e) => {
+    if (e.cotizaciones && e.cotizaciones.length > 0) {
+      const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+      const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+      activeCots.forEach((c) => {
+        let conceptName = (c.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+        if (conceptName === 'OTROS' && c.concepto_otro) {
+          conceptName = c.concepto_otro.trim().toUpperCase();
+        }
+        conceptExpenses[conceptName] = (conceptExpenses[conceptName] || 0) + (c.valor_a_pagar || 0);
+      });
+    } else {
+      const conceptName = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+      conceptExpenses[conceptName] = (conceptExpenses[conceptName] || 0) + (e.valor_final_aprobado || 0);
+    }
+  });
 
   let topConceptName = 'N/A';
   let topConceptValue = 0;
