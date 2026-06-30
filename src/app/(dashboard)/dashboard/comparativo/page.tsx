@@ -317,32 +317,47 @@ export default function ComparativoPage() {
   // Custom tooltips
   const CustomAmountTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const val2025 = payload.find((p: any) => p.dataKey === 'amount2025' || p.dataKey === 'cumAmount2025' || p.name.includes('2025'))?.value || 0;
-      const val2026 = payload.find((p: any) => p.dataKey === 'amount2026' || p.dataKey === 'cumAmount2026' || p.name.includes('2026'))?.value || 0;
+      const val2025 = payload.find((p: any) => {
+        const name = String(p.name || p.dataKey || '');
+        return name.includes('2025');
+      })?.value || 0;
+      const val2026 = payload.find((p: any) => {
+        const name = String(p.name || p.dataKey || '');
+        return name.includes('2026');
+      })?.value || 0;
       const variation = getVariationLabel(val2026, val2025);
       const isIncrease = val2026 > val2025;
 
+      const formatYearName = (name: string, dataKey: string) => {
+        const key = String(name || dataKey || '').toLowerCase();
+        if (key.includes('2025')) return 'Año 2025';
+        if (key.includes('2026')) return 'Año 2026';
+        return name || dataKey;
+      };
+
       return (
-        <div className="glass border border-white/10 p-3 rounded-xl shadow-card-dark text-xs space-y-1.5 text-slate-200">
+        <div className="bg-card/95 border border-border p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-foreground">
           <p className="font-bold text-foreground mb-1">{label}</p>
           {payload.map((p: any) => {
-            const is2026 = p.name.includes('2026') || p.dataKey.includes('2026');
-            const colorClass = is2026 ? 'text-primary' : 'text-slate-400';
+            const nameStr = String(p.name || p.dataKey || '');
+            const is2026 = nameStr.includes('2026');
+            const colorClass = is2026 ? 'text-primary' : 'text-slate-500 dark:text-slate-400';
+            const displayName = formatYearName(p.name, p.dataKey);
             return (
-              <p key={p.name} className="flex items-center justify-between gap-6">
-                <span className="flex items-center gap-1.5 font-medium">
+              <p key={p.name || p.dataKey} className="flex items-center justify-between gap-6">
+                <span className="text-foreground/90 flex items-center gap-1.5 font-medium">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                  {p.name}:
+                  {displayName}:
                 </span>
-                <span className={`font-mono font-bold ${colorClass}`}>
+                <span className={cn("font-mono font-bold ml-auto", colorClass)}>
                   {formatCOP(p.value)}
                 </span>
               </p>
             );
           })}
-          <div className="border-t border-white/5 pt-1.5 mt-1.5 text-[10px] text-muted-foreground flex items-center justify-between">
+          <div className="border-t border-border pt-1.5 mt-1.5 text-[10px] text-muted-foreground flex items-center justify-between">
             <span>Variación (26 vs 25):</span>
-            <span className={cn("font-mono font-bold", isIncrease ? "text-rose-400" : "text-emerald-400")}>
+            <span className={cn("font-mono font-bold", isIncrease ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400")}>
               {variation}
             </span>
           </div>
@@ -354,32 +369,47 @@ export default function ComparativoPage() {
 
   const CustomCountTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const val2025 = payload.find((p: any) => p.dataKey === 'cases2025' || p.name.includes('2025'))?.value || 0;
-      const val2026 = payload.find((p: any) => p.dataKey === 'cases2026' || p.name.includes('2026'))?.value || 0;
+      const val2025 = payload.find((p: any) => {
+        const name = String(p.name || p.dataKey || '');
+        return name.includes('2025');
+      })?.value || 0;
+      const val2026 = payload.find((p: any) => {
+        const name = String(p.name || p.dataKey || '');
+        return name.includes('2026');
+      })?.value || 0;
       const variation = getVariationLabel(val2026, val2025);
       const isIncrease = val2026 > val2025;
 
+      const formatYearName = (name: string, dataKey: string) => {
+        const key = String(name || dataKey || '').toLowerCase();
+        if (key.includes('2025')) return 'Año 2025';
+        if (key.includes('2026')) return 'Año 2026';
+        return name || dataKey;
+      };
+
       return (
-        <div className="glass border border-white/10 p-3 rounded-xl shadow-card-dark text-xs space-y-1.5 text-slate-200">
+        <div className="bg-card/95 border border-border p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-foreground">
           <p className="font-bold text-foreground mb-1">{label}</p>
           {payload.map((p: any) => {
-            const is2026 = p.name.includes('2026') || p.dataKey.includes('2026');
-            const colorClass = is2026 ? 'text-primary' : 'text-slate-400';
+            const nameStr = String(p.name || p.dataKey || '');
+            const is2026 = nameStr.includes('2026');
+            const colorClass = is2026 ? 'text-primary' : 'text-slate-500 dark:text-slate-400';
+            const displayName = formatYearName(p.name, p.dataKey);
             return (
-              <p key={p.name} className="flex items-center justify-between gap-6">
-                <span className="flex items-center gap-1.5 font-medium">
+              <p key={p.name || p.dataKey} className="flex items-center justify-between gap-6">
+                <span className="text-foreground/90 flex items-center gap-1.5 font-medium">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                  {p.name}:
+                  {displayName}:
                 </span>
-                <span className={`font-mono font-bold ${colorClass}`}>
+                <span className={cn("font-mono font-bold ml-auto", colorClass)}>
                   {p.value} {p.value === 1 ? 'caso' : 'casos'}
                 </span>
               </p>
             );
           })}
-          <div className="border-t border-white/5 pt-1.5 mt-1.5 text-[10px] text-muted-foreground flex items-center justify-between">
+          <div className="border-t border-border pt-1.5 mt-1.5 text-[10px] text-muted-foreground flex items-center justify-between">
             <span>Variación (26 vs 25):</span>
-            <span className={cn("font-mono font-bold", isIncrease ? "text-rose-400" : "text-emerald-400")}>
+            <span className={cn("font-mono font-bold", isIncrease ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400")}>
               {variation}
             </span>
           </div>
@@ -652,7 +682,7 @@ export default function ComparativoPage() {
                 <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
                   <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Expedientes YTD</span>
+                      <span>Expedientes YTD (2026 vs 2025)</span>
                       <GitCompare className="w-4 h-4 text-slate-400" />
                     </CardDescription>
                     <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
@@ -689,7 +719,7 @@ export default function ComparativoPage() {
                 <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
                   <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Monto Aprobado YTD</span>
+                      <span>Monto Aprobado YTD (2026 vs 2025)</span>
                       <DollarSign className="w-4 h-4 text-slate-400" />
                     </CardDescription>
                     <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
@@ -725,7 +755,7 @@ export default function ComparativoPage() {
                 <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
                   <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Costo Medio / Caso</span>
+                      <span>Costo Medio / Caso (2026 vs 2025)</span>
                       <FileText className="w-4 h-4 text-slate-400" />
                     </CardDescription>
                     <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
@@ -761,7 +791,7 @@ export default function ComparativoPage() {
                 <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
                   <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Eficiencia (Ahorro)</span>
+                      <span>Eficiencia Ahorro (2026 vs 2025)</span>
                       <TrendingUp className="w-4 h-4 text-slate-400" />
                     </CardDescription>
                     <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
@@ -950,13 +980,13 @@ export default function ComparativoPage() {
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground space-y-2">
                 <p>
-                  • <strong>Progreso del Gasto (YTD)</strong>: En el conjunto de meses seleccionados, el costo total aprobado del Fondo de Auxilio Mutuo para 2026 es de <strong>{formatCOP(totals.ytdAmount2026)}</strong>, comparado con <strong>{formatCOP(totals.ytdAmount2025)}</strong> en el mismo periodo del año anterior. Esto representa una variación en costo del <strong className={amountVariationYTD > 0 ? 'text-rose-400' : 'text-emerald-400'}>{amountVariationYTD > 0 ? '+' : ''}{amountVariationYTD.toFixed(1)}%</strong>.
+                  • <strong>Progreso del Gasto (YTD)</strong>: En el conjunto de meses seleccionados, el costo total aprobado del Fondo de Auxilio Mutuo para 2026 es de <strong>{formatCOP(totals.ytdAmount2026)}</strong>, comparado con <strong>{formatCOP(totals.ytdAmount2025)}</strong> en el mismo periodo del año anterior. Esto representa una variación en costo del <strong className={amountVariationYTD > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>{amountVariationYTD > 0 ? '+' : ''}{amountVariationYTD.toFixed(1)}%</strong>.
                 </p>
                 <p>
-                  • <strong>Frecuencia de Incidentes</strong>: En cuanto a la cantidad de casos presentados YTD para el rango activo de meses, en 2026 se han registrado <strong>{totals.ytdCases2026}</strong> incidentes frente a <strong>{totals.ytdCases2025}</strong> en 2025, variando en un <strong className={casesVariationYTD > 0 ? 'text-rose-400' : 'text-emerald-400'}>{casesVariationYTD > 0 ? '+' : ''}{casesVariationYTD.toFixed(1)}%</strong>.
+                  • <strong>Frecuencia de Incidentes</strong>: En cuanto a la cantidad de casos presentados YTD para el rango activo de meses, en 2026 se han registrado <strong>{totals.ytdCases2026}</strong> incidentes frente a <strong>{totals.ytdCases2025}</strong> en 2025, variando en un <strong className={casesVariationYTD > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>{casesVariationYTD > 0 ? '+' : ''}{casesVariationYTD.toFixed(1)}%</strong>.
                 </p>
                 <p>
-                  • <strong>Costo Medio por Caso</strong>: El costo medio por incidente aprobado para este conjunto de meses ha cambiado de <strong>{formatCOP(avgCost2025)}</strong> en 2025 a <strong>{formatCOP(avgCost2026)}</strong> en 2026 (<strong className={avgCostVariation > 0 ? 'text-rose-400' : 'text-emerald-400'}>{avgCostVariation > 0 ? '+' : ''}{avgCostVariation.toFixed(1)}%</strong>). Un costo medio más bajo indica una mejor contención y negociación de los talleres y cotizaciones individuales.
+                  • <strong>Costo Medio por Caso</strong>: El costo medio por incidente aprobado para este conjunto de meses ha cambiado de <strong>{formatCOP(avgCost2025)}</strong> en 2025 a <strong>{formatCOP(avgCost2026)}</strong> en 2026 (<strong className={avgCostVariation > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>{avgCostVariation > 0 ? '+' : ''}{avgCostVariation.toFixed(1)}%</strong>). Un costo medio más bajo indica una mejor contención y negociación de los talleres y cotizaciones individuales.
                 </p>
               </CardContent>
             </Card>
