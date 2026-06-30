@@ -1616,7 +1616,7 @@ export function DashboardCharts({
               yAxisId="right" 
               dataKey="monto" 
               name="monto" 
-              fill="hsl(142, 71%, 45%)" 
+              fill="hsl(203, 100%, 50%)" 
               radius={[2, 2, 0, 0]}
               onClick={(data) => {
                 const val = data?.name || data?.payload?.name;
@@ -2735,7 +2735,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="#94a3b8" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2830,7 +2830,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="#94a3b8" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2844,7 +2844,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
+                      fill={selectedConductor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2943,7 +2943,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
+                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -3026,7 +3026,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(203, 100%, 50%)"
+                  fill="#94a3b8"
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -3042,7 +3042,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
                     />
                   ))}
                   <LabelList
@@ -3122,7 +3122,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={false} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(203, 100%, 50%)"
+                  fill="#94a3b8"
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -3136,7 +3136,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.nombre ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedConductor === d.nombre ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
                     />
                   ))}
                   <LabelList
