@@ -5,7 +5,6 @@ import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
 import { 
   TrendingUp, 
-  TrendingDown, 
   RefreshCw, 
   Calendar, 
   DollarSign, 
@@ -25,8 +24,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  LineChart,
-  Line,
   AreaChart,
   Area,
   XAxis,
@@ -52,8 +49,14 @@ const MONTHS_SHORT = [
 export default function ComparativoPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4, 5]);
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
+
+  // Dynamic filter state variables (similar to Dashboard)
+  const [filterReclamacion, setFilterReclamacion] = useState('');
+  const [filterCulpabilidad, setFilterCulpabilidad] = useState('');
+  const [filterSerie, setFilterSerie] = useState('');
+  const [filterMonth, setFilterMonth] = useState<number | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -126,7 +129,27 @@ export default function ComparativoPage() {
   const currentYear = 2026;
   const currentMonthIndex = 5; // Junio
 
-  // Process data for monthly charts
+  // Dynamic filter application (exactly like Dashboard)
+  const filteredActiveExpedientes = React.useMemo(() => {
+    return activeExpedientes.filter((e) => {
+      const yr = getYear(e);
+      const mo = getMonth(e);
+      const approved = e.valor_final_aprobado || 0;
+      const cotizado = e.valor_cotizacion || 0;
+      const tipo = e.tipo_reclamacion || 'Otro';
+      const culp = e.culpabilidad || 'Sin definir';
+      const serie = getInternalNumberCategory(e.numero_interno);
+
+      if (filterReclamacion && tipo !== filterReclamacion) return false;
+      if (filterCulpabilidad && culp !== filterCulpabilidad) return false;
+      if (filterSerie && serie !== filterSerie) return false;
+      if (filterMonth !== null && mo !== filterMonth) return false;
+
+      return true;
+    });
+  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterMonth]);
+
+  // Process data for monthly charts based on dynamic filters
   const { 
     monthlyData, 
     totals,
@@ -170,7 +193,7 @@ export default function ComparativoPage() {
     const culpabilidadMap: Record<string, { name: string; cases2025: number; cases2026: number }> = {};
     const seriesMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
 
-    activeExpedientes.forEach((e) => {
+    filteredActiveExpedientes.forEach((e) => {
       const yr = getYear(e);
       const mo = getMonth(e);
       const approved = e.valor_final_aprobado || 0;
@@ -280,7 +303,7 @@ export default function ComparativoPage() {
       culpabilidadData: Object.values(culpabilidadMap).sort((a, b) => b.cases2026 - a.cases2026),
       seriesData: Object.values(seriesMap).sort((a, b) => b.amount2026 - a.amount2026),
     };
-  }, [activeExpedientes, selectedMonths]);
+  }, [filteredActiveExpedientes, selectedMonths]);
 
   // Variations
   const casesVariationYTD = totals.ytdCases2025 > 0 
@@ -314,7 +337,7 @@ export default function ComparativoPage() {
     return `${sign}${diff.toFixed(1)}%`;
   };
 
-  // Custom tooltips
+  // Custom tooltips with high contrast slate/blue styles to ensure visibility in all themes
   const CustomAmountTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const val2025 = payload.find((p: any) => {
@@ -336,16 +359,16 @@ export default function ComparativoPage() {
       };
 
       return (
-        <div className="bg-card/95 border border-border p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-foreground">
-          <p className="font-bold text-foreground mb-1">{label}</p>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-slate-800 dark:text-slate-100">
+          <p className="font-bold text-slate-900 dark:text-white mb-1">{label}</p>
           {payload.map((p: any) => {
             const nameStr = String(p.name || p.dataKey || '');
             const is2026 = nameStr.includes('2026');
-            const colorClass = is2026 ? 'text-primary' : 'text-slate-500 dark:text-slate-400';
+            const colorClass = is2026 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400';
             const displayName = formatYearName(p.name, p.dataKey);
             return (
               <p key={p.name || p.dataKey} className="flex items-center justify-between gap-6">
-                <span className="text-foreground/90 flex items-center gap-1.5 font-medium">
+                <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
                   {displayName}:
                 </span>
@@ -355,7 +378,7 @@ export default function ComparativoPage() {
               </p>
             );
           })}
-          <div className="border-t border-border pt-1.5 mt-1.5 text-[10px] text-muted-foreground flex items-center justify-between">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 mt-1.5 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Variación (26 vs 25):</span>
             <span className={cn("font-mono font-bold", isIncrease ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400")}>
               {variation}
@@ -388,16 +411,16 @@ export default function ComparativoPage() {
       };
 
       return (
-        <div className="bg-card/95 border border-border p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-foreground">
-          <p className="font-bold text-foreground mb-1">{label}</p>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-slate-800 dark:text-slate-100">
+          <p className="font-bold text-slate-900 dark:text-white mb-1">{label}</p>
           {payload.map((p: any) => {
             const nameStr = String(p.name || p.dataKey || '');
             const is2026 = nameStr.includes('2026');
-            const colorClass = is2026 ? 'text-primary' : 'text-slate-500 dark:text-slate-400';
+            const colorClass = is2026 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400';
             const displayName = formatYearName(p.name, p.dataKey);
             return (
               <p key={p.name || p.dataKey} className="flex items-center justify-between gap-6">
-                <span className="text-foreground/90 flex items-center gap-1.5 font-medium">
+                <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
                   {displayName}:
                 </span>
@@ -407,7 +430,7 @@ export default function ComparativoPage() {
               </p>
             );
           })}
-          <div className="border-t border-border pt-1.5 mt-1.5 text-[10px] text-muted-foreground flex items-center justify-between">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 mt-1.5 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Variación (26 vs 25):</span>
             <span className={cn("font-mono font-bold", isIncrease ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400")}>
               {variation}
@@ -423,7 +446,19 @@ export default function ComparativoPage() {
   const renderCasesMonthlyChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={monthlyData} margin={{ top: 20, right: 10, left: -20, bottom: isMaximized ? 20 : 0 }}>
+        <BarChart 
+          data={monthlyData} 
+          margin={{ top: 20, right: 10, left: -20, bottom: isMaximized ? 20 : 0 }}
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = monthlyData[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis dataKey="name" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={11} tickLine={false} />
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={11} tickLine={false} />
@@ -449,7 +484,19 @@ export default function ComparativoPage() {
   const renderAmountMonthlyChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={monthlyData} margin={{ top: 20, right: 10, left: -10, bottom: isMaximized ? 20 : 0 }}>
+        <BarChart 
+          data={monthlyData} 
+          margin={{ top: 20, right: 10, left: -10, bottom: isMaximized ? 20 : 0 }}
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = monthlyData[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis dataKey="name" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={11} tickLine={false} />
           <YAxis 
@@ -481,7 +528,19 @@ export default function ComparativoPage() {
   const renderCumSpendChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={monthlyData} margin={{ top: 20, right: 15, left: -5, bottom: isMaximized ? 20 : 0 }}>
+        <AreaChart 
+          data={monthlyData} 
+          margin={{ top: 20, right: 15, left: -5, bottom: isMaximized ? 20 : 0 }}
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = monthlyData[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+          className="cursor-pointer"
+        >
           <defs>
             <linearGradient id="color2025" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.15}/>
@@ -540,7 +599,18 @@ export default function ComparativoPage() {
   const renderClaimsTypeChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={claimsTypeData.slice(0, 5)} layout="vertical" margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}>
+        <BarChart 
+          data={claimsTypeData.slice(0, 5)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterReclamacion(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
           <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
           <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={80} tickLine={false} />
@@ -560,7 +630,17 @@ export default function ComparativoPage() {
   const renderCulpabilidadChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={culpabilidadData} margin={{ top: 20, right: 10, left: -20, bottom: isMaximized ? 20 : 5 }}>
+        <BarChart 
+          data={culpabilidadData} 
+          margin={{ top: 20, right: 10, left: -20, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterCulpabilidad(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis dataKey="name" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
@@ -580,7 +660,18 @@ export default function ComparativoPage() {
   const renderSeriesChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={seriesData.slice(0, 5)} layout="vertical" margin={{ top: 15, right: 40, left: 10, bottom: isMaximized ? 20 : 5 }}>
+        <BarChart 
+          data={seriesData.slice(0, 5)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 40, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterSerie(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
           <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={65} tickLine={false} />
@@ -641,7 +732,6 @@ export default function ComparativoPage() {
           <div className="flex flex-wrap gap-1.5">
             {MONTHS_NAMES.map((name, index) => {
               const isSelected = selectedMonths.includes(index);
-              const hasData = index <= currentMonthIndex;
               return (
                 <button
                   key={name}
@@ -670,7 +760,7 @@ export default function ComparativoPage() {
           </div>
         ) : (
           <>
-            {/* KPI Cards Grid */}
+            {/* KPI Cards Grid - Beautiful side-by-side integrated 2026 vs 2025 comparison */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
               {/* Card 1: Total Cases YTD */}
               <motion.div
@@ -679,32 +769,41 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
-                  <CardHeader className="pb-2">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
+                  <CardHeader className="pb-1">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Expedientes YTD (2026 vs 2025)</span>
+                      <span>Expedientes Acumulados</span>
                       <GitCompare className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
-                      <span>{totals.ytdCases2026}</span>
-                      <span className="text-[11px] text-muted-foreground font-normal">vs {totals.ytdCases2025} en 25</span>
-                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center gap-1.5">
-                      {casesVariationYTD > 0 ? (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-500">
-                          <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                          +{casesVariationYTD.toFixed(1)}%
-                        </div>
-                      ) : (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500">
-                          <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                          {casesVariationYTD.toFixed(1)}%
-                        </div>
-                      )}
-                      <span className="text-[11px] text-muted-foreground">de variación</span>
+                    <div className="flex items-center">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2026 (YTD)</span>
+                        <div className="text-2xl font-bold font-mono text-primary">{totals.ytdCases2026}</div>
+                      </div>
+                      <div className="h-8 w-px bg-border mx-4" />
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2025 (YTD)</span>
+                        <div className="text-2xl font-bold font-mono text-slate-500">{totals.ytdCases2025}</div>
+                      </div>
+                      <div className="ml-auto">
+                        {casesVariationYTD > 0 ? (
+                          <div className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                            <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
+                            +{casesVariationYTD.toFixed(1)}%
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
+                            {casesVariationYTD.toFixed(1)}%
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
+                      Comparativa YTD acumulada del período
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -716,31 +815,45 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.05 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
-                  <CardHeader className="pb-2">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
+                  <CardHeader className="pb-1">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Monto Aprobado YTD (2026 vs 2025)</span>
+                      <span>Monto Aprobado Acumulado</span>
                       <DollarSign className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
-                      <span>{formatCOP(totals.ytdAmount2026)}</span>
-                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center gap-1.5">
-                      {amountVariationYTD > 0 ? (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-500">
-                          <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                          +{amountVariationYTD.toFixed(1)}%
+                    <div className="flex items-center">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2026 (YTD)</span>
+                        <div className="text-base sm:text-lg font-bold font-mono text-primary truncate" title={formatCOP(totals.ytdAmount2026)}>
+                          {formatCOP(totals.ytdAmount2026)}
                         </div>
-                      ) : (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500">
-                          <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                          {amountVariationYTD.toFixed(1)}%
+                      </div>
+                      <div className="h-8 w-px bg-border mx-3" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">2025 (YTD)</span>
+                        <div className="text-base sm:text-lg font-bold font-mono text-slate-500 truncate" title={formatCOP(totals.ytdAmount2025)}>
+                          {formatCOP(totals.ytdAmount2025)}
                         </div>
-                      )}
-                      <span className="text-[11px] text-muted-foreground">vs {formatCOP(totals.ytdAmount2025)}</span>
+                      </div>
+                      <div className="ml-2">
+                        {amountVariationYTD > 0 ? (
+                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                            <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                            +{amountVariationYTD.toFixed(0)}%
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                            {amountVariationYTD.toFixed(0)}%
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
+                      Comparativa YTD acumulada del período
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -752,31 +865,45 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.1 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
-                  <CardHeader className="pb-2">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
+                  <CardHeader className="pb-1">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Costo Medio / Caso (2026 vs 2025)</span>
+                      <span>Costo Medio por Caso</span>
                       <FileText className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
-                      <span>{formatCOP(avgCost2026)}</span>
-                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center gap-1.5">
-                      {avgCostVariation > 0 ? (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-500">
-                          <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                          +{avgCostVariation.toFixed(1)}%
+                    <div className="flex items-center">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2026</span>
+                        <div className="text-base sm:text-lg font-bold font-mono text-primary truncate" title={formatCOP(avgCost2026)}>
+                          {formatCOP(avgCost2026)}
                         </div>
-                      ) : (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500">
-                          <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                          {avgCostVariation.toFixed(1)}%
+                      </div>
+                      <div className="h-8 w-px bg-border mx-3" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2025</span>
+                        <div className="text-base sm:text-lg font-bold font-mono text-slate-500 truncate" title={formatCOP(avgCost2025)}>
+                          {formatCOP(avgCost2025)}
                         </div>
-                      )}
-                      <span className="text-[11px] text-muted-foreground">vs {formatCOP(avgCost2025)}</span>
+                      </div>
+                      <div className="ml-2">
+                        {avgCostVariation > 0 ? (
+                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                            <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                            +{avgCostVariation.toFixed(0)}%
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center px-1.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                            {avgCostVariation.toFixed(0)}%
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
+                      Costo medio aprobado por siniestro
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -788,27 +915,36 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.15 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[120px]">
-                  <CardHeader className="pb-2">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[135px]">
+                  <CardHeader className="pb-1">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                      <span>Eficiencia Ahorro (2026 vs 2025)</span>
+                      <span>Eficiencia Ahorro</span>
                       <TrendingUp className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-1 flex items-baseline justify-between">
-                      <span>{saving2026.toFixed(1)}%</span>
-                      <span className="text-[11px] text-muted-foreground font-normal">vs {saving2025.toFixed(1)}% en 25</span>
-                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
-                        saving2026 > saving2025 ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
-                      )}>
-                        {saving2026 > saving2025 ? 'Mejoró' : 'Estable'}
+                    <div className="flex items-center">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2026</span>
+                        <div className="text-2xl font-bold font-mono text-primary">{saving2026.toFixed(1)}%</div>
                       </div>
-                      <span className="text-[11px] text-muted-foreground">Tasa global de ahorro</span>
+                      <div className="h-8 w-px bg-border mx-4" />
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Año 2025</span>
+                        <div className="text-2xl font-bold font-mono text-slate-500">{saving2025.toFixed(1)}%</div>
+                      </div>
+                      <div className="ml-auto">
+                        <div className={cn(
+                          "inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold",
+                          saving2026 > saving2025 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"
+                        )}>
+                          {saving2026 > saving2025 ? 'Mejoró' : 'Estable'}
+                        </div>
+                      </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-2 border-t border-border/40 pt-2">
+                      Porcentaje global de ahorro negociado
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -819,8 +955,15 @@ export default function ComparativoPage() {
               {/* Chart 1: Monthly cases count */}
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div>
-                    <CardTitle className="text-sm font-bold text-foreground">Cantidad de Expedientes por Mes (2025 vs 2026)</CardTitle>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Cantidad de Expedientes por Mes (2025 vs 2026)</CardTitle>
+                      {filterMonth !== null && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {MONTHS_NAMES[filterMonth]}
+                        </span>
+                      )}
+                    </div>
                     <CardDescription>Comparativa mensual de frecuencia de incidentes</CardDescription>
                   </div>
                   <Button
@@ -844,8 +987,15 @@ export default function ComparativoPage() {
               {/* Chart 2: Monthly approved spend */}
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div>
-                    <CardTitle className="text-sm font-bold text-foreground">Monto Aprobado por Mes (2025 vs 2026)</CardTitle>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Monto Aprobado por Mes (2025 vs 2026)</CardTitle>
+                      {filterMonth !== null && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {MONTHS_NAMES[filterMonth]}
+                        </span>
+                      )}
+                    </div>
                     <CardDescription>Comparativa mensual de costo de auxilio aprobado</CardDescription>
                   </div>
                   <Button
@@ -870,8 +1020,15 @@ export default function ComparativoPage() {
             {/* Charts Section 2: YTD Cumulative Spend Progress */}
             <Card className="bg-card border-border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <div>
-                  <CardTitle className="text-sm font-bold text-foreground">Gasto Acumulado Mensual — Curva YTD (2025 vs 2026)</CardTitle>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-sm font-bold text-foreground">Gasto Acumulado Mensual — Curva YTD (2025 vs 2026)</CardTitle>
+                    {filterMonth !== null && (
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                        Filtro: {MONTHS_NAMES[filterMonth]}
+                      </span>
+                    )}
+                  </div>
                   <CardDescription>Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado</CardDescription>
                 </div>
                 <Button
@@ -897,8 +1054,15 @@ export default function ComparativoPage() {
               {/* Distribution by Claim Type */}
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div>
-                    <CardTitle className="text-sm font-bold text-foreground">Siniestros por Tipo de Reclamación</CardTitle>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Siniestros por Tipo de Reclamación</CardTitle>
+                      {filterReclamacion && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {filterReclamacion}
+                        </span>
+                      )}
+                    </div>
                     <CardDescription>Comparativa de cantidad de casos</CardDescription>
                   </div>
                   <Button
@@ -922,8 +1086,15 @@ export default function ComparativoPage() {
               {/* Distribution by Culpability */}
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div>
-                    <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
+                      {filterCulpabilidad && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {filterCulpabilidad}
+                        </span>
+                      )}
+                    </div>
                     <CardDescription>Comparativa del nivel de responsabilidad</CardDescription>
                   </div>
                   <Button
@@ -947,8 +1118,15 @@ export default function ComparativoPage() {
               {/* Distribution by Vehicle Series */}
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div>
-                    <CardTitle className="text-sm font-bold text-foreground">Costo Aprobado por Serie de Vehículo</CardTitle>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Costo Aprobado por Serie de Vehículo</CardTitle>
+                      {filterSerie && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {filterSerie}
+                        </span>
+                      )}
+                    </div>
                     <CardDescription>Comparativa financiera de afectación por series</CardDescription>
                   </div>
                   <Button
@@ -993,6 +1171,108 @@ export default function ComparativoPage() {
           </>
         )}
       </div>
+
+      {/* Floating Active Chart Filters Notification Card (exactly like Dashboard) */}
+      <AnimatePresence>
+        {(filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null) && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-24 right-6 z-50 w-80 bg-card/95 border border-border shadow-2xl rounded-xl p-4 overflow-hidden backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/60">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Filtros Activos</h4>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterReclamacion('');
+                  setFilterCulpabilidad('');
+                  setFilterSerie('');
+                  setFilterMonth(null);
+                }}
+                className="text-[10px] text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-semibold p-0 h-auto"
+              >
+                Quitar Todos
+              </Button>
+            </div>
+            
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {filterMonth !== null && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Mes Filtrado</p>
+                    <p className="text-xs font-bold text-foreground truncate">{MONTHS_NAMES[filterMonth]}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterMonth(null)}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+
+              {filterReclamacion && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo Reclamación</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterReclamacion}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterReclamacion('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+
+              {filterCulpabilidad && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Culpabilidad</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterCulpabilidad}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterCulpabilidad('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+
+              {filterSerie && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Serie Vehículo</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterSerie}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterSerie('')}
+                    className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Expanded Chart Modal */}
       <AnimatePresence>
