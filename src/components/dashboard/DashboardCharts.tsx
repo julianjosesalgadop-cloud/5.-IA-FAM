@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   BarChart,
@@ -77,9 +77,9 @@ function CustomTooltipBar({ active, payload, label }: any) {
     const data = payload[0].payload;
     const isFiltered = data.totalFilteredCases < data.totalGeneralCases;
     const prevPeriodText = data.year 
-      ? 'año anterior' 
+      ? 'aÃ±o anterior' 
       : data.rawDate 
-        ? 'día anterior' 
+        ? 'dÃ­a anterior' 
         : 'mes anterior';
     
     return (
@@ -118,7 +118,7 @@ function CustomTooltipBar({ active, payload, label }: any) {
                         ? "text-emerald-500 dark:text-emerald-400" 
                         : "text-muted-foreground"
                   )}>
-                    {diffPct > 0 ? `▲ +${diffPct.toFixed(1)}%` : diffPct < 0 ? `▼ ${diffPct.toFixed(1)}%` : `• 0.0%`}{' '}
+                    {diffPct > 0 ? `â–² +${diffPct.toFixed(1)}%` : diffPct < 0 ? `â–¼ ${diffPct.toFixed(1)}%` : `â€¢ 0.0%`}{' '}
                     <span className="font-normal text-muted-foreground">vs {prevPeriodText}</span>
                   </span>
                 )}
@@ -149,7 +149,7 @@ function CustomTooltipFinanzas({ active, payload, label }: any) {
           } else if (p.name === 'negociado') {
             const savings = Math.max(0, cotizado - val);
             const pct = cotizado > 0 ? (savings / cotizado) * 100 : 0;
-            pctText = `Ahorro por Negociación: ${pct.toFixed(1)}% sobre cotizado`;
+            pctText = `Ahorro por NegociaciÃ³n: ${pct.toFixed(1)}% sobre cotizado`;
           } else if (p.name === 'aprobado') {
             const savings = Math.max(0, cotizado - val);
             const pct = cotizado > 0 ? (savings / cotizado) * 100 : 0;
@@ -205,7 +205,7 @@ function CustomTooltipPercentages({ active, payload, label, isValueCOP = false }
         <div className="flex items-center gap-2 text-foreground">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
           <span className="font-semibold">
-            {isValueCOP ? `Afectación: ${formatCOP(val)}` : `Reclamaciones: ${val} ${val === 1 ? 'expediente' : 'expedientes'}`}
+            {isValueCOP ? `AfectaciÃ³n: ${formatCOP(val)}` : `Reclamaciones: ${val} ${val === 1 ? 'expediente' : 'expedientes'}`}
           </span>
         </div>
         <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-1">
@@ -642,8 +642,8 @@ export function DashboardCharts({
   const getExpandedTitle = () => {
     if (!expandedChart) return '';
     if (expandedChart.id === 'expedientes-mes') {
-      if (timeUnit === 'year') return 'Expedientes por Año';
-      if (timeUnit === 'day') return 'Expedientes por Día';
+      if (timeUnit === 'year') return 'Expedientes por AÃ±o';
+      if (timeUnit === 'day') return 'Expedientes por DÃ­a';
       return 'Expedientes por Mes';
     }
     return expandedChart.title;
@@ -652,22 +652,22 @@ export function DashboardCharts({
   const getExpandedDescription = () => {
     if (!expandedChart) return '';
     if (expandedChart.id === 'expedientes-mes') {
-      if (timeUnit === 'year') return 'Incidencia de reclamaciones por año';
-      if (timeUnit === 'day') return 'Incidencia de reclamaciones por día';
-      return 'Incidencia de reclamaciones en el transcurso del año';
+      if (timeUnit === 'year') return 'Incidencia de reclamaciones por aÃ±o';
+      if (timeUnit === 'day') return 'Incidencia de reclamaciones por dÃ­a';
+      return 'Incidencia de reclamaciones en el transcurso del aÃ±o';
     }
     return expandedChart.description;
   };
 
   // 2. Claim Type Distribution
-  const CLAIM_TYPES = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Afectación por orden público', 'Otro'] as const;
+  const CLAIM_TYPES = ['Siniestro', 'Vidrios', 'CarrocerÃ­a', 'Repuestos', 'PÃ©rdida parcial', 'AfectaciÃ³n por orden pÃºblico', 'Otro'] as const;
   const TIPO_COLORS = {
     'Siniestro': 'hsl(0, 72%, 55%)', // Red
-    'Carrocería': 'hsl(43, 96%, 52%)', // Gold
+    'CarrocerÃ­a': '#475569', // Gold
     'Vidrios': 'hsl(203, 100%, 50%)', // Blue
     'Repuestos': 'hsl(200, 95%, 60%)', // Light blue/cyan
-    'Pérdida parcial': 'hsl(0, 72%, 65%)', // Light red
-    'Afectación por orden público': 'hsl(142, 71%, 45%)', // Green
+    'PÃ©rdida parcial': 'hsl(0, 72%, 65%)', // Light red
+    'AfectaciÃ³n por orden pÃºblico': 'hsl(203, 100%, 50%)', // Green
     'Otro': 'hsl(215, 20%, 55%)', // Muted Grey
   };
   const tipoData = CLAIM_TYPES.map((type) => {
@@ -681,7 +681,7 @@ export function DashboardCharts({
     };
   }).filter((t) => t.value > 0);
 
-  // 2b. Claim Type Expenses (Gastos por Tipo de Reclamación)
+  // 2b. Claim Type Expenses (Gastos por Tipo de ReclamaciÃ³n)
   const tipoGastosData = CLAIM_TYPES.map((type) => {
     const cases = expedientes.filter((e) => e.tipo_reclamacion === type);
     const sumAprobado = cases.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
@@ -696,7 +696,7 @@ export function DashboardCharts({
     };
   }).filter((t) => t.value > 0);
 
-  // 2c. Concepto de la Cotización Distribution (Frecuencia y Gastos)
+  // 2c. Concepto de la CotizaciÃ³n Distribution (Frecuencia y Gastos)
   const conceptoGroups: Record<string, { count: number; value: number }> = {};
   expedientes.forEach((e) => {
     if (e.cotizaciones && e.cotizaciones.length > 0) {
@@ -719,12 +719,12 @@ export function DashboardCharts({
 
   const CONCEPTO_COLORS: Record<string, string> = {
     'SINIESTRO': 'hsl(0, 72%, 55%)',
-    'FACTURA': 'hsl(43, 96%, 52%)',
+    'FACTURA': '#475569',
     'ELECTRICO': 'hsl(203, 100%, 50%)',
     'LLANTAS': 'hsl(200, 95%, 60%)',
-    'PANORAMICO': 'hsl(142, 71%, 45%)',
+    'PANORAMICO': 'hsl(203, 100%, 50%)',
     'PARABRISAS': 'hsl(175, 75%, 40%)',
-    'INSTALACIÓN': 'hsl(290, 60%, 60%)',
+    'INSTALACIÃ“N': 'hsl(290, 60%, 60%)',
     'VIDRIOS': 'hsl(190, 80%, 50%)',
     'ESPEJOS': 'hsl(25, 95%, 55%)',
     'OTROS': 'hsl(215, 20%, 55%)',
@@ -768,8 +768,8 @@ export function DashboardCharts({
 
   // 3. Status Distribution (only Pendiente, Revisado, Aprobado)
   const ESTADO_COLORS = {
-    'Aprobado': 'hsl(142, 71%, 45%)',
-    'Pendiente': 'hsl(43, 96%, 52%)',
+    'Aprobado': 'hsl(203, 100%, 50%)',
+    'Pendiente': '#475569',
     'Revisado': 'hsl(203, 100%, 50%)',
   };
   const estadoData = ['Aprobado', 'Pendiente', 'Revisado'].map((status) => {
@@ -781,8 +781,8 @@ export function DashboardCharts({
   const CULPABILIDAD_TYPES = ['Conductor', 'Tercero', 'Compartida', 'Sin definir'] as const;
   const CULPABILIDAD_COLORS = {
     'Conductor': 'hsl(0, 72%, 55%)',
-    'Tercero': 'hsl(142, 71%, 45%)',
-    'Compartida': 'hsl(43, 96%, 52%)',
+    'Tercero': 'hsl(203, 100%, 50%)',
+    'Compartida': '#475569',
     'Sin definir': 'hsl(215, 20%, 55%)',
   };
   const culpabilidadData = CULPABILIDAD_TYPES.map((type) => {
@@ -796,7 +796,7 @@ export function DashboardCharts({
     };
   }).filter((t) => t.value > 0);
 
-  // 5. Causa Raíz Distribution
+  // 5. Causa RaÃ­z Distribution
   const causaGroups: Record<string, number> = {};
   expedientes.forEach((e) => {
     const causa = e.causa_raiz || 'Sin definir';
@@ -812,7 +812,7 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
   const causaData = allCausaData.slice(0, 5);
 
-  // 6. Afectación FAM por Propietario (Top 5 / Todos)
+  // 6. AfectaciÃ³n FAM por Propietario (Top 5 / Todos)
   const propietarioGroups: Record<string, number> = {};
   ep.forEach((e) => {
     const prop = e.propietario ? e.propietario.trim() : 'Sin definir';
@@ -829,7 +829,7 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
   const propietarioData = allPropietarioData.slice(0, 5);
 
-  // 7. Afectación FAM por Conductor (Top 5 / Todos)
+  // 7. AfectaciÃ³n FAM por Conductor (Top 5 / Todos)
   const conductorGroups: Record<string, number> = {};
   expedientes.forEach((e) => {
     const cond = e.nombre_conductor ? e.nombre_conductor.trim() : 'Sin definir';
@@ -846,7 +846,7 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
   const conductorData = allConductorData.slice(0, 5);
 
-  // 7b. Afectación FAM por Vehículo (Top 5 / Todos)
+  // 7b. AfectaciÃ³n FAM por VehÃ­culo (Top 5 / Todos)
   const vehiculoAfectacionGroups: Record<string, { totalVal: number; placa: string; interno: string | null }> = {};
   ev.forEach((e) => {
     if (!e.placa) return;
@@ -870,7 +870,7 @@ export function DashboardCharts({
     .sort((a, b) => b.value - a.value);
   const vehiculoAfectacionData = allVehiculoAfectacionData.slice(0, 5);
 
-  // 8. Top 5 Vehículos por Reclamaciones
+  // 8. Top 5 VehÃ­culos por Reclamaciones
   const placaGroups: Record<string, { total: number; valor: number; interno: string | null }> = {};
   expedientes.forEach((e) => {
     if (!e.placa) return;
@@ -1107,7 +1107,7 @@ export function DashboardCharts({
 
   const routesMontoData = allRoutesMontoData.slice(0, 5);
 
-  // 13b. Actas de Comité (Frecuencia y Monto)
+  // 13b. Actas de ComitÃ© (Frecuencia y Monto)
   const actaGroups: Record<string, { total: number; valor: number }> = {};
   ea.forEach((e) => {
     if (!e.numero_acta) return;
@@ -1239,7 +1239,7 @@ export function DashboardCharts({
                         y={y}
                         dy={12}
                         textAnchor="middle"
-                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                         className="hover:fill-primary font-semibold text-[10px] transition-colors"
                       >
                         {value}
@@ -1284,7 +1284,7 @@ export function DashboardCharts({
                 {serviceTypeData.map((d, index) => (
                   <Cell 
                     key={index} 
-                    fill={selectedTipoServicio === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                    fill={selectedTipoServicio === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                   />
                 ))}
                 <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
@@ -1332,7 +1332,7 @@ export function DashboardCharts({
                         y={y}
                         dy={12}
                         textAnchor="middle"
-                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                         className="hover:fill-primary font-semibold text-[10px] transition-colors"
                       >
                         {value}
@@ -1367,7 +1367,7 @@ export function DashboardCharts({
               />
               <Bar 
                 dataKey="monto" 
-                fill="hsl(142, 71%, 45%)" 
+                fill="hsl(203, 100%, 50%)" 
                 radius={[4, 4, 0, 0]}
                 onClick={(data) => {
                   const val = data?.name || data?.payload?.name;
@@ -1380,7 +1380,7 @@ export function DashboardCharts({
                 {serviceTypeData.map((d, index) => (
                   <Cell 
                     key={index} 
-                    fill={selectedTipoServicio === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                    fill={selectedTipoServicio === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                   />
                 ))}
                 <LabelList
@@ -1406,12 +1406,12 @@ export function DashboardCharts({
         >
           <defs>
             <linearGradient id="colorAhorroNegociacion" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(43, 96%, 52%)" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="hsl(43, 96%, 52%)" stopOpacity={0} />
+              <stop offset="5%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="colorAhorroAprobado" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
+              <stop offset="5%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -1442,7 +1442,7 @@ export function DashboardCharts({
                       <div key={p.dataKey} className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2 text-foreground">
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                          <span className="font-medium">{isAprobado ? 'Ahorro vs Aprobado' : 'Ahorro por Negociación'}:</span>
+                          <span className="font-medium">{isAprobado ? 'Ahorro vs Aprobado' : 'Ahorro por NegociaciÃ³n'}:</span>
                           <span className="font-semibold">{formatCOP(p.value)}</span>
                         </div>
                         <div className="pl-4 text-[10px] text-muted-foreground">
@@ -1459,21 +1459,21 @@ export function DashboardCharts({
             iconSize={8}
             formatter={(value) => (
               <span className="text-xs text-muted-foreground font-medium capitalize font-mono">
-                {value === 'ahorroAprobado' ? 'Ahorro vs Aprobado' : 'Ahorro por Negociación'}
+                {value === 'ahorroAprobado' ? 'Ahorro vs Aprobado' : 'Ahorro por NegociaciÃ³n'}
               </span>
             )}
           />
           <Area 
             type="monotone" 
             dataKey="ahorroNegociacion" 
-            stroke="hsl(43, 96%, 52%)" 
+            stroke="hsl(203, 100%, 50%)" 
             fillOpacity={1} 
             fill="url(#colorAhorroNegociacion)" 
           />
           <Area 
             type="monotone" 
             dataKey="ahorroAprobado" 
-            stroke="hsl(142, 71%, 45%)" 
+            stroke="hsl(203, 100%, 50%)" 
             fillOpacity={1} 
             fill="url(#colorAhorroAprobado)" 
           >
@@ -1535,7 +1535,7 @@ export function DashboardCharts({
                     y={y}
                     dy={12}
                     textAnchor="middle"
-                    fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                    fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                     className="hover:fill-primary font-semibold text-[9px] transition-colors"
                   >
                     {value}
@@ -1597,7 +1597,7 @@ export function DashboardCharts({
               {internalCategoriesData.map((d, index) => (
                 <Cell 
                   key={index} 
-                  fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                  fill={selectedSerie === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                 />
               ))}
               <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
@@ -1608,7 +1608,7 @@ export function DashboardCharts({
               yAxisId="right" 
               dataKey="monto" 
               name="monto" 
-              fill="hsl(142, 71%, 45%)" 
+              fill="hsl(203, 100%, 50%)" 
               radius={[2, 2, 0, 0]}
               onClick={(data) => {
                 const val = data?.name || data?.payload?.name;
@@ -1621,7 +1621,7 @@ export function DashboardCharts({
               {internalCategoriesData.map((d, index) => (
                 <Cell 
                   key={index} 
-                  fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                  fill={selectedSerie === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                 />
               ))}
               <LabelList
@@ -1686,7 +1686,7 @@ export function DashboardCharts({
                     y={y}
                     dy={12}
                     textAnchor="middle"
-                    fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                    fill={isSelected ? 'hsl(203, 100%, 50%)' : 'hsl(var(--muted-foreground))'}
                     className="hover:fill-primary font-semibold text-[11px] transition-colors"
                   >
                     {value}
@@ -1706,7 +1706,7 @@ export function DashboardCharts({
             strokeWidth={2}
             fill="url(#colorExpedientes)"
             dot={{ fill: 'hsl(203, 100%, 50%)', strokeWidth: 0, r: 3 }}
-            activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(142, 71%, 45%)' : 'hsl(43, 96%, 52%)' }}
+            activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(203, 100%, 50%)' : '#475569' }}
           >
             <LabelList
               dataKey="expedientes"
@@ -1885,7 +1885,7 @@ export function DashboardCharts({
                         dx={-6}
                         dy={4}
                         textAnchor="end"
-                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                         className="hover:fill-primary font-semibold text-[9px] transition-colors"
                       >
                         {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -1913,7 +1913,7 @@ export function DashboardCharts({
                   return (
                     <Cell
                       key={index}
-                      fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={isSelected ? '#475569' : 'hsl(203, 100%, 50%)'}
                       opacity={selectedConcepto && !isSelected ? 0.45 : 1}
                     />
                   );
@@ -1966,7 +1966,7 @@ export function DashboardCharts({
                         dx={-6}
                         dy={4}
                         textAnchor="end"
-                        fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                        fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                         className="hover:fill-primary font-semibold text-[9px] transition-colors"
                       >
                         {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -1994,7 +1994,7 @@ export function DashboardCharts({
                   return (
                     <Cell
                       key={index}
-                      fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={isSelected ? '#475569' : 'hsl(203, 100%, 50%)'}
                       opacity={selectedConcepto && !isSelected ? 0.45 : 1}
                     />
                   );
@@ -2051,7 +2051,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[9px] transition-colors"
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -2081,7 +2081,7 @@ export function DashboardCharts({
                 />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 4, 4, 0]}
                   onClick={(data) => {
                     const val = data?.name || data?.payload?.name;
@@ -2094,7 +2094,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedProveedor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={selectedProveedor === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2155,7 +2155,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[9px] transition-colors"
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -2185,7 +2185,7 @@ export function DashboardCharts({
                 />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(217, 91%, 60%)" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 4, 4, 0]}
                   onClick={(data) => {
                     const val = data?.name || data?.payload?.name;
@@ -2198,7 +2198,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedProveedor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(217, 91%, 60%)'}
+                      fill={selectedProveedor === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2265,7 +2265,7 @@ export function DashboardCharts({
                       y={y}
                       dy={12}
                       textAnchor="middle"
-                      fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                      fill={isSelected ? 'hsl(203, 100%, 50%)' : 'hsl(var(--muted-foreground))'}
                       className="hover:fill-primary font-semibold text-[11px] transition-colors"
                     >
                       {value}
@@ -2286,7 +2286,7 @@ export function DashboardCharts({
             <Bar 
               dataKey="valor" 
               name="valor" 
-              fill="hsl(142, 71%, 45%)" 
+              fill="hsl(203, 100%, 50%)" 
               radius={[3, 3, 0, 0]}
               onClick={(data) => {
                 const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
@@ -2307,7 +2307,7 @@ export function DashboardCharts({
                 return (
                   <Cell
                     key={i}
-                    fill={isSelected ? 'hsl(43, 96%, 52%)' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(34, 197, 94, 0.15)' : 'hsl(142, 71%, 45%)') : 'rgba(255,255,255,0.1)')}
+                    fill={isSelected ? '#475569' : (entry.valor > 0 ? (selectedMonth !== null ? 'rgba(0, 149, 255, 0.15)' : 'hsl(203, 100%, 50%)') : 'rgba(255,255,255,0.1)')}
                   />
                 );
               })}
@@ -2397,7 +2397,7 @@ export function DashboardCharts({
                     y={y}
                     dy={12}
                     textAnchor="middle"
-                    fill={isSelected ? 'hsl(142, 71%, 45%)' : 'hsl(var(--muted-foreground))'}
+                    fill={isSelected ? 'hsl(203, 100%, 50%)' : 'hsl(var(--muted-foreground))'}
                     className="hover:fill-primary font-semibold text-[11px] transition-colors"
                   >
                     {value}
@@ -2453,7 +2453,7 @@ export function DashboardCharts({
           <Bar 
             dataKey="negociado" 
             name="negociado" 
-            fill="hsl(43, 96%, 52%)" 
+            fill="hsl(203, 100%, 50%)" 
             radius={[2, 2, 0, 0]}
             onClick={(data) => {
               const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
@@ -2474,7 +2474,7 @@ export function DashboardCharts({
               return (
                 <Cell 
                   key={i} 
-                  fill={entry.negociado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(245, 158, 11, 0.15)' : 'hsl(43, 96%, 52%)') : 'rgba(255,255,255,0.05)'}
+                  fill={entry.negociado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(0, 149, 255, 0.15)' : '#475569') : 'rgba(255,255,255,0.05)'}
                 />
               );
             })}
@@ -2482,7 +2482,7 @@ export function DashboardCharts({
           <Bar 
             dataKey="aprobado" 
             name="aprobado" 
-            fill="hsl(142, 71%, 45%)" 
+            fill="hsl(203, 100%, 50%)" 
             radius={[2, 2, 0, 0]}
             onClick={(data) => {
               const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
@@ -2503,7 +2503,7 @@ export function DashboardCharts({
               return (
                 <Cell 
                   key={i} 
-                  fill={entry.aprobado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(34, 197, 94, 0.15)' : 'hsl(142, 71%, 45%)') : 'rgba(255,255,255,0.05)'}
+                  fill={entry.aprobado > 0 ? (selectedMonth !== null && !isSelected ? 'rgba(0, 149, 255, 0.15)' : 'hsl(203, 100%, 50%)') : 'rgba(255,255,255,0.05)'}
                 />
               );
             })}
@@ -2618,7 +2618,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
                         >
                           {value.length > 22 ? `${value.slice(0, 20)}...` : value}
@@ -2647,7 +2647,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedCausaRaiz === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedCausaRaiz === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2672,7 +2672,7 @@ export function DashboardCharts({
       <div style={{ height }} className="w-full overflow-y-auto pr-1">
         <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectaciÃ³n registrada</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -2712,7 +2712,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -2727,7 +2727,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2741,7 +2741,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedProprietario === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={selectedProprietario === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2767,7 +2767,7 @@ export function DashboardCharts({
       <div style={{ height }} className="w-full overflow-y-auto pr-1">
         <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectaciÃ³n registrada</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -2807,7 +2807,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -2822,7 +2822,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2836,7 +2836,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={selectedConductor === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2862,7 +2862,7 @@ export function DashboardCharts({
       <div style={{ height }} className="w-full overflow-y-auto pr-1">
         <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectación registrada</div>
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay afectaciÃ³n registrada</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -2904,7 +2904,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
                         >
                           {value}
@@ -2919,7 +2919,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)" 
+                  fill="hsl(203, 100%, 50%)" 
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -2935,7 +2935,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={selectedPlaca === d.placa ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -2961,7 +2961,7 @@ export function DashboardCharts({
       <div style={{ height }} className="w-full overflow-y-auto pr-1">
         <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de vehículos</div>
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de vehÃ­culos</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -3003,7 +3003,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
                         >
                           {value}
@@ -3034,7 +3034,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedPlaca === d.placa ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedPlaca === d.placa ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -3099,7 +3099,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[11px] transition-colors"
                         >
                           {value.length > 18 ? `${value.slice(0, 16)}...` : value}
@@ -3128,7 +3128,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedConductor === d.nombre ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedConductor === d.nombre ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -3193,7 +3193,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[10px] transition-colors"
                         >
                           {value.length > 20 ? `${value.substring(0, 18)}...` : value}
@@ -3222,7 +3222,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedRoute === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
@@ -3243,7 +3243,7 @@ export function DashboardCharts({
       <div style={{ height }} className="w-full overflow-y-auto pr-1">
         <div style={{ height: innerHeight }} className="w-full">
           {dataToUse.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de afectación</div>
+            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos de afectaciÃ³n</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -3283,7 +3283,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[10px] transition-colors"
                         >
                           {value.length > 20 ? `${value.substring(0, 18)}...` : value}
@@ -3298,7 +3298,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)"
+                  fill="hsl(203, 100%, 50%)"
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -3312,7 +3312,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedRoute === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={selectedRoute === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList
@@ -3377,7 +3377,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[10px] transition-colors"
                         >
                           {value}
@@ -3406,7 +3406,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                      fill={selectedActa === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }} />
@@ -3467,7 +3467,7 @@ export function DashboardCharts({
                           dx={-6}
                           dy={4}
                           textAnchor="end"
-                          fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                          fill={isSelected ? '#475569' : 'hsl(var(--muted-foreground))'}
                           className="hover:fill-primary font-semibold text-[10px] transition-colors"
                         >
                           {value}
@@ -3482,7 +3482,7 @@ export function DashboardCharts({
                 <Tooltip content={<CustomTooltipPercentages isValueCOP={true} />} />
                 <Bar 
                   dataKey="value" 
-                  fill="hsl(142, 71%, 45%)"
+                  fill="hsl(203, 100%, 50%)"
                   radius={[0, 3, 3, 0]} 
                   barSize={15}
                   onClick={(data) => {
@@ -3496,7 +3496,7 @@ export function DashboardCharts({
                   {dataToUse.map((d, index) => (
                     <Cell 
                       key={index} 
-                      fill={selectedActa === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(142, 71%, 45%)'}
+                      fill={selectedActa === d.name ? '#475569' : 'hsl(203, 100%, 50%)'}
                     />
                   ))}
                   <LabelList 
@@ -3594,14 +3594,14 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-4 flex-wrap sm:flex-nowrap">
             <div>
               <CardTitle>
-                {timeUnit === 'year' ? 'Expedientes por Año' : timeUnit === 'day' ? 'Expedientes por Día' : 'Expedientes por Mes'}
+                {timeUnit === 'year' ? 'Expedientes por AÃ±o' : timeUnit === 'day' ? 'Expedientes por DÃ­a' : 'Expedientes por Mes'}
               </CardTitle>
               <CardDescription>
                 {timeUnit === 'year' 
-                  ? 'Incidencia de reclamaciones por año' 
+                  ? 'Incidencia de reclamaciones por aÃ±o' 
                   : timeUnit === 'day' 
-                    ? 'Incidencia de reclamaciones por día' 
-                    : 'Incidencia de reclamaciones en el transcurso del año'}
+                    ? 'Incidencia de reclamaciones por dÃ­a' 
+                    : 'Incidencia de reclamaciones en el transcurso del aÃ±o'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
@@ -3617,7 +3617,7 @@ export function DashboardCharts({
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Año
+                  AÃ±o
                 </button>
                 <button
                   type="button"
@@ -3641,18 +3641,18 @@ export function DashboardCharts({
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Día
+                  DÃ­a
                 </button>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'expedientes-mes',
                   title: 'Expedientes por Mes',
-                  description: 'Incidencia de reclamaciones en el transcurso del año',
+                  description: 'Incidencia de reclamaciones en el transcurso del aÃ±o',
                   render: renderExpedientesPorMes
                 })}
               >
@@ -3676,17 +3676,17 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Culpabilidad de Incidentes</CardTitle>
-              <CardDescription>Distribución de responsabilidad en siniestros</CardDescription>
+              <CardDescription>DistribuciÃ³n de responsabilidad en siniestros</CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'culpabilidad',
                 title: 'Culpabilidad de Incidentes',
-                description: 'Distribución de responsabilidad en siniestros',
+                description: 'DistribuciÃ³n de responsabilidad en siniestros',
                 render: renderCulpabilidad
               })}
             >
@@ -3709,18 +3709,18 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Tipo de Reclamación</CardTitle>
-              <CardDescription>Distribución por categoría de reclamo</CardDescription>
+              <CardTitle>Tipo de ReclamaciÃ³n</CardTitle>
+              <CardDescription>DistribuciÃ³n por categorÃ­a de reclamo</CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'tipo-reclamacion',
-                title: 'Tipo de Reclamación',
-                description: 'Distribución por categoría de reclamo',
+                title: 'Tipo de ReclamaciÃ³n',
+                description: 'DistribuciÃ³n por categorÃ­a de reclamo',
                 render: renderTipoReclamacion
               })}
             >
@@ -3733,7 +3733,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Gastos por Tipo de Reclamación */}
+      {/* Gastos por Tipo de ReclamaciÃ³n */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -3743,17 +3743,17 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Gastos por Tipo de Reclamo</CardTitle>
-              <CardDescription>Monto final aprobado por categoría ($)</CardDescription>
+              <CardDescription>Monto final aprobado por categorÃ­a ($)</CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'gastos-tipo-reclamacion',
-                title: 'Gastos por Tipo de Reclamación',
-                description: 'Monto final aprobado por categoría de reclamo',
+                title: 'Gastos por Tipo de ReclamaciÃ³n',
+                description: 'Monto final aprobado por categorÃ­a de reclamo',
                 render: renderGastosTipoReclamacion
               })}
             >
@@ -3766,7 +3766,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Detalle de Tipo de Reclamación (Conceptos) */}
+      {/* Detalle de Tipo de ReclamaciÃ³n (Conceptos) */}
       <motion.div
         className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -3776,18 +3776,18 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Detalle de Tipo de Reclamación</CardTitle>
-              <CardDescription>Distribución por concepto de cotización</CardDescription>
+              <CardTitle>Detalle de Tipo de ReclamaciÃ³n</CardTitle>
+              <CardDescription>DistribuciÃ³n por concepto de cotizaciÃ³n</CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'detalle-tipo-reclamacion',
-                title: 'Detalle de Tipo de Reclamación',
-                description: 'Distribución por concepto de cotización',
+                title: 'Detalle de Tipo de ReclamaciÃ³n',
+                description: 'DistribuciÃ³n por concepto de cotizaciÃ³n',
                 render: renderDetalleTipoReclamacion
               })}
             >
@@ -3810,17 +3810,17 @@ export function DashboardCharts({
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle>Detalle de Gasto por Tipo de Reclamo</CardTitle>
-              <CardDescription>Monto aprobado por concepto de cotización ($)</CardDescription>
+              <CardDescription>Monto aprobado por concepto de cotizaciÃ³n ($)</CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'detalle-gastos-tipo-reclamacion',
                 title: 'Detalle de Gasto por Tipo de Reclamo',
-                description: 'Monto aprobado por concepto de cotización',
+                description: 'Monto aprobado por concepto de cotizaciÃ³n',
                 render: renderDetalleGastosTipoReclamacion
               })}
             >
@@ -3850,7 +3850,7 @@ export function DashboardCharts({
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'monto-aprobado',
                 title: 'Monto Aprobado Mensual',
@@ -3884,7 +3884,7 @@ export function DashboardCharts({
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'estado-expedientes',
                 title: 'Estado de Expedientes',
@@ -3911,17 +3911,17 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Gestión y Eficiencia de Costos</CardTitle>
+              <CardTitle>GestiÃ³n y Eficiencia de Costos</CardTitle>
               <CardDescription>Comparativa entre cotizaciones iniciales, valores negociados y aprobados (COP)</CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'gestion-costos',
-                title: 'Gestión y Eficiencia de Costos',
+                title: 'GestiÃ³n y Eficiencia de Costos',
                 description: 'Comparativa entre cotizaciones iniciales, valores negociados y aprobados (COP)',
                 render: renderGestionCostos
               })}
@@ -3952,7 +3952,7 @@ export function DashboardCharts({
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-              title="Expandir gráfico"
+              title="Expandir grÃ¡fico"
               onClick={() => setExpandedChart({
                 id: 'costos-ahorrados',
                 title: 'Costos Ahorrados',
@@ -3969,7 +3969,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Talleres / Proveedores — Ingresos y Servicios */}
+      {/* Talleres / Proveedores â€” Ingresos y Servicios */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -3997,7 +3997,7 @@ export function DashboardCharts({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                  title="Expandir gráfico"
+                  title="Expandir grÃ¡fico"
                   onClick={() => setExpandedChart({
                     id: 'ingresos-proveedor',
                     title: 'Ingresos por Taller / Proveedor',
@@ -4034,7 +4034,7 @@ export function DashboardCharts({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                  title="Expandir gráfico"
+                  title="Expandir grÃ¡fico"
                   onClick={() => setExpandedChart({
                     id: 'servicios-proveedor',
                     title: 'Servicios por Taller / Proveedor',
@@ -4053,7 +4053,7 @@ export function DashboardCharts({
         </div>
       </motion.div>
 
-      {/* Tipo de Servicio — Cantidad y Monto en la misma fila */}
+      {/* Tipo de Servicio â€” Cantidad y Monto en la misma fila */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4072,7 +4072,7 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'tipo-servicio-cantidad',
                   title: 'Tipo de Servicio (Cantidad)',
@@ -4099,7 +4099,7 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'tipo-servicio-monto',
                   title: 'Tipo de Servicio (Monto $)',
@@ -4127,7 +4127,7 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Causas Raíz Más Frecuentes</CardTitle>
+              <CardTitle>Causas RaÃ­z MÃ¡s Frecuentes</CardTitle>
               <CardDescription>{showAllCausa ? 'Detalle completo de todas las causas de incidentes' : 'Principales detonantes de incidentes en la flota (Top 5)'}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -4143,10 +4143,10 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'causas-raiz',
-                  title: 'Causas Raíz Más Frecuentes',
+                  title: 'Causas RaÃ­z MÃ¡s Frecuentes',
                   description: 'Principales detonantes de incidentes en la flota',
                   render: renderCausasRaiz
                 })}
@@ -4162,7 +4162,7 @@ export function DashboardCharts({
       </motion.div>
 
 
-      {/* Siniestralidad por Serie de Vehículo */}
+      {/* Siniestralidad por Serie de VehÃ­culo */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4172,8 +4172,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Siniestralidad por Serie de Vehículo</CardTitle>
-              <CardDescription>Cantidad de reclamaciones y monto $ por prefijo de número interno</CardDescription>
+              <CardTitle>Siniestralidad por Serie de VehÃ­culo</CardTitle>
+              <CardDescription>Cantidad de reclamaciones y monto $ por prefijo de nÃºmero interno</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
@@ -4218,11 +4218,11 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'serie-vehiculos',
-                  title: 'Siniestralidad por Serie de Vehículo',
-                  description: 'Cantidad de reclamaciones y monto $ por prefijo de número interno',
+                  title: 'Siniestralidad por Serie de VehÃ­culo',
+                  description: 'Cantidad de reclamaciones y monto $ por prefijo de nÃºmero interno',
                   render: renderVehiculosInterno
                 })}
               >
@@ -4236,7 +4236,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Afectación FAM por Propietario */}
+      {/* AfectaciÃ³n FAM por Propietario */}
       <motion.div
         className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4246,8 +4246,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Afectación FAM por Propietario</CardTitle>
-              <CardDescription>{showAllPropietario ? 'Afectación acumulada de todos los propietarios' : 'Costo total acumulado de afectación al Fondo por propietario (Top 5)'}</CardDescription>
+              <CardTitle>AfectaciÃ³n FAM por Propietario</CardTitle>
+              <CardDescription>{showAllPropietario ? 'AfectaciÃ³n acumulada de todos los propietarios' : 'Costo total acumulado de afectaciÃ³n al Fondo por propietario (Top 5)'}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -4262,11 +4262,11 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'afectacion-propietario',
-                  title: 'Afectación FAM por Propietario',
-                  description: 'Costo total acumulado de afectación al Fondo por propietario',
+                  title: 'AfectaciÃ³n FAM por Propietario',
+                  description: 'Costo total acumulado de afectaciÃ³n al Fondo por propietario',
                   render: renderAfectacionPropietario
                 })}
               >
@@ -4280,7 +4280,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Afectación FAM por Conductor */}
+      {/* AfectaciÃ³n FAM por Conductor */}
       <motion.div
         className="lg:col-span-1 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4290,8 +4290,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Afectación FAM por Conductor</CardTitle>
-              <CardDescription>{showAllConductor ? 'Afectación acumulada de todos los conductores' : 'Costo total acumulado por conductor (Top 5)'}</CardDescription>
+              <CardTitle>AfectaciÃ³n FAM por Conductor</CardTitle>
+              <CardDescription>{showAllConductor ? 'AfectaciÃ³n acumulada de todos los conductores' : 'Costo total acumulado por conductor (Top 5)'}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -4306,10 +4306,10 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'afectacion-conductor',
-                  title: 'Afectación FAM por Conductor',
+                  title: 'AfectaciÃ³n FAM por Conductor',
                   description: 'Costo total acumulado por conductor',
                   render: renderAfectacionConductor
                 })}
@@ -4324,7 +4324,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Afectación FAM por Vehículo */}
+      {/* AfectaciÃ³n FAM por VehÃ­culo */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4334,8 +4334,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Afectación FAM por Vehículo</CardTitle>
-              <CardDescription>{showAllVehiculoAfectacion ? 'Afectación acumulada de todos los vehículos' : 'Costo total acumulado de afectación al Fondo por vehículo (Top 5)'}</CardDescription>
+              <CardTitle>AfectaciÃ³n FAM por VehÃ­culo</CardTitle>
+              <CardDescription>{showAllVehiculoAfectacion ? 'AfectaciÃ³n acumulada de todos los vehÃ­culos' : 'Costo total acumulado de afectaciÃ³n al Fondo por vehÃ­culo (Top 5)'}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -4350,11 +4350,11 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'afectacion-vehiculo',
-                  title: 'Afectación FAM por Vehículo',
-                  description: 'Costo total acumulado de afectación al Fondo por vehículo',
+                  title: 'AfectaciÃ³n FAM por VehÃ­culo',
+                  description: 'Costo total acumulado de afectaciÃ³n al Fondo por vehÃ­culo',
                   render: renderAfectacionVehiculo
                 })}
               >
@@ -4368,7 +4368,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Top 5 Vehículos por Reclamaciones */}
+      {/* Top 5 VehÃ­culos por Reclamaciones */}
       <motion.div
         className="lg:col-span-2 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4378,8 +4378,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Top Vehículos por Reclamaciones</CardTitle>
-              <CardDescription>{showAllTopPlacas ? 'Frecuencia de incidentes en todos los vehículos' : 'Vehículos con mayor frecuencia de incidentes (Top 5)'}</CardDescription>
+              <CardTitle>Top VehÃ­culos por Reclamaciones</CardTitle>
+              <CardDescription>{showAllTopPlacas ? 'Frecuencia de incidentes en todos los vehÃ­culos' : 'VehÃ­culos con mayor frecuencia de incidentes (Top 5)'}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -4394,11 +4394,11 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'top-vehiculos',
-                  title: 'Top Vehículos por Reclamaciones',
-                  description: 'Vehículos con mayor frecuencia de incidentes',
+                  title: 'Top VehÃ­culos por Reclamaciones',
+                  description: 'VehÃ­culos con mayor frecuencia de incidentes',
                   render: renderTopPlacas
                 })}
               >
@@ -4438,7 +4438,7 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'top-conductores',
                   title: 'Top Conductores',
@@ -4482,7 +4482,7 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'ruta-cantidad',
                   title: 'Siniestralidad por Ruta (Cantidad)',
@@ -4500,7 +4500,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Afectación FAM por Ruta (Monto $) */}
+      {/* AfectaciÃ³n FAM por Ruta (Monto $) */}
       <motion.div
         className="lg:col-span-1 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4510,8 +4510,8 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Afectación por Ruta</CardTitle>
-              <CardDescription>{showAllRoutesMonto ? 'Afectación acumulada de todos los trayectos' : 'Costo acumulado por trayecto (Top 5)'}</CardDescription>
+              <CardTitle>AfectaciÃ³n por Ruta</CardTitle>
+              <CardDescription>{showAllRoutesMonto ? 'AfectaciÃ³n acumulada de todos los trayectos' : 'Costo acumulado por trayecto (Top 5)'}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -4526,11 +4526,11 @@ export function DashboardCharts({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
+                title="Expandir grÃ¡fico"
                 onClick={() => setExpandedChart({
                   id: 'ruta-monto',
-                  title: 'Afectación FAM por Ruta (Monto $)',
-                  description: 'Costo total acumulado de afectación por trayecto',
+                  title: 'AfectaciÃ³n FAM por Ruta (Monto $)',
+                  description: 'Costo total acumulado de afectaciÃ³n por trayecto',
                   render: renderRoutesMonto
                 })}
               >
@@ -4544,7 +4544,7 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
-      {/* Actas de Comité — Cantidad y Dinero Aprobado en la misma fila */}
+      {/* Actas de ComitÃ© â€” Cantidad y Dinero Aprobado en la misma fila */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
         initial={{ opacity: 0, y: 16 }}
@@ -4557,7 +4557,7 @@ export function DashboardCharts({
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
                 <CardTitle>Cantidad de Expedientes por Acta</CardTitle>
-                <CardDescription>{showAllActas ? 'Cantidad de expedientes de todas las actas' : 'Expedientes por acta de comité (Top 5)'}</CardDescription>
+                <CardDescription>{showAllActas ? 'Cantidad de expedientes de todas las actas' : 'Expedientes por acta de comitÃ© (Top 5)'}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -4572,11 +4572,11 @@ export function DashboardCharts({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                  title="Expandir gráfico"
+                  title="Expandir grÃ¡fico"
                   onClick={() => setExpandedChart({
                     id: 'actas-cantidad',
                     title: 'Cantidad de Expedientes por Acta',
-                    description: 'Cantidad de expedientes tramitados por acta de comité',
+                    description: 'Cantidad de expedientes tramitados por acta de comitÃ©',
                     render: renderActasCantidad
                   })}
                 >
@@ -4594,7 +4594,7 @@ export function DashboardCharts({
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
                 <CardTitle>Dinero Aprobado por Acta</CardTitle>
-                <CardDescription>{showAllActas ? 'Dinero aprobado de todas las actas' : 'Dinero aprobado por acta de comité (Top 5)'}</CardDescription>
+                <CardDescription>{showAllActas ? 'Dinero aprobado de todas las actas' : 'Dinero aprobado por acta de comitÃ© (Top 5)'}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -4609,11 +4609,11 @@ export function DashboardCharts({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                  title="Expandir gráfico"
+                  title="Expandir grÃ¡fico"
                   onClick={() => setExpandedChart({
                     id: 'actas-monto',
                     title: 'Dinero Aprobado por Acta',
-                    description: 'Dinero total aprobado por acta de comité',
+                    description: 'Dinero total aprobado por acta de comitÃ©',
                     render: renderActasMonto
                   })}
                 >
@@ -4659,7 +4659,7 @@ export function DashboardCharts({
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
-                        Año
+                        AÃ±o
                       </button>
                       <button
                         type="button"
@@ -4683,7 +4683,7 @@ export function DashboardCharts({
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
-                        Día
+                        DÃ­a
                       </button>
                     </div>
                   )}
@@ -4758,3 +4758,7 @@ export function DashboardCharts({
     </div>
   );
 }
+
+
+
+
