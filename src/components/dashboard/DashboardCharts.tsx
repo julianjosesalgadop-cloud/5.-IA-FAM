@@ -17,7 +17,7 @@ import {
   LabelList,
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Maximize2, X } from 'lucide-react';
+import { Maximize2, X, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCOP, cn } from '@/lib/utils';
@@ -4638,6 +4638,34 @@ export function DashboardCharts({
             </CardContent>
           </Card>
         </div>
+      </motion.div>
+
+      {/* Observaciones de Gestión para Gerencia */}
+      <motion.div 
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden mt-2"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.4 }}
+      >
+        <Card className="bg-white dark:bg-white border-2 border-primary/20 shadow-lg transition-all duration-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-900 flex items-center gap-2">
+              <Info className="w-4 h-4 text-primary" />
+              Observaciones de Gestión para Gerencia
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs text-slate-700 dark:text-slate-700 space-y-2">
+            <p>
+              • <strong className="text-slate-900 dark:text-slate-900">Resumen General de Siniestralidad</strong>: Para el conjunto de datos y filtros activos en el dashboard, se han gestionado un total de <strong className="text-slate-900 dark:text-slate-900">{expedientes.length} expedientes</strong>, registrando un valor total aprobado de desembolsos de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(expedientes.reduce((sum, e) => sum + (e.valor_final_aprobado || 0), 0))}</strong>. Esto representa un costo promedio de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(expedientes.length ? Math.round(expedientes.reduce((sum, e) => sum + (e.valor_final_aprobado || 0), 0) / expedientes.length) : 0)}</strong> por incidente, distribuido entre <strong className="text-slate-900 dark:text-slate-900">{new Set(expedientes.map(e => e.placa).filter(Boolean)).size} vehículos únicos</strong>.
+            </p>
+            <p>
+              • <strong className="text-slate-900 dark:text-slate-900">Gestión de Afectaciones por Incidentes</strong>: El análisis detallado de la distribución de siniestralidad por ruta, serie de vehículo y actas del comité permite evaluar y mitigar los puntos críticos de mayor frecuencia, así como optimizar las cotizaciones individuales con los talleres asignados para el Fondo de Auxilio Mutuo (FAM).
+            </p>
+            <p>
+              • <strong className="text-slate-900 dark:text-slate-900">Mitigación de Pérdidas y Recobros</strong>: Se ha consolidado una recuperación total de <strong className="text-slate-900 dark:text-slate-900">{formatCOP(expedientes.reduce((sum, e) => sum + (e.valor_recobro_vehiculo || 0) + (e.valor_recobro_abogado || 0) + (e.valor_recobro_empresa || 0) + (e.valor_descuento_conductor || 0), 0))}</strong> a través de gestiones activas de recobros a terceros y de descuentos a conductores responsables, lo cual reduce significativamente el impacto neto sobre el presupuesto del fondo.
+            </p>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Expanded Chart Modal */}
