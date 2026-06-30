@@ -60,6 +60,7 @@ interface DashboardChartsProps {
   selectedConcepto?: string;
   onSelectActa?: (acta: string) => void;
   selectedActa?: string;
+  presetRange?: string;
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
@@ -273,6 +274,7 @@ export function DashboardCharts({
   selectedConcepto,
   onSelectActa,
   selectedActa,
+  presetRange,
 }: DashboardChartsProps) {
   // Filter out 'Rechazado' and 'Inactivo' states for all graphics/charts
   const allowedStates = ['Pendiente', 'Revisado', 'Aprobado'];
@@ -332,6 +334,12 @@ export function DashboardCharts({
   const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
   const [serieMetricFilter, setSerieMetricFilter] = useState<'todos' | 'cantidad' | 'monto'>('todos');
 
+  useEffect(() => {
+    if (presetRange === 'todo') {
+      setTimeUnit('year');
+    }
+  }, [presetRange]);
+
   // 1. Monthly trend calculations
   const totalFilteredCount = expedientes.length;
   const totalGeneralCount = unfilteredExpedientes.length;
@@ -342,59 +350,125 @@ export function DashboardCharts({
   const totalFilteredNegociado = expedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
   const totalGeneralNegociado = unfilteredExpedientes.reduce((acc, e) => acc + (e.valor_negociado || 0), 0);
 
-  const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  const allMonthlyData = MONTH_NAMES.map((name, index) => {
-    const cases = expedientes.filter((e) => {
-      // Handle date comparison safely
-      if (!e.fecha_incidente) return false;
-      const d = new Date(e.fecha_incidente + 'T00:00:00');
-      return !isNaN(d.getTime()) && d.getMonth() === index;
-    });
-    const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
-    const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
-    const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+  // Find all unique years in expedientes
+  const yearsWithData = Array.from(
+    new Set(
+      expedientes
+        .map((e) => {
+          if (!e.fecha_incidente) return null;
+          const d = new Date(e.fecha_incidente + 'T00:00:00');
+          return isNaN(d.getTime()) ? null : d.getFullYear();
+        })
+        .filter((y): y is number => y !== null)
+    )
+  ).sort((a, b) => a - b);
 
-    // MoM comparison values
-    const prevMonthIndex = index - 1;
-    let prevCasesCount = 0;
-    let prevSumAprobado = 0;
-    if (prevMonthIndex >= 0) {
-      const prevCases = expedientes.filter((e) => {
+  const hasMultipleYears = yearsWithData.length > 1;
+  const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  let allMonthlyData;
+
+  if (hasMultipleYears) {
+    // Generate chronological list of year-months
+    const combinations: { year: number; month: number; name: string }[] = [];
+    yearsWithData.forEach((year) => {
+      for (let month = 0; month < 12; month++) {
+        combinations.push({
+          year,
+          month,
+          name: `${MONTH_NAMES[month]} ${String(year).slice(-2)}`,
+        });
+      }
+    });
+
+    allMonthlyData = combinations.map(({ year, month, name }) => {
+      const cases = expedientes.filter((e) => {
         if (!e.fecha_incidente) return false;
         const d = new Date(e.fecha_incidente + 'T00:00:00');
-        return !isNaN(d.getTime()) && d.getMonth() === prevMonthIndex;
+        return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month;
       });
-      prevCasesCount = prevCases.length;
-      prevSumAprobado = prevCases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
-    }
 
-    let casesDiffPct = null;
-    let valorDiffPct = null;
-    if (prevMonthIndex >= 0) {
-      casesDiffPct = prevCasesCount === 0 ? (cases.length > 0 ? 100 : 0) : ((cases.length - prevCasesCount) / prevCasesCount) * 100;
-      valorDiffPct = prevSumAprobado === 0 ? (sumAprobado > 0 ? 100 : 0) : ((sumAprobado - prevSumAprobado) / prevSumAprobado) * 100;
-    }
+      const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+      const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+      const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
 
-    return {
-      mes: name,
-      monthIndex: index,
-      expedientes: cases.length,
-      valor: sumAprobado,
-      cotizado: sumCotizado,
-      negociado: sumNegociado,
-      aprobado: sumAprobado,
-      casesDiffPct,
-      valorDiffPct,
-      totalFilteredCases: totalFilteredCount,
-      totalGeneralCases: totalGeneralCount,
-      totalFilteredApprovedSum: totalFilteredApproved,
-      totalGeneralApprovedSum: totalGeneralApproved,
-      totalFilteredCotizadoSum: totalFilteredCotizado,
-      totalGeneralCotizadoSum: totalGeneralCotizado,
-      totalFilteredNegociadoSum: totalFilteredNegociado,
-      totalGeneralNegociadoSum: totalGeneralNegociado,
-    };
-  });
+      return {
+        mes: name,
+        monthIndex: month,
+        year,
+        expedientes: cases.length,
+        valor: sumAprobado,
+        cotizado: sumCotizado,
+        negociado: sumNegociado,
+        aprobado: sumAprobado,
+        casesDiffPct: null,
+        valorDiffPct: null,
+        totalFilteredCases: totalFilteredCount,
+        totalGeneralCases: totalGeneralCount,
+        totalFilteredApprovedSum: totalFilteredApproved,
+        totalGeneralApprovedSum: totalGeneralApproved,
+        totalFilteredCotizadoSum: totalFilteredCotizado,
+        totalGeneralCotizadoSum: totalGeneralCotizado,
+        totalFilteredNegociadoSum: totalFilteredNegociado,
+        totalGeneralNegociadoSum: totalGeneralNegociado,
+      };
+    });
+  } else {
+    // Single year (default behavior)
+    allMonthlyData = MONTH_NAMES.map((name, index) => {
+      const cases = expedientes.filter((e) => {
+        if (!e.fecha_incidente) return false;
+        const d = new Date(e.fecha_incidente + 'T00:00:00');
+        return !isNaN(d.getTime()) && d.getMonth() === index;
+      });
+
+      const sumAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+      const sumCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+      const sumNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+
+      // MoM comparison values
+      const prevMonthIndex = index - 1;
+      let prevCasesCount = 0;
+      let prevSumAprobado = 0;
+      if (prevMonthIndex >= 0) {
+        const prevCases = expedientes.filter((e) => {
+          if (!e.fecha_incidente) return false;
+          const d = new Date(e.fecha_incidente + 'T00:00:00');
+          return !isNaN(d.getTime()) && d.getMonth() === prevMonthIndex;
+        });
+        prevCasesCount = prevCases.length;
+        prevSumAprobado = prevCases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+      }
+
+      let casesDiffPct = null;
+      let valorDiffPct = null;
+      if (prevMonthIndex >= 0) {
+        casesDiffPct = prevCasesCount === 0 ? (cases.length > 0 ? 100 : 0) : ((cases.length - prevCasesCount) / prevCasesCount) * 100;
+        valorDiffPct = prevSumAprobado === 0 ? (sumAprobado > 0 ? 100 : 0) : ((sumAprobado - prevSumAprobado) / prevSumAprobado) * 100;
+      }
+
+      return {
+        mes: name,
+        monthIndex: index,
+        year: yearsWithData[0] || new Date().getFullYear(),
+        expedientes: cases.length,
+        valor: sumAprobado,
+        cotizado: sumCotizado,
+        negociado: sumNegociado,
+        aprobado: sumAprobado,
+        casesDiffPct,
+        valorDiffPct,
+        totalFilteredCases: totalFilteredCount,
+        totalGeneralCases: totalGeneralCount,
+        totalFilteredApprovedSum: totalFilteredApproved,
+        totalGeneralApprovedSum: totalGeneralApproved,
+        totalFilteredCotizadoSum: totalFilteredCotizado,
+        totalGeneralCotizadoSum: totalGeneralCotizado,
+        totalFilteredNegociadoSum: totalFilteredNegociado,
+        totalGeneralNegociadoSum: totalGeneralNegociado,
+      };
+    });
+  }
   const monthlyData = allMonthlyData.filter(d => d.expedientes > 0);
 
   // Year, Month, Day dynamic data processing
@@ -798,7 +872,7 @@ export function DashboardCharts({
 
   // 8. Top 5 Vehículos por Reclamaciones
   const placaGroups: Record<string, { total: number; valor: number; interno: string | null }> = {};
-  ev.forEach((e) => {
+  expedientes.forEach((e) => {
     if (!e.placa) return;
     const p = e.placa.trim().toUpperCase();
     if (!placaGroups[p]) {
@@ -818,7 +892,7 @@ export function DashboardCharts({
         placa,
         value: data.total, 
         valor: data.valor,
-        totalFilteredCases: ev.length,
+        totalFilteredCases: expedientes.length,
         totalGeneralCases: totalGeneralCount,
       };
     })
@@ -827,7 +901,7 @@ export function DashboardCharts({
 
   // 9. Top 5 Conductores por Reclamaciones
   const condGroups: Record<string, { total: number; valor: number }> = {};
-  ed.forEach((e) => {
+  expedientes.forEach((e) => {
     if (!e.nombre_conductor) return;
     const name = e.nombre_conductor.trim();
     if (!condGroups[name]) condGroups[name] = { total: 0, valor: 0 };
@@ -840,7 +914,7 @@ export function DashboardCharts({
       nombre,
       value: data.total, 
       valor: data.valor,
-      totalFilteredCases: ed.length,
+      totalFilteredCases: expedientes.length,
       totalGeneralCases: totalGeneralCount,
     }))
     .sort((a, b) => b.value - a.value || b.valor - a.valor);
@@ -864,35 +938,82 @@ export function DashboardCharts({
     .map((d) => ({ ...d, totalCantidad: totalServiceCantidad, totalMonto: totalServiceMonto }));
 
   // 11. Costos Ahorrados monthly data
-  const allMonthlySavingsData = MONTH_NAMES.map((name, index) => {
-    const cases = expedientes.filter((e) => {
-      if (!e.fecha_incidente) return false;
-      const d = new Date(e.fecha_incidente + 'T00:00:00');
-      return !isNaN(d.getTime()) && d.getMonth() === index;
+  let allMonthlySavingsData;
+  if (hasMultipleYears) {
+    // Generate chronological list of year-months
+    const combinations: { year: number; month: number; name: string }[] = [];
+    yearsWithData.forEach((year) => {
+      for (let month = 0; month < 12; month++) {
+        combinations.push({
+          year,
+          month,
+          name: `${MONTH_NAMES[month]} ${String(year).slice(-2)}`,
+        });
+      }
     });
-    
-    const totalCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
-    const totalNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
-    const totalAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
-    
-    const ahorroNegociacion = Math.max(0, totalCotizado - totalNegociado);
-    const ahorroAprobado = Math.max(0, totalCotizado - totalAprobado);
-    
-    const pctAhorroNegociacion = totalCotizado > 0 ? (ahorroNegociacion / totalCotizado) * 100 : 0;
-    const pctAhorroAprobado = totalCotizado > 0 ? (ahorroAprobado / totalCotizado) * 100 : 0;
-    
-    return {
-      mes: name,
-      monthIndex: index,
-      ahorroNegociacion,
-      ahorroAprobado,
-      pctAhorroNegociacion,
-      pctAhorroAprobado,
-      casesCount: cases.length,
-      totalFilteredCases: totalFilteredCount,
-      totalGeneralCases: totalGeneralCount,
-    };
-  });
+
+    allMonthlySavingsData = combinations.map(({ year, month, name }) => {
+      const cases = expedientes.filter((e) => {
+        if (!e.fecha_incidente) return false;
+        const d = new Date(e.fecha_incidente + 'T00:00:00');
+        return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month;
+      });
+
+      const totalCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+      const totalNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+      const totalAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+
+      const ahorroNegociacion = Math.max(0, totalCotizado - totalNegociado);
+      const ahorroAprobado = Math.max(0, totalCotizado - totalAprobado);
+
+      const pctAhorroNegociacion = totalCotizado > 0 ? (ahorroNegociacion / totalCotizado) * 100 : 0;
+      const pctAhorroAprobado = totalCotizado > 0 ? (ahorroAprobado / totalCotizado) * 100 : 0;
+
+      return {
+        mes: name,
+        monthIndex: month,
+        year,
+        ahorroNegociacion,
+        ahorroAprobado,
+        pctAhorroNegociacion,
+        pctAhorroAprobado,
+        casesCount: cases.length,
+        totalFilteredCases: totalFilteredCount,
+        totalGeneralCases: totalGeneralCount,
+      };
+    });
+  } else {
+    // Single year (default behavior)
+    allMonthlySavingsData = MONTH_NAMES.map((name, index) => {
+      const cases = expedientes.filter((e) => {
+        if (!e.fecha_incidente) return false;
+        const d = new Date(e.fecha_incidente + 'T00:00:00');
+        return !isNaN(d.getTime()) && d.getMonth() === index;
+      });
+
+      const totalCotizado = cases.reduce((acc, c) => acc + (c.valor_cotizacion || 0), 0);
+      const totalNegociado = cases.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+      const totalAprobado = cases.reduce((acc, c) => acc + (c.valor_final_aprobado || 0), 0);
+
+      const ahorroNegociacion = Math.max(0, totalCotizado - totalNegociado);
+      const ahorroAprobado = Math.max(0, totalCotizado - totalAprobado);
+
+      const pctAhorroNegociacion = totalCotizado > 0 ? (ahorroNegociacion / totalCotizado) * 100 : 0;
+      const pctAhorroAprobado = totalCotizado > 0 ? (ahorroAprobado / totalCotizado) * 100 : 0;
+
+      return {
+        mes: name,
+        monthIndex: index,
+        ahorroNegociacion,
+        ahorroAprobado,
+        pctAhorroNegociacion,
+        pctAhorroAprobado,
+        casesCount: cases.length,
+        totalFilteredCases: totalFilteredCount,
+        totalGeneralCases: totalGeneralCount,
+      };
+    });
+  }
   const monthlySavingsData = allMonthlySavingsData.filter(d => d.casesCount > 0);
 
   // 12. Internal Number prefixes categorization
@@ -1545,7 +1666,9 @@ export function DashboardCharts({
             tick={timeUnit === 'month' ? (props: any) => {
               const { x, y, payload } = props;
               const value = payload?.value || '';
-              const idx = MONTH_NAMES.indexOf(value);
+              const parts = String(value).split(' ');
+              const monthName = parts[0];
+              const idx = MONTH_NAMES.indexOf(monthName);
               const isSelected = selectedMonth === idx;
               return (
                 <g 
@@ -2122,7 +2245,9 @@ export function DashboardCharts({
               tick={(props: any) => {
                 const { x, y, payload } = props;
                 const value = payload?.value || '';
-                const idx = MONTH_NAMES.indexOf(value);
+                const parts = String(value).split(' ');
+                const monthName = parts[0];
+                const idx = MONTH_NAMES.indexOf(monthName);
                 const isSelected = selectedMonth === idx;
                 return (
                   <g 
@@ -2252,7 +2377,9 @@ export function DashboardCharts({
             tick={(props: any) => {
               const { x, y, payload } = props;
               const value = payload?.value || '';
-              const idx = MONTH_NAMES.indexOf(value);
+              const parts = String(value).split(' ');
+              const monthName = parts[0];
+              const idx = MONTH_NAMES.indexOf(monthName);
               const isSelected = selectedMonth === idx;
               return (
                 <g 

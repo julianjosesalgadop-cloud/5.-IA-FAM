@@ -479,6 +479,7 @@ export default function DashboardPage() {
               selectedTipoServicio={selectedChartTipoServicio}
               selectedConcepto={selectedChartConcepto}
               selectedActa={selectedChartActa}
+              presetRange={presetRange}
             />
           </>
         )}
