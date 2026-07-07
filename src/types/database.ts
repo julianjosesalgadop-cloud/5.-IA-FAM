@@ -75,6 +75,7 @@ export interface Expediente {
   memorando_pago_storage_path?: string | null;
   memorando_pago_archivo_nombre?: string | null;
   estado: EstadoExpediente;
+  observacion_rechazo?: string | null;
   // Metadata
   created_at: string;
   updated_at: string;

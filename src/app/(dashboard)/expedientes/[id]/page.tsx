@@ -12,6 +12,7 @@ import {
   Edit,
   Eye,
   CheckCircle,
+  XCircle,
   FileDown,
   UploadCloud,
   File,
@@ -70,6 +71,10 @@ export default function ExpedienteDetailPage() {
   // Document Preview State
   const [previewFile, setPreviewFile] = useState<{ url: string; type: 'pdf' | 'image' | 'other'; name: string } | null>(null);
 
+  // Rejection Observation State
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionObservation, setRejectionObservation] = useState('');
+
   const currentUser = getMockUser();
 
   const loadData = useCallback(async () => {
@@ -120,6 +125,12 @@ export default function ExpedienteDetailPage() {
 
   const handleStatusChange = async (newEstado: any) => {
     if (!expediente) return;
+    if (newEstado === 'Rechazado') {
+      setRejectionObservation('');
+      setShowRejectionModal(true);
+      return;
+    }
+
     try {
       const updated = await dbService.updateExpediente(expediente.id, { estado: newEstado });
       setExpediente(updated);
@@ -130,6 +141,29 @@ export default function ExpedienteDetailPage() {
     } catch (error) {
       console.error(error);
       toast.error('Error al cambiar de estado');
+    }
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!expediente || !rejectionObservation.trim()) {
+      toast.error('La observación de rechazo es obligatoria.');
+      return;
+    }
+
+    try {
+      const updated = await dbService.updateExpediente(expediente.id, { 
+        estado: 'Rechazado',
+        observacion_rechazo: rejectionObservation.trim() 
+      });
+      setExpediente(updated);
+      setShowRejectionModal(false);
+      toast.success(`Estado actualizado a Rechazado`);
+      // Refresh audits
+      const audits = await dbService.getAuditoria(id);
+      setAuditorias(audits);
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al cambiar de estado a rechazado');
     }
   };
 
@@ -430,6 +464,10 @@ export default function ExpedienteDetailPage() {
         ['Fecha Autorización:', formatDate(expediente.fecha_autorizacion), 'Memorando de Pago:', expediente.memorando_pago_nombre || '—'],
       ];
 
+      if (expediente.estado === 'Rechazado' && expediente.observacion_rechazo) {
+        comData.push(['Observación de Rechazo:', { content: expediente.observacion_rechazo, colSpan: 3 }, '', '']);
+      }
+
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 13,
         theme: 'striped',
@@ -601,7 +639,16 @@ export default function ExpedienteDetailPage() {
 
       <Separator />
 
-      {/* Main Area */}
+      {/* Rejection observation banner */}
+      {!isEditMode && expediente.estado === 'Rechazado' && expediente.observacion_rechazo && (
+        <div className="bg-red-500/10 border-2 border-red-500/20 text-red-700 dark:text-red-300 p-4 rounded-xl flex items-start gap-3 shadow-sm animate-fade-in">
+          <XCircle className="w-5 h-5 mt-0.5 text-red-500 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold text-sm">Expediente Rechazado</h3>
+            <p className="text-xs mt-1 font-medium leading-relaxed">{expediente.observacion_rechazo}</p>
+          </div>
+        </div>
+      )}
       {isEditMode ? (
         <ExpedienteForm
           id={expediente.id}
@@ -1321,6 +1368,45 @@ export default function ExpedienteDetailPage() {
                     </Button>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Rejection Observation Modal */}
+      <AnimatePresence>
+        {showRejectionModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 text-left"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-foreground">Rechazar Expediente</h3>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setShowRejectionModal(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Por favor, ingrese el motivo u observación por la cual se rechaza este expediente. Esta información será visible para el equipo y se incluirá en los reportes generados.
+              </p>
+              <textarea
+                value={rejectionObservation}
+                onChange={(e) => setRejectionObservation(e.target.value)}
+                placeholder="Escriba la observación aquí..."
+                rows={4}
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowRejectionModal(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleConfirmRejection} disabled={!rejectionObservation.trim()}>
+                  Confirmar Rechazo
+                </Button>
               </div>
             </motion.div>
           </div>

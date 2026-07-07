@@ -58,6 +58,7 @@ const REPORT_COLUMNS = [
   { label: 'Fecha Aut.', key: 'fecha_autorizacion', isNumeric: false },
   { label: 'Mem. Pago', key: 'memorando_pago_nombre', isNumeric: false },
   { label: 'Estado', key: 'estado', isNumeric: false },
+  { label: 'Obs. Rechazo', key: 'observacion_rechazo', isNumeric: false },
 ] as const;
 
 export function ReportesView() {
@@ -344,6 +345,7 @@ export function ReportesView() {
         'Fecha Autorización': e.fecha_autorizacion || '',
         'Memorando Pago': e.memorando_pago_nombre || '',
         'Estado': e.estado,
+        'Observación de Rechazo': e.observacion_rechazo || '',
       }));
 
       const ws = XLSX.utils.json_to_sheet(wsData);
@@ -428,7 +430,7 @@ export function ReportesView() {
         e.nombre_conductor || '—',
         e.numero_acta || '—',
         formatCOP(e.valor_final_aprobado),
-        e.estado,
+        e.estado === 'Rechazado' && e.observacion_rechazo ? `Rechazado (${e.observacion_rechazo})` : e.estado,
       ]);
 
       autoTable(doc, {
@@ -718,7 +720,7 @@ export function ReportesView() {
                 <tbody className="divide-y divide-border">
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={38} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={REPORT_COLUMNS.length} className="py-8 text-center text-muted-foreground">
                         No se encontraron registros que coincidan con la búsqueda.
                       </td>
                     </tr>
@@ -758,16 +760,25 @@ export function ReportesView() {
                             );
                           } else if (col.key === 'estado') {
                             content = (
-                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                                val === 'Aprobado'
-                                  ? 'bg-green-500/15 text-green-400 border-green-500/30'
-                                  : val === 'Rechazado'
-                                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                                  : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
-                              }`}>
-                                {String(val)}
-                              </span>
+                              <div className="flex flex-col">
+                                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium w-fit ${
+                                  val === 'Aprobado'
+                                    ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                                    : val === 'Rechazado'
+                                    ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                                    : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
+                                }`}>
+                                  {String(val)}
+                                </span>
+                                {val === 'Rechazado' && e.observacion_rechazo && (
+                                  <span className="text-[9px] text-red-500 mt-0.5 max-w-[120px] truncate" title={e.observacion_rechazo}>
+                                    {e.observacion_rechazo}
+                                  </span>
+                                )}
+                              </div>
                             );
+                          } else if (col.key === 'observacion_rechazo') {
+                            content = val ? <span className="truncate max-w-[150px] inline-block text-red-500 font-medium animate-pulse-slow" title={String(val)}>{String(val)}</span> : '—';
                           } else if (col.key === 'culpabilidad') {
                             content = val ? (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-slate-500/10 text-slate-400">

@@ -134,12 +134,27 @@ export default function ComparativoPage() {
   const filteredActiveExpedientes = React.useMemo(() => {
     return activeExpedientes.filter((e) => {
       const mo = getMonth(e);
-      const tipo = e.tipo_reclamacion || 'Otro';
       const culp = e.culpabilidad || 'Sin definir';
       const serie = getInternalNumberCategory(e.numero_interno);
       const tipoServ = e.tipo_servicio || 'No especificado';
 
-      if (filterReclamacion && tipo !== filterReclamacion) return false;
+      if (filterReclamacion) {
+        if (!e.cotizaciones || e.cotizaciones.length === 0) {
+          const name = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+          if (name !== filterReclamacion.toUpperCase()) return false;
+        } else {
+          const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+          const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+          const hasConcepto = activeCots.some((c) => {
+            let name = (c.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+            if (name === 'OTROS' && c.concepto_otro) {
+              name = c.concepto_otro.trim().toUpperCase();
+            }
+            return name === filterReclamacion.toUpperCase();
+          });
+          if (!hasConcepto) return false;
+        }
+      }
       if (filterCulpabilidad && culp !== filterCulpabilidad) return false;
       if (filterSerie && serie !== filterSerie) return false;
       if (filterMonth !== null && mo !== filterMonth) return false;
@@ -236,12 +251,34 @@ export default function ComparativoPage() {
 
       // Group by dimension maps (only if the claim month is selected!)
       if ((yr === 2025 || yr === 2026) && mo !== null && selectedMonths.includes(mo)) {
-        // Group by Claim Type
-        if (!claimsMap[tipo]) {
-          claimsMap[tipo] = { name: tipo, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+        // Group by Concepto de Cotización
+        let conceptName = 'SIN ESPECIFICAR';
+        let conceptValue = approved;
+        
+        if (e.cotizaciones && e.cotizaciones.length > 0) {
+          const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+          const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+          if (activeCots[0]) {
+            conceptName = (activeCots[0].concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+            if (conceptName === 'OTROS' && activeCots[0].concepto_otro) {
+              conceptName = activeCots[0].concepto_otro.trim().toUpperCase();
+            }
+            conceptValue = activeCots[0].valor_a_pagar || approved;
+          }
+        } else {
+          conceptName = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
         }
-        if (yr === 2025) { claimsMap[tipo].cases2025 += 1; claimsMap[tipo].amount2025 += approved; }
-        else { claimsMap[tipo].cases2026 += 1; claimsMap[tipo].amount2026 += approved; }
+
+        if (!claimsMap[conceptName]) {
+          claimsMap[conceptName] = { name: conceptName, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+        }
+        if (yr === 2025) { 
+          claimsMap[conceptName].cases2025 += 1; 
+          claimsMap[conceptName].amount2025 += conceptValue; 
+        } else { 
+          claimsMap[conceptName].cases2026 += 1; 
+          claimsMap[conceptName].amount2026 += conceptValue; 
+        }
 
         // Group by Culpability
         if (!culpabilidadMap[culp]) {
@@ -1103,42 +1140,9 @@ export default function ComparativoPage() {
               </Card>
             </motion.div>
 
-            {/* Row 4: Detalle Tipo Reclamación (Cant.) | Detalle Gasto por Tipo Reclamo (Monto) */}
+            {/* Row 4: Detalle Gasto por Tipo Reclamo (Monto) | Detalle Tipo Reclamación (Cant.) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.35 }}>
-                <Card className="bg-card border-border shadow-sm h-full">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-bold text-foreground">Detalle de Tipo de Reclamación</CardTitle>
-                        {filterReclamacion && (
-                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                            Filtro: {filterReclamacion}
-                          </span>
-                        )}
-                      </div>
-                      <CardDescription>Comparativa de cantidad de casos por categoría de reclamo</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                      onClick={() => setExpandedChart({
-                        id: 'reclamaciones-count',
-                        title: 'Detalle de Tipo de Reclamación (2025 vs 2026)',
-                        description: 'Comparativa de cantidad de casos por categoría de reclamo'
-                      })}
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="h-[280px]">
-                    {renderClaimsTypeChart(false)}
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }}>
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
@@ -1150,7 +1154,7 @@ export default function ComparativoPage() {
                           </span>
                         )}
                       </div>
-                      <CardDescription>Comparativa de monto aprobado por categoría de reclamo</CardDescription>
+                      <CardDescription>Monto aprobado por concepto de cotización ($)</CardDescription>
                     </div>
                     <Button
                       variant="ghost"
@@ -1159,7 +1163,7 @@ export default function ComparativoPage() {
                       onClick={() => setExpandedChart({
                         id: 'reclamaciones-amount',
                         title: 'Detalle de Gasto por Tipo de Reclamo (2025 vs 2026)',
-                        description: 'Comparativa de monto aprobado por categoría de reclamo'
+                        description: 'Monto aprobado por concepto de cotización'
                       })}
                     >
                       <Maximize2 className="h-4 w-4" />
@@ -1170,44 +1174,44 @@ export default function ComparativoPage() {
                   </CardContent>
                 </Card>
               </motion.div>
-            </div>
 
-            {/* Row 5: Tipo de Servicio (Cantidad) | Tipo de Servicio (Monto) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.45 }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 }}>
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-bold text-foreground">Tipo de Servicio (Cantidad)</CardTitle>
-                        {filterTipoServicio && (
+                        <CardTitle className="text-sm font-bold text-foreground">Detalle de Tipo de Reclamación</CardTitle>
+                        {filterReclamacion && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                            Filtro: {filterTipoServicio}
+                            Filtro: {filterReclamacion}
                           </span>
                         )}
                       </div>
-                      <CardDescription>Casos por tipo de servicio contratado</CardDescription>
+                      <CardDescription>Distribución por concepto de cotización</CardDescription>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                       onClick={() => setExpandedChart({
-                        id: 'tipo-servicio-cant',
-                        title: 'Tipo de Servicio (Cantidad) — 2025 vs 2026',
-                        description: 'Casos por tipo de servicio contratado'
+                        id: 'reclamaciones-count',
+                        title: 'Detalle de Tipo de Reclamación (2025 vs 2026)',
+                        description: 'Distribución por concepto de cotización'
                       })}
                     >
                       <Maximize2 className="h-4 w-4" />
                     </Button>
                   </CardHeader>
                   <CardContent className="h-[280px]">
-                    {renderTipoServicioCantidadChart(false)}
+                    {renderClaimsTypeChart(false)}
                   </CardContent>
                 </Card>
               </motion.div>
+            </div>
 
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }}>
+            {/* Row 5: Tipo de Servicio (Monto) | Tipo de Servicio (Cantidad) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.45 }}>
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
@@ -1239,44 +1243,44 @@ export default function ComparativoPage() {
                   </CardContent>
                 </Card>
               </motion.div>
-            </div>
 
-            {/* Row 6: Culpabilidad | Serie */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.55 }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.5 }}>
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
-                        {filterCulpabilidad && (
+                        <CardTitle className="text-sm font-bold text-foreground">Tipo de Servicio (Cantidad)</CardTitle>
+                        {filterTipoServicio && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                            Filtro: {filterCulpabilidad}
+                            Filtro: {filterTipoServicio}
                           </span>
                         )}
                       </div>
-                      <CardDescription>Comparativa del nivel de responsabilidad</CardDescription>
+                      <CardDescription>Casos por tipo de servicio contratado</CardDescription>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                       onClick={() => setExpandedChart({
-                        id: 'culpabilidad',
-                        title: 'Siniestros por Culpabilidad (2025 vs 2026)',
-                        description: 'Comparativa de culpabilidad e imputación de siniestros'
+                        id: 'tipo-servicio-cant',
+                        title: 'Tipo de Servicio (Cantidad) — 2025 vs 2026',
+                        description: 'Casos por tipo de servicio contratado'
                       })}
                     >
                       <Maximize2 className="h-4 w-4" />
                     </Button>
                   </CardHeader>
-                  <CardContent className="h-[260px]">
-                    {renderCulpabilidadChart(false)}
+                  <CardContent className="h-[280px]">
+                    {renderTipoServicioCantidadChart(false)}
                   </CardContent>
                 </Card>
               </motion.div>
+            </div>
 
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.6 }}>
+            {/* Row 6: Serie | Culpabilidad */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.55 }}>
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
@@ -1305,6 +1309,39 @@ export default function ComparativoPage() {
                   </CardHeader>
                   <CardContent className="h-[260px]">
                     {renderSeriesChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.6 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
+                        {filterCulpabilidad && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterCulpabilidad}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Comparativa del nivel de responsabilidad</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'culpabilidad',
+                        title: 'Siniestros por Culpabilidad (2025 vs 2026)',
+                        description: 'Comparativa de culpabilidad e imputación de siniestros'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[260px]">
+                    {renderCulpabilidadChart(false)}
                   </CardContent>
                 </Card>
               </motion.div>

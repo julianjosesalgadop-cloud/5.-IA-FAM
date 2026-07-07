@@ -144,6 +144,7 @@ export function ExpedientesList() {
         'Causa Raíz': e.causa_raiz || '',
         'Fecha Comité': e.fecha_comite || '',
         'Estado': e.estado,
+        'Observación de Rechazo': e.observacion_rechazo || '',
         'Creado el': formatDate(e.created_at),
       }));
 
@@ -228,7 +229,7 @@ export function ExpedientesList() {
         e.numero_interno ? `${e.numero_interno} (${e.placa})` : e.placa,
         e.tipo_reclamacion,
         formatCOP(e.valor_final_aprobado),
-        e.estado,
+        e.estado === 'Rechazado' && e.observacion_rechazo ? `Rechazado (${e.observacion_rechazo})` : e.estado,
         e.propietario || '—',
         e.nombre_conductor || '—',
         e.culpabilidad || '—',
@@ -674,9 +675,16 @@ export function ExpedientesList() {
                       {formatCOP(exp.valor_final_aprobado)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getEstadoBadgeColor(exp.estado || '')}`}>
-                        {exp.estado}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium w-fit ${getEstadoBadgeColor(exp.estado || '')}`}>
+                          {exp.estado}
+                        </span>
+                        {exp.estado === 'Rechazado' && exp.observacion_rechazo && (
+                          <span className="text-[10px] text-red-500 mt-1 max-w-[150px] truncate" title={exp.observacion_rechazo}>
+                            {exp.observacion_rechazo}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 max-w-[180px] truncate text-foreground">
                       {exp.propietario}
