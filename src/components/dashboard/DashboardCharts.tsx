@@ -4816,13 +4816,66 @@ export function DashboardCharts({
                 ref={modalContentRef}
                 className="p-6 flex-1 flex items-center justify-center bg-card min-h-0 w-full"
               >
-                {expandedChart.id === 'estado-expedientes' ? (
-                  <div className="w-full max-w-2xl overflow-y-auto max-h-full">
-                    {renderEstadoExpedientes(true)}
-                  </div>
-                ) : (
-                  expandedChart.render(contentHeight)
-                )}
+                {(() => {
+                  switch (expandedChart.id) {
+                    case 'estado-expedientes':
+                      return (
+                        <div className="w-full max-w-2xl overflow-y-auto max-h-full">
+                          {renderEstadoExpedientes(true)}
+                        </div>
+                      );
+                    case 'expedientes-mes':
+                      return renderExpedientesPorMes(contentHeight);
+                    case 'culpabilidad':
+                      return renderCulpabilidad(contentHeight);
+                    case 'gastos-tipo-reclamacion':
+                      return renderGastosTipoReclamacion(contentHeight);
+                    case 'tipo-reclamacion':
+                      return renderTipoReclamacion(contentHeight);
+                    case 'detalle-gastos-tipo-reclamacion':
+                      return renderDetalleGastosTipoReclamacion(contentHeight, true);
+                    case 'detalle-tipo-reclamacion':
+                      return renderDetalleTipoReclamacion(contentHeight, true);
+                    case 'monto-aprobado':
+                      return renderMontoAprobado(contentHeight);
+                    case 'gestion-costos':
+                      return renderGestionCostos(contentHeight);
+                    case 'costos-ahorrados':
+                      return renderCostosAhorrados(contentHeight);
+                    case 'ingresos-proveedor':
+                      return renderIngresosProveedor(contentHeight);
+                    case 'servicios-proveedor':
+                      return renderServiciosProveedor(contentHeight);
+                    case 'tipo-servicio-monto':
+                      return renderTipoServicioMonto(contentHeight);
+                    case 'tipo-servicio-cantidad':
+                      return renderTipoServicioCantidad(contentHeight);
+                    case 'causas-raiz':
+                      return renderCausasRaiz(contentHeight);
+                    case 'serie-vehiculos':
+                      return renderVehiculosInterno(contentHeight);
+                    case 'afectacion-propietario':
+                      return renderAfectacionPropietario(contentHeight);
+                    case 'afectacion-conductor':
+                      return renderAfectacionConductor(contentHeight);
+                    case 'top-conductores':
+                      return renderTopConductores(contentHeight);
+                    case 'afectacion-vehiculo':
+                      return renderAfectacionVehiculo(contentHeight);
+                    case 'top-vehiculos':
+                      return renderTopPlacas(contentHeight);
+                    case 'ruta-monto':
+                      return renderRoutesMonto(contentHeight);
+                    case 'ruta-cantidad':
+                      return renderRoutesCant(contentHeight);
+                    case 'actas-monto':
+                      return renderActasMonto(contentHeight);
+                    case 'actas-cantidad':
+                      return renderActasCantidad(contentHeight);
+                    default:
+                      return expandedChart.render(contentHeight);
+                  }
+                })()}
               </div>
             </motion.div>
           </div>

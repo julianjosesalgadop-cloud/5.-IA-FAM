@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Download, FileText, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, FolderOpen, DollarSign, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Download, FileText, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, FolderOpen, DollarSign, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +59,8 @@ export function ExpedientesList() {
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [presetRange, setPresetRange] = useState('este-anio');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   useEffect(() => {
     const today = new Date();
@@ -350,6 +352,15 @@ export function ExpedientesList() {
     return sorted.reduce((sum, exp) => sum + (exp.valor_final_aprobado || 0), 0);
   }, [sorted]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, estadoFilter, tipoFilter, customTipoFilter, fechaInicio, fechaFin, sortField, sortOrder]);
+
+  const paginatedExpedientes = React.useMemo(() => {
+    return sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [sorted, currentPage]);
+
   return (
     <div className="space-y-5">
       {/* Actions Bar */}
@@ -631,7 +642,7 @@ export function ExpedientesList() {
                       Cargando expedientes...
                     </td>
                   </tr>
-                ) : sorted.map((exp, i) => (
+                ) : paginatedExpedientes.map((exp, i) => (
                   <motion.tr
                     key={exp.id}
                     initial={{ opacity: 0, y: 4 }}
@@ -708,6 +719,61 @@ export function ExpedientesList() {
             </div>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {!loading && sorted.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border bg-secondary/5 text-xs">
+            <span className="text-muted-foreground font-medium">
+              Mostrando <span className="font-semibold text-foreground">{Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, sorted.length)}</span> a{' '}
+              <span className="font-semibold text-foreground">{Math.min(currentPage * ITEMS_PER_PAGE, sorted.length)}</span> de{' '}
+              <span className="font-semibold text-foreground">{sorted.length}</span> expedientes
+            </span>
+            
+            {Math.ceil(sorted.length / ITEMS_PER_PAGE) > 1 && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg border-border hover:bg-secondary/80 text-foreground"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {Array.from({ length: Math.ceil(sorted.length / ITEMS_PER_PAGE) }).map((_, idx) => {
+                  const pageNum = idx + 1;
+                  const isPageActive = currentPage === pageNum;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={isPageActive ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 min-w-[32px] px-2 rounded-lg font-semibold transition-all ${
+                        isPageActive
+                          ? 'bg-primary text-white shadow-sm hover:bg-primary/95'
+                          : 'border-border hover:bg-secondary/80 text-foreground'
+                      }`}
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg border-border hover:bg-secondary/80 text-foreground"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(sorted.length / ITEMS_PER_PAGE)))}
+                  disabled={currentPage === Math.ceil(sorted.length / ITEMS_PER_PAGE)}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );
