@@ -361,6 +361,42 @@ export function ExpedientesList() {
     return sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   }, [sorted, currentPage]);
 
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+
+  const getPaginationRange = (current: number, total: number) => {
+    const maxPagesToShow = 5;
+    if (total <= maxPagesToShow) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    const range: (number | string)[] = [];
+    range.push(1);
+
+    let start = Math.max(2, current - 1);
+    let end = Math.min(total - 1, current + 1);
+
+    if (current <= 3) {
+      end = 4;
+    } else if (current >= total - 2) {
+      start = total - 3;
+    }
+
+    if (start > 2) {
+      range.push('...');
+    }
+
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+
+    if (end < total - 1) {
+      range.push('...');
+    }
+
+    range.push(total);
+    return range;
+  };
+
   return (
     <div className="space-y-5">
       {/* Actions Bar */}
@@ -729,8 +765,8 @@ export function ExpedientesList() {
               <span className="font-semibold text-foreground">{sorted.length}</span> expedientes
             </span>
             
-            {Math.ceil(sorted.length / ITEMS_PER_PAGE) > 1 && (
-              <div className="flex items-center gap-1.5">
+            {totalPages > 1 && (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-full sm:max-w-md md:max-w-lg lg:max-w-none">
                 <Button
                   variant="outline"
                   size="icon"
@@ -741,8 +777,18 @@ export function ExpedientesList() {
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
 
-                {Array.from({ length: Math.ceil(sorted.length / ITEMS_PER_PAGE) }).map((_, idx) => {
-                  const pageNum = idx + 1;
+                {getPaginationRange(currentPage, totalPages).map((pageNum, idx) => {
+                  if (pageNum === '...') {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="h-8 w-8 flex items-center justify-center text-muted-foreground select-none font-semibold"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+
                   const isPageActive = currentPage === pageNum;
                   return (
                     <Button
@@ -754,7 +800,7 @@ export function ExpedientesList() {
                           ? 'bg-primary text-white shadow-sm hover:bg-primary/95'
                           : 'border-border hover:bg-secondary/80 text-foreground'
                       }`}
-                      onClick={() => setCurrentPage(pageNum)}
+                      onClick={() => setCurrentPage(Number(pageNum))}
                     >
                       {pageNum}
                     </Button>
@@ -765,8 +811,8 @@ export function ExpedientesList() {
                   variant="outline"
                   size="icon"
                   className="h-8 w-8 rounded-lg border-border hover:bg-secondary/80 text-foreground"
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(sorted.length / ITEMS_PER_PAGE)))}
-                  disabled={currentPage === Math.ceil(sorted.length / ITEMS_PER_PAGE)}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
