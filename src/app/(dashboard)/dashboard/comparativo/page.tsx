@@ -1528,10 +1528,32 @@ export default function ComparativoPage() {
               {filterReclamacion && (
                 <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
                   <div className="min-w-0">
-                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo Reclamación</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Concepto de Reclamación</p>
                     <p className="text-xs font-bold text-foreground truncate">{filterReclamacion}</p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => setFilterReclamacion('')} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {filterTipoReclamacion.length > 0 && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Tipo de Reclamación</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterTipoReclamacion.join(', ')}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFilterTipoReclamacion([])} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {filterEstado.length > 0 && (
+                <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 rounded-lg border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase">Estado de Expediente</p>
+                    <p className="text-xs font-bold text-foreground truncate">{filterEstado.join(', ')}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setFilterEstado([])} className="h-5 w-5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-0">
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
