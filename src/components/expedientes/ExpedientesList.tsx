@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Download, FileText, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, FolderOpen, DollarSign, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -62,7 +62,76 @@ export function ExpedientesList() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
+  const isLoadedRef = useRef(false);
+  const isRestoringRef = useRef(true);
+
+  // Load from sessionStorage on mount
   useEffect(() => {
+    try {
+      const savedSearch = sessionStorage.getItem('exp_search');
+      const savedEstado = sessionStorage.getItem('exp_estadoFilter');
+      const savedTipo = sessionStorage.getItem('exp_tipoFilter');
+      const savedCustomTipo = sessionStorage.getItem('exp_customTipoFilter');
+      const savedSortField = sessionStorage.getItem('exp_sortField');
+      const savedSortOrder = sessionStorage.getItem('exp_sortOrder');
+      const savedFechaInicio = sessionStorage.getItem('exp_fechaInicio');
+      const savedFechaFin = sessionStorage.getItem('exp_fechaFin');
+      const savedPresetRange = sessionStorage.getItem('exp_presetRange');
+      const savedPage = sessionStorage.getItem('exp_currentPage');
+
+      if (savedSearch !== null) setSearch(savedSearch);
+      if (savedEstado !== null) setEstadoFilter(savedEstado);
+      if (savedTipo !== null) setTipoFilter(savedTipo);
+      if (savedCustomTipo !== null) setCustomTipoFilter(savedCustomTipo);
+      if (savedSortField !== null) setSortField(savedSortField);
+      if (savedSortOrder !== null) setSortOrder(savedSortOrder as 'asc' | 'desc');
+      
+      if (savedPresetRange !== null) {
+        setPresetRange(savedPresetRange);
+      }
+      
+      if (savedFechaInicio !== null) {
+        setFechaInicio(savedFechaInicio);
+      } else if (savedPresetRange === null) {
+        const today = new Date();
+        const start = new Date(today.getFullYear(), 0, 1);
+        setFechaInicio(start.toISOString().split('T')[0]);
+        setFechaFin(today.toISOString().split('T')[0]);
+      }
+      
+      if (savedFechaFin !== null) setFechaFin(savedFechaFin);
+      if (savedPage !== null) setCurrentPage(Number(savedPage));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTimeout(() => {
+        isRestoringRef.current = false;
+        isLoadedRef.current = true;
+      }, 100);
+    }
+  }, []);
+
+  // Save to sessionStorage when filters change
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    try {
+      sessionStorage.setItem('exp_search', search);
+      sessionStorage.setItem('exp_estadoFilter', estadoFilter);
+      sessionStorage.setItem('exp_tipoFilter', tipoFilter);
+      sessionStorage.setItem('exp_customTipoFilter', customTipoFilter);
+      sessionStorage.setItem('exp_sortField', sortField);
+      sessionStorage.setItem('exp_sortOrder', sortOrder);
+      sessionStorage.setItem('exp_fechaInicio', fechaInicio);
+      sessionStorage.setItem('exp_fechaFin', fechaFin);
+      sessionStorage.setItem('exp_presetRange', presetRange);
+      sessionStorage.setItem('exp_currentPage', String(currentPage));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [search, estadoFilter, tipoFilter, customTipoFilter, sortField, sortOrder, fechaInicio, fechaFin, presetRange, currentPage]);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
     const today = new Date();
     if (presetRange === 'este-mes') {
       const start = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -354,6 +423,7 @@ export function ExpedientesList() {
 
   // Reset page when filters change
   useEffect(() => {
+    if (isRestoringRef.current) return;
     setCurrentPage(1);
   }, [search, estadoFilter, tipoFilter, customTipoFilter, fechaInicio, fechaFin, sortField, sortOrder]);
 
