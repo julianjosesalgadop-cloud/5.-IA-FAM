@@ -1042,7 +1042,7 @@ export function ExpedienteForm({
                       {propietariosFields.map((fieldItem, idx) => (
                         <div key={fieldItem.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end p-4 rounded-xl border border-border bg-card shadow-sm relative">
                           <div className="sm:col-span-5 space-y-1.5">
-                            <Label className="text-xs text-muted-foreground font-semibold">Nombre Completo / Razón Social (Solo primer nombre y primer apellido) *</Label>
+                            <Label className="text-xs text-muted-foreground font-semibold">Nombre y Apellido / Razón Social (Solo primer nombre y primer apellido) *</Label>
                             <Input
                               placeholder="Ej: JUAN PEREZ (solo primer nombre y primer apellido)"
                               {...register(`propietarios.${idx}.nombre` as const)}
