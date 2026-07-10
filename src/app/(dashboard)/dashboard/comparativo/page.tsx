@@ -14,12 +14,14 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Maximize2,
+  Minimize2,
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import {
   ResponsiveContainer,
   BarChart,
@@ -51,6 +53,20 @@ export default function ComparativoPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4, 5]);
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
+  
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    const nextVal = !sidebarCollapsed;
+    setSidebarCollapsed(nextVal);
+    window.dispatchEvent(new CustomEvent('set-sidebar-collapsed', { detail: nextVal }));
+  };
+
+  useEffect(() => {
+    return () => {
+      window.dispatchEvent(new CustomEvent('set-sidebar-collapsed', { detail: false }));
+    };
+  }, []);
 
   // Dynamic filter state variables (similar to Dashboard)
   const [filterReclamacion, setFilterReclamacion] = useState('');
@@ -58,6 +74,8 @@ export default function ComparativoPage() {
   const [filterSerie, setFilterSerie] = useState('');
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
   const [filterTipoServicio, setFilterTipoServicio] = useState('');
+  const [filterTipoReclamacion, setFilterTipoReclamacion] = useState<string[]>([]);
+  const [filterEstado, setFilterEstado] = useState<string[]>([]);
 
   const loadData = async () => {
     setLoading(true);
@@ -138,6 +156,14 @@ export default function ComparativoPage() {
       const serie = getInternalNumberCategory(e.numero_interno);
       const tipoServ = e.tipo_servicio || 'No especificado';
 
+      // 1. Standard toolbar filters
+      if (filterTipoReclamacion.length > 0) {
+        if (!filterTipoReclamacion.includes(e.tipo_reclamacion || 'Otro')) return false;
+      }
+      if (filterEstado.length > 0) {
+        if (!filterEstado.includes(e.estado)) return false;
+      }
+
       if (filterReclamacion) {
         if (!e.cotizaciones || e.cotizaciones.length === 0) {
           const name = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
@@ -162,7 +188,7 @@ export default function ComparativoPage() {
 
       return true;
     });
-  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterMonth, filterTipoServicio]);
+  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterMonth, filterTipoServicio, filterTipoReclamacion, filterEstado]);
 
   // Process data for monthly charts based on dynamic filters
   const { 
@@ -818,13 +844,45 @@ export default function ComparativoPage() {
     );
   };
 
-  const hasActiveFilters = filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null || filterTipoServicio;
+  const hasActiveFilters = filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null || filterTipoServicio || filterTipoReclamacion.length > 0 || filterEstado.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header 
         title="Comparativo de Gestión" 
         subtitle="SIGFAM — Análisis comparativo de siniestralidad, costos y gestión 2025 vs 2026" 
+        action={
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadData} 
+              disabled={loading} 
+              className="h-9 px-2.5 sm:px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSidebar}
+              className="hidden md:flex text-xs h-9 py-1 px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
+            >
+              {sidebarCollapsed ? (
+                <>
+                  <Minimize2 className="w-4 h-4 mr-2" />
+                  Salir Pantalla Completa
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  Pantalla Completa
+                </>
+              )}
+            </Button>
+          </div>
+        }
       />
 
       <div className="flex-1 p-6 overflow-auto space-y-6">
@@ -883,6 +941,58 @@ export default function ComparativoPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Dynamic Filters Toolbar */}
+        <div className="bg-card border border-border p-4 rounded-xl shadow-sm flex flex-col md:flex-row flex-wrap items-stretch md:items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <MultiSelect
+              label="Tipo de Reclamación"
+              options={[
+                { label: 'Siniestro', value: 'Siniestro' },
+                { label: 'Vidrios', value: 'Vidrios' },
+                { label: 'Carrocería', value: 'Carrocería' },
+                { label: 'Repuestos', value: 'Repuestos' },
+                { label: 'Pérdida parcial', value: 'Pérdida parcial' },
+                { label: 'Otro', value: 'Otro' }
+              ]}
+              selectedValues={filterTipoReclamacion}
+              onChange={setFilterTipoReclamacion}
+              placeholder="Todos los tipos"
+            />
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <MultiSelect
+              label="Estado de Expediente"
+              options={[
+                { label: 'Pendiente', value: 'Pendiente' },
+                { label: 'Revisado', value: 'Revisado' },
+                { label: 'Aprobado', value: 'Aprobado' },
+                { label: 'Rechazado', value: 'Rechazado' }
+              ]}
+              selectedValues={filterEstado}
+              onChange={setFilterEstado}
+              placeholder="Todos los estados"
+            />
+          </div>
+          {(filterTipoReclamacion.length > 0 || filterEstado.length > 0 || hasActiveFilters) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterTipoReclamacion([]);
+                setFilterEstado([]);
+                setFilterReclamacion('');
+                setFilterCulpabilidad('');
+                setFilterSerie('');
+                setFilterMonth(null);
+                setFilterTipoServicio('');
+              }}
+              className="text-xs text-red-400 hover:text-red-500 h-10 px-3 shrink-0"
+            >
+              Limpiar Filtros
+            </Button>
+          )}
         </div>
 
         {selectedMonths.length === 0 ? (
@@ -1072,42 +1182,8 @@ export default function ComparativoPage() {
               </Card>
             </motion.div>
 
-            {/* Row 2: Gasto Acumulado YTD — full width */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.25 }}>
-              <Card className="bg-card border-border shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm font-bold text-foreground">Gastos por Tipo de Reclamo — Curva YTD (2025 vs 2026)</CardTitle>
-                      {filterMonth !== null && (
-                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                          Filtro: {MONTHS_NAMES[filterMonth]}
-                        </span>
-                      )}
-                    </div>
-                    <CardDescription>Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado</CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
-                    onClick={() => setExpandedChart({
-                      id: 'cum-spend',
-                      title: 'Gastos por Tipo de Reclamo — Curva YTD (2025 vs 2026)',
-                      description: 'Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado'
-                    })}
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="h-[320px]">
-                  {renderCumSpendChart(false)}
-                </CardContent>
-              </Card>
-            </motion.div>
-
             {/* Row 3: Monto Aprobado Mensual — full width */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.25 }}>
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex flex-col gap-1">
@@ -1136,6 +1212,40 @@ export default function ComparativoPage() {
                 </CardHeader>
                 <CardContent className="h-[300px]">
                   {renderAmountMonthlyChart(false)}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Row 2: Gasto Acumulado YTD — full width */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.3 }}>
+              <Card className="bg-card border-border shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Gastos por Tipo de Reclamo — Curva YTD (2025 vs 2026)</CardTitle>
+                      {filterMonth !== null && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {MONTHS_NAMES[filterMonth]}
+                        </span>
+                      )}
+                    </div>
+                    <CardDescription>Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    onClick={() => setExpandedChart({
+                      id: 'cum-spend',
+                      title: 'Gastos por Tipo de Reclamo — Curva YTD (2025 vs 2026)',
+                      description: 'Visualiza la velocidad de ejecución y acumulación del costo de auxilio aprobado'
+                    })}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="h-[320px]">
+                  {renderCumSpendChart(false)}
                 </CardContent>
               </Card>
             </motion.div>
@@ -1394,6 +1504,8 @@ export default function ComparativoPage() {
                   setFilterSerie('');
                   setFilterMonth(null);
                   setFilterTipoServicio('');
+                  setFilterTipoReclamacion([]);
+                  setFilterEstado([]);
                 }}
                 className="text-[10px] text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-semibold p-0 h-auto"
               >

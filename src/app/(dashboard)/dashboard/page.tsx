@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
@@ -9,6 +9,7 @@ import { RefreshCw, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 
 export default function DashboardPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [presetRange, setPresetRange] = useState('este-anio');
+  const [estadoFilter, setEstadoFilter] = useState<string[]>(['Pendiente', 'Aprobado']);
   const [tipoReclamacion, setTipoReclamacion] = useState('todos');
   const [customTipoFilter, setCustomTipoFilter] = useState('');
   const [placaSearch, setPlacaSearch] = useState('');
@@ -159,6 +161,11 @@ export default function DashboardPage() {
       const matchPlaca = e.placa?.toLowerCase().includes(placaSearch.toLowerCase());
       const matchInterno = e.numero_interno?.toLowerCase().includes(placaSearch.toLowerCase());
       if (!matchPlaca && !matchInterno) return false;
+    }
+
+    // Status Filter (multi-select)
+    if (estadoFilter.length > 0) {
+      if (!estadoFilter.includes(e.estado)) return false;
     }
 
     // Chart-based interactive filters
@@ -297,6 +304,8 @@ export default function DashboardPage() {
     return true;
   });
 
+  const isDefaultEstado = estadoFilter.length === 2 && estadoFilter.includes('Pendiente') && estadoFilter.includes('Aprobado');
+
   return (
     <>
       <Header 
@@ -409,6 +418,21 @@ export default function DashboardPage() {
             </div>
           )}
 
+          <div className="w-full sm:flex-1 sm:min-w-[160px]">
+            <MultiSelect
+              label="Estado"
+              options={[
+                { label: 'Pendiente', value: 'Pendiente' },
+                { label: 'Revisado', value: 'Revisado' },
+                { label: 'Aprobado', value: 'Aprobado' },
+                { label: 'Rechazado', value: 'Rechazado' }
+              ]}
+              selectedValues={estadoFilter}
+              onChange={setEstadoFilter}
+              placeholder="Todos los estados"
+            />
+          </div>
+
           <div className="w-full sm:flex-1 sm:min-w-[140px] space-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground">Buscar por Placa / Interno</span>
             <input
@@ -421,7 +445,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || customTipoFilter || placaSearch || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || selectedChartProveedor || selectedChartTipoServicio) && (
+          {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || customTipoFilter || placaSearch || !isDefaultEstado || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || selectedChartProveedor || selectedChartTipoServicio) && (
             <Button
               variant="ghost"
               size="sm"
@@ -432,6 +456,7 @@ export default function DashboardPage() {
                 setTipoReclamacion('todos');
                 setCustomTipoFilter('');
                 setPlacaSearch('');
+                setEstadoFilter(['Pendiente', 'Aprobado']);
                 setSelectedChartPlaca('');
                 setSelectedChartConductor('');
                 setSelectedChartProprietario('');
