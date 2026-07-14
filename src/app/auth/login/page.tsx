@@ -211,6 +211,10 @@ export default function LoginPage() {
             Sistema de uso exclusivo para personal autorizado de{' '}
             <span className="text-foreground font-medium">Flota Sugamuxi S.A.</span>
           </p>
+
+          <div className="text-center text-xs text-muted-foreground/80 mt-6 pt-4 border-t border-border/50 font-semibold">
+            Desarrollado Por Julián Salgado | Flota Sugamuxi S.A.
+          </div>
         </CardContent>
       </Card>
     </motion.div>
