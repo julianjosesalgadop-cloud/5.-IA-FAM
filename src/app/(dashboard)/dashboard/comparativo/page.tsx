@@ -995,7 +995,12 @@ export default function ComparativoPage() {
           )}
         </div>
 
-        {selectedMonths.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center min-h-[40vh] text-muted-foreground">
+            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+            <p>Calculando estadísticas en tiempo real...</p>
+          </div>
+        ) : selectedMonths.length === 0 ? (
           <div className="py-24 text-center glass border border-border rounded-xl">
             <Info className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground font-semibold">Selecciona al menos un mes en el filtro de arriba para visualizar las gráficas y KPIs.</p>

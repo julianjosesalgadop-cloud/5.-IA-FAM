@@ -500,7 +500,7 @@ export default function ExpedienteDetailPage() {
         doc.setFontSize(10);
         doc.setFont('Helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.201-1', 36, 21);
+        doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.075-8', 36, 21);
         doc.text('Reporte Oficial de Expediente de Reclamación', 36, 26);
 
         // Orange line separator

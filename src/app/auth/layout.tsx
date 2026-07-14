@@ -11,6 +11,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       
       <div className="relative z-10 w-full max-w-md px-4">
         {children}
+        <div className="text-center text-xs text-muted-foreground/50 mt-6 font-medium">
+          Desarrollado Por Julián Salgado | Flota Sugamuxi S.A.
+        </div>
       </div>
     </div>
   );
