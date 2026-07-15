@@ -119,11 +119,17 @@ export function ReportesView() {
     valorMinFilter, valorMaxFilter, actaFilter
   ]);
 
+  const [profiles, setProfiles] = useState<any[]>([]);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await dbService.getExpedientes();
+      const [data, users] = await Promise.all([
+        dbService.getExpedientes(),
+        dbService.getPerfiles()
+      ]);
       setExpedientes(data);
+      setProfiles(users);
     } catch (err) {
       console.error(err);
       toast.error('Error al cargar datos para reportes');
@@ -287,66 +293,79 @@ export function ReportesView() {
     }
 
     try {
-      const wsData = filtered.map((e) => ({
-        'No. Expediente': e.numero_expediente,
-        'Fecha Incidente': e.fecha_incidente,
-        'No. Interno': e.numero_interno || '',
-        'Placa': e.placa,
-        'Tipo de Servicio': e.tipo_servicio || '',
-        'Propietario': e.propietario,
-        'Tipo Reclamación': e.tipo_reclamacion,
-        'Ciudad Origen': e.ciudad_origen || '',
-        'Ciudad Destino': e.ciudad_destino || '',
-        'Concepto': (() => {
-          if (e.cotizaciones && e.cotizaciones.length > 0) {
-            const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
-            const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
-            const concepts = activeCots
-              .map((c) => {
-                if (!c) return '';
-                let name = (c.concepto || '').trim();
-                if (name.toUpperCase() === 'OTROS' && c.concepto_otro) {
-                  name = c.concepto_otro.trim();
-                }
-                return name;
-              })
-              .filter(Boolean);
-            if (concepts.length > 0) {
-              return concepts.join(', ');
+      const wsData = filtered.map((e) => {
+        const creator = (() => {
+          if (!e.created_by) return { name: '—', email: '—' };
+          const p = profiles.find((u) => u.id === e.created_by);
+          return {
+            name: p ? (p.nombre || '—') : '—',
+            email: p ? (p.email || '—') : '—',
+          };
+        })();
+
+        return {
+          'No. Expediente': e.numero_expediente,
+          'Fecha Incidente': e.fecha_incidente,
+          'No. Interno': e.numero_interno || '',
+          'Placa': e.placa,
+          'Tipo de Servicio': e.tipo_servicio || '',
+          'Propietario': e.propietario,
+          'Tipo Reclamación': e.tipo_reclamacion,
+          'Ciudad Origen': e.ciudad_origen || '',
+          'Ciudad Destino': e.ciudad_destino || '',
+          'Concepto': (() => {
+            if (e.cotizaciones && e.cotizaciones.length > 0) {
+              const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
+              const activeCots = selectedCots.length > 0 ? selectedCots : [e.cotizaciones[0]];
+              const concepts = activeCots
+                .map((c) => {
+                  if (!c) return '';
+                  let name = (c.concepto || '').trim();
+                  if (name.toUpperCase() === 'OTROS' && c.concepto_otro) {
+                    name = c.concepto_otro.trim();
+                  }
+                  return name;
+                })
+                .filter(Boolean);
+              if (concepts.length > 0) {
+                return concepts.join(', ');
+              }
             }
-          }
-          return e.concepto || '';
-        })(),
-        'Valor Cotización': e.valor_cotizacion || 0,
-        'Valor Negociado': e.valor_negociado || 0,
-        'Deducible %': e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '0%',
-        'Valor Deducible': e.valor_deducible || 0,
-        'Valor a Pagar': e.valor_a_pagar || 0,
-        'Valor Salvamento': e.valor_salvamento || 0,
-        'Valor Aprobado': e.valor_final_aprobado || 0,
-        'Conductor': e.nombre_conductor || '',
-        'Cédula Conductor': e.id_conductor || '',
-        'Celular Conductor': e.celular_conductor || '',
-        'Culpabilidad': e.culpabilidad || 'Sin definir',
-        'Descuento Conductor': e.valor_descuento_conductor || 0,
-        'Memorando Descuento': e.memorando_descuento || '',
-        'Recobro Vehículo': e.valor_recobro_vehiculo || 0,
-        'Recobro Vehículo %': e.porcentaje_recobro_vehiculo ? `${e.porcentaje_recobro_vehiculo}%` : '0%',
-        'Recobro Abogado': e.valor_recobro_abogado || 0,
-        'Recobro Abogado %': e.porcentaje_recobro_abogado ? `${e.porcentaje_recobro_abogado}%` : '0%',
-        'Recobro Empresa': e.valor_recobro_empresa || 0,
-        'Recobro Empresa %': e.porcentaje_recobro_empresa ? `${e.porcentaje_recobro_empresa}%` : '0%',
-        'Fecha Comité': e.fecha_comite || '',
-        'Número Acta': e.numero_acta || '',
-        'Causa Raíz': e.causa_raiz || '',
-        'Observaciones Comité': e.observaciones_comite || '',
-        'Autorizado Por': e.autorizado_por || '',
-        'Cargo': e.cargo_autorizador || '',
-        'Fecha Autorización': e.fecha_autorizacion || '',
-        'Memorando Pago': e.memorando_pago_nombre || '',
-        'Estado': e.estado,
-        'Observación de Rechazo': e.observacion_rechazo || '',
-      }));
+            return e.concepto || '';
+          })(),
+          'Valor Cotización': e.valor_cotizacion || 0,
+          'Valor Negociado': e.valor_negociado || 0,
+          'Deducible %': e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '0%',
+          'Valor Deducible': e.valor_deducible || 0,
+          'Valor a Pagar': e.valor_a_pagar || 0,
+          'Valor Salvamento': e.valor_salvamento || 0,
+          'Valor Aprobado': e.valor_final_aprobado || 0,
+          'Conductor': e.nombre_conductor || '',
+          'Cédula Conductor': e.id_conductor || '',
+          'Celular Conductor': e.celular_conductor || '',
+          'Culpabilidad': e.culpabilidad || 'Sin definir',
+          'Descuento Conductor': e.valor_descuento_conductor || 0,
+          'Memorando Descuento': e.memorando_descuento || '',
+          'Recobro Vehículo': e.valor_recobro_vehiculo || 0,
+          'Recobro Vehículo %': e.porcentaje_recobro_vehiculo ? `${e.porcentaje_recobro_vehiculo}%` : '0%',
+          'Recobro Abogado': e.valor_recobro_abogado || 0,
+          'Recobro Abogado %': e.porcentaje_recobro_abogado ? `${e.porcentaje_recobro_abogado}%` : '0%',
+          'Recobro Empresa': e.valor_recobro_empresa || 0,
+          'Recobro Empresa %': e.porcentaje_recobro_empresa ? `${e.porcentaje_recobro_empresa}%` : '0%',
+          'Fecha Comité': e.fecha_comite || '',
+          'Número Acta': e.numero_acta || '',
+          'Causa Raíz': e.causa_raiz || '',
+          'Observaciones Comité': e.observaciones_comite || '',
+          'Autorizado Por': e.autorizado_por || '',
+          'Cargo': e.cargo_autorizador || '',
+          'Fecha Autorización': e.fecha_autorizacion || '',
+          'Memorando Pago': e.memorando_pago_nombre || '',
+          'Estado': e.estado,
+          'Observación de Rechazo': e.observacion_rechazo || '',
+          'Usuario que registró': creator.name,
+          'Correo del usuario que registró': creator.email,
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();

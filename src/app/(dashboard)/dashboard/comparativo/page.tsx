@@ -845,6 +845,37 @@ export default function ComparativoPage() {
     );
   };
 
+  const renderSeriesCasesChart = (isMaximized = false) => {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={seriesData.slice(0, 5)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterSerie(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={65} tickLine={false} />
+          <Tooltip content={<CustomCountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="cases2026" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
   const hasActiveFilters = filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null || filterTipoServicio || filterTipoReclamacion.length > 0 || filterEstado.length > 0;
 
   return (
@@ -1394,7 +1425,7 @@ export default function ComparativoPage() {
               </motion.div>
             </div>
 
-            {/* Row 6: Serie | Culpabilidad */}
+            {/* Row 6: Serie (Costo) | Serie (Cantidad) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.55 }}>
                 <Card className="bg-card border-border shadow-sm h-full">
@@ -1434,34 +1465,68 @@ export default function ComparativoPage() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
-                        {filterCulpabilidad && (
+                        <CardTitle className="text-sm font-bold text-foreground">Cantidad por Serie de Vehículo</CardTitle>
+                        {filterSerie && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                            Filtro: {filterCulpabilidad}
+                            Filtro: {filterSerie}
                           </span>
                         )}
                       </div>
-                      <CardDescription>Comparativa del nivel de responsabilidad</CardDescription>
+                      <CardDescription>Comparativa del número de siniestros por series</CardDescription>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                       onClick={() => setExpandedChart({
-                        id: 'culpabilidad',
-                        title: 'Siniestros por Culpabilidad (2025 vs 2026)',
-                        description: 'Comparativa de culpabilidad e imputación de siniestros'
+                        id: 'series-cases',
+                        title: 'Cantidad por Serie de Vehículo (2025 vs 2026)',
+                        description: 'Comparativa de cantidad de siniestros según la serie del vehículo'
                       })}
                     >
                       <Maximize2 className="h-4 w-4" />
                     </Button>
                   </CardHeader>
                   <CardContent className="h-[260px]">
-                    {renderCulpabilidadChart(false)}
+                    {renderSeriesCasesChart(false)}
                   </CardContent>
                 </Card>
               </motion.div>
             </div>
+
+            {/* Row 7: Siniestros por Culpabilidad */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.65 }}>
+              <Card className="bg-card border-border shadow-sm w-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-foreground">Siniestros por Culpabilidad</CardTitle>
+                      {filterCulpabilidad && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {filterCulpabilidad}
+                        </span>
+                      )}
+                    </div>
+                    <CardDescription>Comparativa del nivel de responsabilidad en siniestros</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    onClick={() => setExpandedChart({
+                      id: 'culpabilidad',
+                      title: 'Siniestros por Culpabilidad (2025 vs 2026)',
+                      description: 'Comparativa de culpabilidad e imputación de siniestros'
+                    })}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="h-[280px]">
+                  {renderCulpabilidadChart(false)}
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Manager Insights Card */}
             <Card className="bg-white dark:bg-white border-2 border-primary/20 shadow-lg transition-all duration-200">
@@ -1489,6 +1554,161 @@ export default function ComparativoPage() {
       </div>
 
 
+
+      {/* Active Chart Filters Notification */}
+      <AnimatePresence>
+        {hasActiveFilters && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-24 right-6 z-50 w-72 bg-card/95 border border-border shadow-2xl rounded-xl p-3.5 overflow-hidden backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-border/60">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Filtros Activos</h4>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterReclamacion('');
+                  setFilterCulpabilidad('');
+                  setFilterSerie('');
+                  setFilterMonth(null);
+                  setFilterTipoServicio('');
+                  setFilterTipoReclamacion([]);
+                  setFilterEstado([]);
+                }}
+                className="text-[9px] text-red-400 hover:text-red-500 font-semibold p-0 h-auto"
+              >
+                Limpiar Todo
+              </Button>
+            </div>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {filterReclamacion && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Concepto / Reclamo</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">{filterReclamacion}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterReclamacion('')}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterCulpabilidad && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Culpabilidad</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">{filterCulpabilidad}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterCulpabilidad('')}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterSerie && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Serie Vehículo</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">{filterSerie}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterSerie('')}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterMonth !== null && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Mes Gráfico</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">
+                      {['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][filterMonth]}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterMonth(null)}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterTipoServicio && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Tipo Servicio</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">{filterTipoServicio}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterTipoServicio('')}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterTipoReclamacion.length > 0 && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Filtro Reclamación</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">
+                      {filterTipoReclamacion.join(', ')}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterTipoReclamacion([])}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0 ml-1 flex-shrink-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterEstado.length > 0 && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Filtro Estado</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">
+                      {filterEstado.join(', ')}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterEstado([])}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0 ml-1 flex-shrink-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Expanded Chart Modal */}
       <AnimatePresence>
@@ -1528,6 +1748,7 @@ export default function ComparativoPage() {
                   {expandedChart.id === 'tipo-servicio-monto' && renderTipoServicioMontoChart(true)}
                   {expandedChart.id === 'culpabilidad' && renderCulpabilidadChart(true)}
                   {expandedChart.id === 'series' && renderSeriesChart(true)}
+                  {expandedChart.id === 'series-cases' && renderSeriesCasesChart(true)}
                 </div>
               </div>
             </motion.div>

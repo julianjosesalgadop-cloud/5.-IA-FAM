@@ -161,11 +161,17 @@ export function ExpedientesList() {
     }
   };
 
+  const [profiles, setProfiles] = useState<any[]>([]);
+
   const fetchExpedientes = async () => {
     setLoading(true);
     try {
-      const data = await dbService.getExpedientes();
+      const [data, users] = await Promise.all([
+        dbService.getExpedientes(),
+        dbService.getPerfiles()
+      ]);
       setExpedientes(data);
+      setProfiles(users);
     } catch (error) {
       console.error(error);
       toast.error('Error al cargar los expedientes');
@@ -185,39 +191,52 @@ export function ExpedientesList() {
     }
 
     try {
-      const wsData = sorted.map((e) => ({
-        'No. Expediente': e.numero_expediente,
-        'Acta': e.numero_acta ? e.numero_acta.replace(/[^0-9]/g, '') : '',
-        'Fecha Incidente': e.fecha_incidente,
-        'Tipo Reclamación': e.tipo_reclamacion,
-        'Placa': e.placa,
-        'No. Interno': e.numero_interno || '',
-        'Propietario': e.propietario,
-        'Ciudad Origen': e.ciudad_origen || '',
-        'Ciudad Destino': e.ciudad_destino || '',
-        'Concepto': e.concepto || '',
-        'Valor Cotización': e.valor_cotizacion || 0,
-        'Valor Negociado': e.valor_negociado || 0,
-        'Deducible %': e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '0%',
-        'Valor Deducible': e.valor_deducible || 0,
-        'Valor a Pagar': e.valor_a_pagar || 0,
-        'Valor Salvamento': e.valor_salvamento || 0,
-        'Valor Aprobado': e.valor_final_aprobado || 0,
-        'Conductor': e.nombre_conductor || '',
-        'Cédula Conductor': e.id_conductor || '',
-        'Celular Conductor': e.celular_conductor || '',
-        'Culpabilidad': e.culpabilidad || 'Sin definir',
-        'Descuento Conductor': e.valor_descuento_conductor || 0,
-        'Memo Descuento': e.memorando_descuento || '',
-        'Recobro Vehículo': e.valor_recobro_vehiculo || 0,
-        'Recobro Abogado': e.valor_recobro_abogado || 0,
-        'Recobro Empresa': e.valor_recobro_empresa || 0,
-        'Causa Raíz': e.causa_raiz || '',
-        'Fecha Comité': e.fecha_comite || '',
-        'Estado': e.estado,
-        'Observación de Rechazo': e.observacion_rechazo || '',
-        'Creado el': formatDate(e.created_at),
-      }));
+      const wsData = sorted.map((e) => {
+        const creator = (() => {
+          if (!e.created_by) return { name: '—', email: '—' };
+          const p = profiles.find((u) => u.id === e.created_by);
+          return {
+            name: p ? (p.nombre || '—') : '—',
+            email: p ? (p.email || '—') : '—',
+          };
+        })();
+
+        return {
+          'No. Expediente': e.numero_expediente,
+          'Acta': e.numero_acta ? e.numero_acta.replace(/[^0-9]/g, '') : '',
+          'Fecha Incidente': e.fecha_incidente,
+          'Tipo Reclamación': e.tipo_reclamacion,
+          'Placa': e.placa,
+          'No. Interno': e.numero_interno || '',
+          'Propietario': e.propietario,
+          'Ciudad Origen': e.ciudad_origen || '',
+          'Ciudad Destino': e.ciudad_destino || '',
+          'Concepto': e.concepto || '',
+          'Valor Cotización': e.valor_cotizacion || 0,
+          'Valor Negociado': e.valor_negociado || 0,
+          'Deducible %': e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '0%',
+          'Valor Deducible': e.valor_deducible || 0,
+          'Valor a Pagar': e.valor_a_pagar || 0,
+          'Valor Salvamento': e.valor_salvamento || 0,
+          'Valor Aprobado': e.valor_final_aprobado || 0,
+          'Conductor': e.nombre_conductor || '',
+          'Cédula Conductor': e.id_conductor || '',
+          'Celular Conductor': e.celular_conductor || '',
+          'Culpabilidad': e.culpabilidad || 'Sin definir',
+          'Descuento Conductor': e.valor_descuento_conductor || 0,
+          'Memo Descuento': e.memorando_descuento || '',
+          'Recobro Vehículo': e.valor_recobro_vehiculo || 0,
+          'Recobro Abogado': e.valor_recobro_abogado || 0,
+          'Recobro Empresa': e.valor_recobro_empresa || 0,
+          'Causa Raíz': e.causa_raiz || '',
+          'Fecha Comité': e.fecha_comite || '',
+          'Estado': e.estado,
+          'Observación de Rechazo': e.observacion_rechazo || '',
+          'Creado el': formatDate(e.created_at),
+          'Usuario que registró': creator.name,
+          'Correo del usuario que registró': creator.email,
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
