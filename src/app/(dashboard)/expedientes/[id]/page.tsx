@@ -36,6 +36,7 @@ import { TIPOS_DOCUMENTO } from '@/lib/constants';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 type TabType = 'resumen' | 'financiero' | 'conductor' | 'comite' | 'documentos' | 'auditoria';
 
@@ -1412,6 +1413,7 @@ export default function ExpedienteDetailPage() {
           </div>
         )}
       </AnimatePresence>
+      <Footer />
     </div>
     </>
   );

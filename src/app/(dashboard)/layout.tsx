@@ -128,9 +128,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <main className="flex-1 flex flex-col min-w-0 overflow-auto">
           {children}
-          <footer className="w-full py-4 text-center text-xs text-muted-foreground/70 border-t border-border mt-auto shrink-0 bg-background/30 backdrop-blur-sm font-semibold">
-            Desarrollado Por Julián Salgado | Flota Sugamuxi S.A.
-          </footer>
         </main>
       </div>
     </div>

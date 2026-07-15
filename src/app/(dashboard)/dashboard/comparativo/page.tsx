@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
 import { 
@@ -1482,6 +1483,7 @@ export default function ComparativoPage() {
                 </p>
               </CardContent>
             </Card>
+            <Footer />
           </>
         )}
       </div>

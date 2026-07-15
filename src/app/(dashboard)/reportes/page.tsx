@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/Header';
 import { ReportesView } from '@/components/reportes/ReportesView';
+import { Footer } from '@/components/layout/Footer';
 
 export const metadata = { title: 'Reportes' };
 
@@ -9,6 +10,7 @@ export default function ReportesPage() {
       <Header title="Reportes" subtitle="SIGFAM — Análisis y exportación de datos" />
       <div className="flex-1 p-6 overflow-auto">
         <ReportesView />
+        <Footer />
       </div>
     </>
   );

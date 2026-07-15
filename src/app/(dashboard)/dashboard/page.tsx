@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
+import { Footer } from '@/components/layout/Footer';
 import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
 import { RefreshCw, X, Maximize2, Minimize2 } from 'lucide-react';
@@ -524,6 +525,7 @@ export default function DashboardPage() {
               selectedActa={selectedChartActa}
               presetRange={presetRange}
             />
+            <Footer />
           </>
         )}
       </div>
