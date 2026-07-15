@@ -20,6 +20,7 @@ import {
   X,
   Users,
   GitCompare,
+  Coins,
 } from 'lucide-react';
 import { getMockUser } from '@/lib/services/dbService';
 import { useRouter } from 'next/navigation';
@@ -32,6 +33,7 @@ const NAV_GROUPS = [
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
       { href: '/dashboard/comparativo', label: 'Comparativo', icon: 'GitCompare', roles: ['admin', 'analista', 'consultor'] },
+      { href: '/dashboard/gasvsing', label: 'Gastos Vs Ingresos', icon: 'Coins', roles: ['admin', 'analista', 'consultor'] },
     ],
   },
   {
@@ -63,6 +65,7 @@ const ICONS: Record<string, React.ElementType> = {
   Shield,
   Users,
   GitCompare,
+  Coins,
 };
 
 export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
