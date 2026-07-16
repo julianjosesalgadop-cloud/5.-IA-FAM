@@ -359,10 +359,10 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Bar name="Ingresos 2025" dataKey="income2025" fill="#cbd5e1" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Ingresos 2025" dataKey="income2025" fill="#64748b" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="income2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
-          <Bar name="Gastos 2025" dataKey="expense2025" fill="#1e293b" stroke="#475569" strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Gastos 2025" dataKey="expense2025" fill="#0f172a" stroke="#475569" strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="expense2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
         </BarChart>
@@ -455,12 +455,12 @@ export default function GasVsIngPage() {
         >
           <defs>
             <linearGradient id="colorInc25" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#cbd5e1" stopOpacity={0.15}/>
-              <stop offset="95%" stopColor="#cbd5e1" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="#64748b" stopOpacity={0.15}/>
+              <stop offset="95%" stopColor="#64748b" stopOpacity={0.01}/>
             </linearGradient>
             <linearGradient id="colorExp25" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#1e293b" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#1e293b" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="#0f172a" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#0f172a" stopOpacity={0.01}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
@@ -468,10 +468,10 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="#cbd5e1" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2}>
+          <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="#64748b" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2}>
             <LabelList dataKey="cumIncome2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
           </Area>
-          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="#1e293b" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2}>
+          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="#0f172a" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2}>
             <LabelList dataKey="cumExpense2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
           </Area>
         </AreaChart>
