@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import {
   ResponsiveContainer,
   BarChart,
@@ -68,6 +69,7 @@ export default function GasVsIngPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4]); // Default Ene-May matching active 2026 data
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
+  const [filterEstado, setFilterEstado] = useState<string[]>([]);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -145,7 +147,11 @@ export default function GasVsIngPage() {
     const monthlyExpenses2026 = Array(12).fill(0);
 
     // Filter active (non-deleted, approved/closed or pending approved) expedientes
-    const activeExp = expedientes.filter(e => e.deleted_at === null);
+    const activeExp = expedientes.filter(e => {
+      if (e.deleted_at !== null) return false;
+      if (filterEstado.length > 0 && !filterEstado.includes(e.estado)) return false;
+      return true;
+    });
 
     activeExp.forEach(e => {
       const yr = getYear(e);
@@ -250,7 +256,7 @@ export default function GasVsIngPage() {
       totals,
       lastActiveMonthIndex2026: lastIncomeMonthIndex2026
     };
-  }, [expedientes, ingresos, selectedMonths]);
+  }, [expedientes, ingresos, selectedMonths, filterEstado]);
 
   const { monthlyData, fullMonthlyData, totals, lastActiveMonthIndex2026 } = financialData;
 
@@ -542,6 +548,41 @@ export default function GasVsIngPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Toolbar & Filters */}
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">Filtros Activos:</span>
+                </div>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="w-[200px]">
+                    <MultiSelect
+                      label="Estado de Expediente"
+                      options={[
+                        { label: 'Pendiente', value: 'Pendiente' },
+                        { label: 'Revisado', value: 'Revisado' },
+                        { label: 'Aprobado', value: 'Aprobado' },
+                        { label: 'Rechazado', value: 'Rechazado' }
+                      ]}
+                      selectedValues={filterEstado}
+                      onChange={setFilterEstado}
+                      placeholder="Todos los estados"
+                    />
+                  </div>
+                  {filterEstado.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFilterEstado([])}
+                      className="text-xs text-red-400 hover:text-red-500 h-10 px-3 shrink-0"
+                    >
+                      Limpiar Filtro
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
