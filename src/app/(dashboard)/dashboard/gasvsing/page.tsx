@@ -398,8 +398,12 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="#94a3b8" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2} />
-          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2} />
+          <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="#94a3b8" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2}>
+            <LabelList dataKey="cumIncome2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
+          </Area>
+          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2}>
+            <LabelList dataKey="cumExpense2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
+          </Area>
         </AreaChart>
       </ResponsiveContainer>
     );
@@ -426,8 +430,12 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Area name="Ingresos Acum. 2026" type="monotone" dataKey="cumIncome2026" stroke="hsl(203, 100%, 50%)" fillOpacity={1} fill="url(#colorInc26)" strokeWidth={2} />
-          <Area name="Gastos Acum. 2026" type="monotone" dataKey="cumExpense2026" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp26)" strokeWidth={2} />
+          <Area name="Ingresos Acum. 2026" type="monotone" dataKey="cumIncome2026" stroke="hsl(203, 100%, 50%)" fillOpacity={1} fill="url(#colorInc26)" strokeWidth={2}>
+            <LabelList dataKey="cumIncome2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
+          </Area>
+          <Area name="Gastos Acum. 2026" type="monotone" dataKey="cumExpense2026" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp26)" strokeWidth={2}>
+            <LabelList dataKey="cumExpense2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
+          </Area>
         </AreaChart>
       </ResponsiveContainer>
     );
