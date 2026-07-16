@@ -69,7 +69,8 @@ export default function GasVsIngPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4]); // Default Ene-May matching active 2026 data
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
-  const [filterEstado, setFilterEstado] = useState<string[]>([]);
+  const [filterEstado, setFilterEstado] = useState<string[]>(['Pendiente', 'Revisado', 'Aprobado']);
+  const [filterMonth, setFilterMonth] = useState<number | null>(null);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -150,6 +151,7 @@ export default function GasVsIngPage() {
     const activeExp = expedientes.filter(e => {
       if (e.deleted_at !== null) return false;
       if (filterEstado.length > 0 && !filterEstado.includes(e.estado)) return false;
+      if (filterMonth !== null && getMonth(e) !== filterMonth) return false;
       return true;
     });
 
@@ -166,10 +168,13 @@ export default function GasVsIngPage() {
         }
       }
     });
-
     // 2. Fetch incomes
-    const inc2025 = ingresos["2025"] || FALLBACK_INGRESOS["2025"];
-    const inc2026 = ingresos["2026"] || FALLBACK_INGRESOS["2026"];
+    const rawInc2025 = ingresos["2025"] || FALLBACK_INGRESOS["2025"];
+    const rawInc2026 = ingresos["2026"] || FALLBACK_INGRESOS["2026"];
+
+    // Si filterMonth está activo, hacemos cero los ingresos de los otros meses
+    const inc2025 = rawInc2025.map((val, idx) => (filterMonth !== null && idx !== filterMonth) ? 0 : val);
+    const inc2026 = rawInc2026.map((val, idx) => (filterMonth !== null && idx !== filterMonth) ? 0 : val);
 
     // Find the last month of 2026 with income > 0
     const lastIncomeMonthIndex2026 = inc2026.reduce((acc, val, idx) => val > 0 ? idx : acc, 0);
@@ -256,10 +261,9 @@ export default function GasVsIngPage() {
       totals,
       lastActiveMonthIndex2026: lastIncomeMonthIndex2026
     };
-  }, [expedientes, ingresos, selectedMonths, filterEstado]);
+  }, [expedientes, ingresos, selectedMonths, filterEstado, filterMonth]);
 
   const { monthlyData, fullMonthlyData, totals, lastActiveMonthIndex2026 } = financialData;
-
   // Variations Calculation
   const incomeVariation = totals.income2025 > 0 
     ? ((totals.income2026 - totals.income2025) / totals.income2025) * 100 
@@ -335,7 +339,19 @@ export default function GasVsIngPage() {
   const renderMonthlyChart2025 = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={monthlyData} margin={{ top: 15, right: 10, left: -20, bottom: isMaximized ? 20 : 5 }}>
+        <BarChart 
+          data={monthlyData} 
+          margin={{ top: 15, right: 10, left: -20, bottom: isMaximized ? 20 : 5 }}
+          className="cursor-pointer"
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = monthlyData[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis dataKey="shortName" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
@@ -358,7 +374,19 @@ export default function GasVsIngPage() {
 
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={activeData2026} margin={{ top: 15, right: 10, left: -20, bottom: isMaximized ? 20 : 5 }}>
+        <BarChart 
+          data={activeData2026} 
+          margin={{ top: 15, right: 10, left: -20, bottom: isMaximized ? 20 : 5 }}
+          className="cursor-pointer"
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = activeData2026[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis dataKey="shortName" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
@@ -378,7 +406,19 @@ export default function GasVsIngPage() {
   const renderRatioChart = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={monthlyData} margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}>
+        <LineChart 
+          data={monthlyData} 
+          margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}
+          className="cursor-pointer"
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = monthlyData[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis dataKey="shortName" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `${val}%`} />
@@ -398,7 +438,19 @@ export default function GasVsIngPage() {
   const renderCumulativeChart2025 = (isMaximized = false) => {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={monthlyData} margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}>
+        <AreaChart 
+          data={monthlyData} 
+          margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}
+          className="cursor-pointer"
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = monthlyData[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+        >
           <defs>
             <linearGradient id="colorInc25" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.15}/>
@@ -430,7 +482,19 @@ export default function GasVsIngPage() {
 
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={activeData2026} margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}>
+        <AreaChart 
+          data={activeData2026} 
+          margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}
+          className="cursor-pointer"
+          onClick={(state) => {
+            if (state && state.activeTooltipIndex !== undefined) {
+              const item = activeData2026[state.activeTooltipIndex];
+              if (item) {
+                setFilterMonth(current => current === item.monthIndex ? null : item.monthIndex);
+              }
+            }
+          }}
+        >
           <defs>
             <linearGradient id="colorInc26" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.25}/>
@@ -506,26 +570,27 @@ export default function GasVsIngPage() {
           </div>
         ) : (
           <>
-            {/* Month Selector Card */}
+            {/* Month Selector & Filters Card */}
             <Card className="bg-card border-border shadow-sm">
               <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                 <div className="flex flex-col gap-1">
                   <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-primary" />
-                    Meses de Análisis Comparativo
+                    Periodo y Filtros de Análisis
                   </CardTitle>
-                  <CardDescription>Selecciona los meses para calcular los totales de cruzamiento financiero</CardDescription>
+                  <CardDescription>Selecciona los meses y parámetros de estado para el análisis comparativo</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleSelectAllMonths} className="text-xs h-8">
-                    Todos
+                    Todos los Meses
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleSelectNoMonths} className="text-xs h-8">
                     Ninguno
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Month Selector Buttons */}
                 <div className="flex flex-wrap gap-2">
                   {MONTHS_NAMES.map((name, idx) => {
                     const isSelected = selectedMonths.includes(idx);
@@ -546,43 +611,75 @@ export default function GasVsIngPage() {
                     );
                   })}
                 </div>
+
+                {/* Separator and Filters Row */}
+                <div className="border-t border-border/50 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  {/* Left Side: Active Status Badges */}
+                  <div className="flex items-center gap-2 flex-wrap min-h-[36px]">
+                    <span className="text-xs font-semibold text-muted-foreground">Filtros Activos:</span>
+                    {filterMonth !== null ? (
+                      <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        Mes: {MONTHS_NAMES[filterMonth]}
+                        <button 
+                          onClick={() => setFilterMonth(null)} 
+                          className="hover:text-red-500 font-bold ml-1 text-xs"
+                          title="Quitar filtro de mes"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/60 italic">Ningún mes seleccionado en gráficos</span>
+                    )}
+
+                    {filterEstado.length > 0 && (
+                      <span className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        Estados ({filterEstado.length})
+                        <button 
+                          onClick={() => setFilterEstado([])} 
+                          className="hover:text-red-500 font-bold ml-1 text-xs"
+                          title="Limpiar estados"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Right Side: MultiSelect dropdown & Clean Button */}
+                  <div className="flex items-center gap-3 self-end sm:self-auto">
+                    <div className="w-[200px]">
+                      <MultiSelect
+                        label="Estado de Expediente"
+                        options={[
+                          { label: 'Pendiente', value: 'Pendiente' },
+                          { label: 'Revisado', value: 'Revisado' },
+                          { label: 'Aprobado', value: 'Aprobado' },
+                          { label: 'Rechazado', value: 'Rechazado' }
+                        ]}
+                        selectedValues={filterEstado}
+                        onChange={setFilterEstado}
+                        placeholder="Todos los estados"
+                      />
+                    </div>
+
+                    {(filterEstado.length > 0 || filterMonth !== null) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFilterEstado([]);
+                          setFilterMonth(null);
+                        }}
+                        className="text-xs text-red-400 hover:text-red-500 h-9 px-2.5"
+                      >
+                        Limpiar Filtros
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
-
-            {/* Toolbar & Filters */}
-            <div className="bg-card border border-border p-4 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">Filtros Activos:</span>
-                </div>
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="w-[200px]">
-                    <MultiSelect
-                      label="Estado de Expediente"
-                      options={[
-                        { label: 'Pendiente', value: 'Pendiente' },
-                        { label: 'Revisado', value: 'Revisado' },
-                        { label: 'Aprobado', value: 'Aprobado' },
-                        { label: 'Rechazado', value: 'Rechazado' }
-                      ]}
-                      selectedValues={filterEstado}
-                      onChange={setFilterEstado}
-                      placeholder="Todos los estados"
-                    />
-                  </div>
-                  {filterEstado.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFilterEstado([])}
-                      className="text-xs text-red-400 hover:text-red-500 h-10 px-3 shrink-0"
-                    >
-                      Limpiar Filtro
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -713,7 +810,14 @@ export default function GasVsIngPage() {
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
-                      <CardTitle className="text-sm font-bold text-foreground">Gastos vs Ingresos 2025</CardTitle>
+                      <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                        Gastos vs Ingresos 2025
+                        {filterMonth !== null && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {MONTHS_NAMES[filterMonth]}
+                          </span>
+                        )}
+                      </CardTitle>
                       <CardDescription>Comparativa mensual de ingresos vs egresos aprobados</CardDescription>
                     </div>
                     <Button
@@ -740,7 +844,14 @@ export default function GasVsIngPage() {
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
-                      <CardTitle className="text-sm font-bold text-foreground">Gastos vs Ingresos 2026</CardTitle>
+                      <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                        Gastos vs Ingresos 2026
+                        {filterMonth !== null && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {MONTHS_NAMES[filterMonth]}
+                          </span>
+                        )}
+                      </CardTitle>
                       <CardDescription>Comparativa mensual de ingresos vs egresos aprobados (rango activo)</CardDescription>
                     </div>
                     <Button
@@ -768,7 +879,14 @@ export default function GasVsIngPage() {
               <Card className="bg-card border-border shadow-sm w-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <div className="flex flex-col gap-1">
-                    <CardTitle className="text-sm font-bold text-foreground">Tasa de Afectación Mensual (%)</CardTitle>
+                    <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                      Tasa de Afectación Mensual (%)
+                      {filterMonth !== null && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          Filtro: {MONTHS_NAMES[filterMonth]}
+                        </span>
+                      )}
+                    </CardTitle>
                     <CardDescription>Porcentaje mensual de ingresos consumidos por gastos (2025 vs 2026)</CardDescription>
                   </div>
                   <Button
@@ -797,7 +915,14 @@ export default function GasVsIngPage() {
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
-                      <CardTitle className="text-sm font-bold text-foreground">Acumulado Gastos vs Ingresos 2025</CardTitle>
+                      <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                        Acumulado Gastos vs Ingresos 2025
+                        {filterMonth !== null && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {MONTHS_NAMES[filterMonth]}
+                          </span>
+                        )}
+                      </CardTitle>
                       <CardDescription>Tendencia acumulada del balance financiero (Ene-Dic 2025)</CardDescription>
                     </div>
                     <Button
@@ -824,7 +949,14 @@ export default function GasVsIngPage() {
                 <Card className="bg-card border-border shadow-sm h-full">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
-                      <CardTitle className="text-sm font-bold text-foreground">Acumulado Gastos vs Ingresos 2026</CardTitle>
+                      <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                        Acumulado Gastos vs Ingresos 2026
+                        {filterMonth !== null && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {MONTHS_NAMES[filterMonth]}
+                          </span>
+                        )}
+                      </CardTitle>
                       <CardDescription>Tendencia acumulada del balance financiero (Ene-May 2026)</CardDescription>
                     </div>
                     <Button

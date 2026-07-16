@@ -76,7 +76,7 @@ export default function ComparativoPage() {
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
   const [filterTipoServicio, setFilterTipoServicio] = useState('');
   const [filterTipoReclamacion, setFilterTipoReclamacion] = useState<string[]>([]);
-  const [filterEstado, setFilterEstado] = useState<string[]>([]);
+  const [filterEstado, setFilterEstado] = useState<string[]>(['Pendiente', 'Revisado', 'Aprobado']);
 
   const loadData = async () => {
     setLoading(true);
