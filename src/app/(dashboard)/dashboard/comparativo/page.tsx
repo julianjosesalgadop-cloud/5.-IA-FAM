@@ -868,8 +868,8 @@ export default function ComparativoPage() {
           <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
             <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
-          <Bar name="2026" dataKey="cases2026" fill="hsl(43, 96%, 52%)" radius={[0, 3, 3, 0]}>
-            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

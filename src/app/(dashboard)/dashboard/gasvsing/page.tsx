@@ -325,10 +325,10 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Bar name="Ingresos 2025" dataKey="income2025" fill="hsl(217, 91%, 55%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Ingresos 2025" dataKey="income2025" fill="#94a3b8" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="income2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
-          <Bar name="Gastos 2025" dataKey="expense2025" fill="hsl(0, 72%, 55%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Gastos 2025" dataKey="expense2025" fill="hsl(217, 70%, 35%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="expense2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
         </BarChart>
@@ -348,10 +348,10 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Bar name="Ingresos 2026" dataKey="income2026" fill="hsl(43, 96%, 52%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Ingresos 2026" dataKey="income2026" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="income2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
-          <Bar name="Gastos 2026" dataKey="expense2026" fill="hsl(340, 75%, 50%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Gastos 2026" dataKey="expense2026" fill="hsl(217, 70%, 35%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="expense2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
         </BarChart>
@@ -368,10 +368,10 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `${val}%`} />
           <Tooltip content={<CustomRatioTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Line name="Afectación 2025" type="monotone" dataKey="ratio2025" stroke="hsl(217, 91%, 55%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }}>
+          <Line name="Afectación 2025" type="monotone" dataKey="ratio2025" stroke="#94a3b8" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }}>
             <LabelList dataKey="ratio2025" position="top" formatter={(v: number) => `${v.toFixed(0)}%`} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Line>
-          <Line name="Afectación 2026" type="monotone" dataKey="ratio2026" stroke="hsl(43, 96%, 52%)" strokeWidth={2} connectNulls dot={{ r: 4 }} activeDot={{ r: 6 }}>
+          <Line name="Afectación 2026" type="monotone" dataKey="ratio2026" stroke="hsl(203, 100%, 50%)" strokeWidth={2} connectNulls dot={{ r: 4 }} activeDot={{ r: 6 }}>
             <LabelList dataKey="ratio2026" position="top" formatter={(v: number) => v !== null ? `${v.toFixed(0)}%` : ''} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Line>
         </LineChart>
@@ -385,12 +385,12 @@ export default function GasVsIngPage() {
         <AreaChart data={monthlyData} margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}>
           <defs>
             <linearGradient id="colorInc25" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(217, 91%, 55%)" stopOpacity={0.15}/>
-              <stop offset="95%" stopColor="hsl(217, 91%, 55%)" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.15}/>
+              <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.01}/>
             </linearGradient>
             <linearGradient id="colorExp25" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(0, 72%, 55%)" stopOpacity={0.15}/>
-              <stop offset="95%" stopColor="hsl(0, 72%, 55%)" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.2}/>
+              <stop offset="95%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.01}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
@@ -398,8 +398,8 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="hsl(217, 91%, 55%)" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2} />
-          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="hsl(0, 72%, 55%)" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2} />
+          <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="#94a3b8" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2} />
+          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2} />
         </AreaChart>
       </ResponsiveContainer>
     );
@@ -413,12 +413,12 @@ export default function GasVsIngPage() {
         <AreaChart data={activeData2026} margin={{ top: 15, right: 20, left: -20, bottom: isMaximized ? 20 : 5 }}>
           <defs>
             <linearGradient id="colorInc26" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(43, 96%, 52%)" stopOpacity={0.15}/>
-              <stop offset="95%" stopColor="hsl(43, 96%, 52%)" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.25}/>
+              <stop offset="95%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.01}/>
             </linearGradient>
             <linearGradient id="colorExp26" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(340, 75%, 50%)" stopOpacity={0.15}/>
-              <stop offset="95%" stopColor="hsl(340, 75%, 50%)" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.2}/>
+              <stop offset="95%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.01}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
@@ -426,8 +426,8 @@ export default function GasVsIngPage() {
           <YAxis stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
           <Tooltip content={<CustomCOPTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-          <Area name="Ingresos Acum. 2026" type="monotone" dataKey="cumIncome2026" stroke="hsl(43, 96%, 52%)" fillOpacity={1} fill="url(#colorInc26)" strokeWidth={2} />
-          <Area name="Gastos Acum. 2026" type="monotone" dataKey="cumExpense2026" stroke="hsl(340, 75%, 50%)" fillOpacity={1} fill="url(#colorExp26)" strokeWidth={2} />
+          <Area name="Ingresos Acum. 2026" type="monotone" dataKey="cumIncome2026" stroke="hsl(203, 100%, 50%)" fillOpacity={1} fill="url(#colorInc26)" strokeWidth={2} />
+          <Area name="Gastos Acum. 2026" type="monotone" dataKey="cumExpense2026" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp26)" strokeWidth={2} />
         </AreaChart>
       </ResponsiveContainer>
     );
