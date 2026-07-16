@@ -589,9 +589,9 @@ export default function GasVsIngPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Month Selector Buttons */}
-                <div className="flex flex-wrap gap-2">
+              <CardContent className="py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Month Selector Buttons */}
                   {MONTHS_NAMES.map((name, idx) => {
                     const isSelected = selectedMonths.includes(idx);
                     const is2026Active = idx <= lastActiveMonthIndex2026;
@@ -601,7 +601,7 @@ export default function GasVsIngPage() {
                         variant={isSelected ? 'default' : 'outline'}
                         onClick={() => handleToggleMonth(idx)}
                         className={cn(
-                          "text-xs px-3 h-8 rounded-full transition-all duration-200",
+                          "text-xs px-2.5 h-8 rounded-full transition-all duration-200",
                           isSelected ? "bg-primary hover:bg-primary/95 text-white shadow-glow-brand" : "hover:bg-secondary/50",
                           !is2026Active && isSelected && "bg-slate-500 hover:bg-slate-600" // visually indicate data limit for 2026
                         )}
@@ -610,47 +610,15 @@ export default function GasVsIngPage() {
                       </Button>
                     );
                   })}
-                </div>
 
-                {/* Separator and Filters Row */}
-                <div className="border-t border-border/50 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  {/* Left Side: Active Status Badges */}
-                  <div className="flex items-center gap-2 flex-wrap min-h-[36px]">
-                    <span className="text-xs font-semibold text-muted-foreground">Filtros Activos:</span>
-                    {filterMonth !== null ? (
-                      <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        Mes: {MONTHS_NAMES[filterMonth]}
-                        <button 
-                          onClick={() => setFilterMonth(null)} 
-                          className="hover:text-red-500 font-bold ml-1 text-xs"
-                          title="Quitar filtro de mes"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground/60 italic">Ningún mes seleccionado en gráficos</span>
-                    )}
-
-                    {filterEstado.length > 0 && (
-                      <span className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        Estados ({filterEstado.length})
-                        <button 
-                          onClick={() => setFilterEstado([])} 
-                          className="hover:text-red-500 font-bold ml-1 text-xs"
-                          title="Limpiar estados"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )}
-                  </div>
+                  {/* Vertical Separator */}
+                  <div className="hidden lg:block h-6 w-[1px] bg-border mx-1" />
 
                   {/* Right Side: MultiSelect dropdown & Clean Button */}
-                  <div className="flex items-center gap-3 self-end sm:self-auto">
-                    <div className="w-[200px]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-[180px]">
                       <MultiSelect
-                        label="Estado de Expediente"
+                        label=""
                         options={[
                           { label: 'Pendiente', value: 'Pendiente' },
                           { label: 'Revisado', value: 'Revisado' },
@@ -659,11 +627,41 @@ export default function GasVsIngPage() {
                         ]}
                         selectedValues={filterEstado}
                         onChange={setFilterEstado}
-                        placeholder="Todos los estados"
+                        placeholder="Estado Expediente"
                       />
                     </div>
+                  </div>
 
-                    {(filterEstado.length > 0 || filterMonth !== null) && (
+                  {/* Active Status Badges */}
+                  {(filterMonth !== null || filterEstado.length > 0) && (
+                    <div className="flex items-center gap-1.5 flex-wrap ml-2">
+                      <span className="text-xs font-semibold text-muted-foreground">Filtros Activos:</span>
+                      {filterMonth !== null && (
+                        <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          Mes: {MONTHS_NAMES[filterMonth]}
+                          <button 
+                            onClick={() => setFilterMonth(null)} 
+                            className="hover:text-red-500 font-bold ml-1 text-xs"
+                            title="Quitar filtro de mes"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )}
+
+                      {filterEstado.length > 0 && (
+                        <span className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          Estados ({filterEstado.length})
+                          <button 
+                            onClick={() => setFilterEstado([])} 
+                            className="hover:text-red-500 font-bold ml-1 text-xs"
+                            title="Limpiar estados"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )}
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -671,12 +669,12 @@ export default function GasVsIngPage() {
                           setFilterEstado([]);
                           setFilterMonth(null);
                         }}
-                        className="text-xs text-red-400 hover:text-red-500 h-9 px-2.5"
+                        className="text-xs text-red-400 hover:text-red-500 h-8 px-2 shrink-0"
                       >
-                        Limpiar Filtros
+                        Limpiar Todo
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
