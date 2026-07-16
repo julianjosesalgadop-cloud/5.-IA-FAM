@@ -452,19 +452,29 @@ export default function GasVsIngPage() {
               variant="outline" 
               size="sm" 
               onClick={loadData} 
-              className="text-xs flex items-center gap-1.5 h-9 bg-card border-border hover:bg-secondary text-foreground"
+              disabled={loading} 
+              className="h-9 px-2.5 sm:px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Recargar
+              <RefreshCw className={`w-4 h-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={toggleSidebar}
-              className="text-xs h-9 bg-card border-border text-foreground hover:bg-secondary hidden lg:flex items-center gap-1.5"
+              className="hidden md:flex text-xs h-9 py-1 px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
             >
-              {sidebarCollapsed ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
-              {sidebarCollapsed ? 'Expandir' : 'Contraer'}
+              {sidebarCollapsed ? (
+                <>
+                  <Minimize2 className="w-4 h-4 mr-2" />
+                  Salir Pantalla Completa
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  Pantalla Completa
+                </>
+              )}
             </Button>
           </div>
         }
