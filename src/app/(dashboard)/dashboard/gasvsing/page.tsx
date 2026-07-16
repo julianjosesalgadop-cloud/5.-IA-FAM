@@ -272,6 +272,10 @@ export default function GasVsIngPage() {
   // Custom tooltips
   const CustomCOPTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const dataObj = payload[0].payload;
+      const is2026 = payload.some((p: any) => p.dataKey.includes('2026'));
+      const ratio = is2026 ? dataObj.ratio2026 : dataObj.ratio2025;
+
       return (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-slate-800 dark:text-slate-100">
           <p className="font-bold text-slate-900 dark:text-white mb-1">{label}</p>
@@ -284,6 +288,12 @@ export default function GasVsIngPage() {
               <span className="font-bold font-mono">{formatCOP(p.value)}</span>
             </div>
           ))}
+          {ratio !== undefined && ratio !== null && (
+            <div className="border-t border-border/60 pt-1.5 mt-1.5 flex items-center justify-between">
+              <span className="font-semibold text-primary">Afectación del Mes:</span>
+              <span className="font-bold font-mono text-primary">{ratio.toFixed(1)}%</span>
+            </div>
+          )}
         </div>
       );
     }
