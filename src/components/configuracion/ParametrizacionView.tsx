@@ -46,6 +46,14 @@ const DEFAULT_CATALOGS = {
     { label: 'Urbano', activo: true, orden: 2 },
     { label: 'Otro', activo: true, orden: 3 },
   ],
+  claseVehiculo: [
+    { label: 'Bus', activo: true, orden: 0 },
+    { label: 'Buseta', activo: true, orden: 1 },
+    { label: 'Microbus', activo: true, orden: 2 },
+    { label: 'Camioneta', activo: true, orden: 3 },
+    { label: 'Servicio Especial', activo: true, orden: 4 },
+    { label: 'Otro (Cúal...)', activo: true, orden: 5 },
+  ],
   tiposDocPaso1: [
     { label: 'Solicitud', activo: true },
     { label: 'Documento Vario', activo: true },
@@ -99,6 +107,7 @@ const DEFAULT_CATALOGS = {
     placa: { label: 'Placa', placeholder: 'Ej: ABC123', visible: true, requerido: true },
     numero_interno: { label: 'Número Interno', placeholder: 'Ej: 1024', visible: true, requerido: true },
     tipo_servicio: { label: 'Tipo de Servicio', placeholder: '', visible: true, requerido: true },
+    clase_vehiculo: { label: 'Clase de Vehículo', placeholder: '', visible: true, requerido: true },
     propietarios: { label: 'Propietarios', placeholder: '', visible: true, requerido: true },
     tipo_reclamacion: { label: 'Tipo de Reclamación', placeholder: '', visible: true, requerido: true },
     ciudad_origen: { label: 'Ciudad Origen', placeholder: 'EJ: SOGAMOSO', visible: true, requerido: false },
@@ -151,6 +160,7 @@ export function ParametrizacionView() {
   
   const [localTiposReclamacion, setLocalTiposReclamacion] = useState<CatalogoItem[]>([]);
   const [localTiposServicio, setLocalTiposServicio] = useState<CatalogoItem[]>([]);
+  const [localClasesVehiculo, setLocalClasesVehiculo] = useState<CatalogoItem[]>([]);
   const [localTiposDocPaso1, setLocalTiposDocPaso1] = useState<{ label: string; activo: boolean }[]>([]);
   const [localConceptosCot, setLocalConceptosCot] = useState<CatalogoItem[]>([]);
   const [localDeducibles, setLocalDeducibles] = useState<{ label: string; value: number; activo: boolean }[]>([]);
@@ -166,6 +176,7 @@ export function ParametrizacionView() {
       setLocalCampos(config.campoConfig);
       setLocalTiposReclamacion(config.tiposReclamacion);
       setLocalTiposServicio(config.tiposServicio);
+      setLocalClasesVehiculo(config.claseVehiculo);
       setLocalTiposDocPaso1(config.tiposDocPaso1);
       setLocalConceptosCot(config.conceptosCotizacion);
       setLocalDeducibles(config.opcionesDeducible);
@@ -174,7 +185,7 @@ export function ParametrizacionView() {
       setLocalAutorizadosPor(config.autorizadosPor);
       setLocalCargos(config.cargos);
     }
-  }, [config.loading, config.pasos, config.campoConfig, config.tiposReclamacion, config.tiposServicio, config.tiposDocPaso1, config.conceptosCotizacion, config.opcionesDeducible, config.culpabilidades, config.causasRaiz, config.autorizadosPor, config.cargos]);
+  }, [config.loading, config.pasos, config.campoConfig, config.tiposReclamacion, config.tiposServicio, config.claseVehiculo, config.tiposDocPaso1, config.conceptosCotizacion, config.opcionesDeducible, config.culpabilidades, config.causasRaiz, config.autorizadosPor, config.cargos]);
 
   if (currentUser.rol !== 'admin') {
     return (
@@ -371,7 +382,7 @@ export function ParametrizacionView() {
               <Input
                 value={field.placeholder || ''}
                 onChange={(e) => handleFieldChange(key, 'placeholder', e.target.value)}
-                disabled={isReadOnly || ['fecha_incidente', 'fecha_comite', 'fecha_autorizacion', 'tipo_servicio', 'tipo_reclamacion', 'culpabilidad', 'causa_raiz', 'autorizado_por', 'cargo_autorizador'].includes(key)}
+                disabled={isReadOnly || ['fecha_incidente', 'fecha_comite', 'fecha_autorizacion', 'tipo_servicio', 'clase_vehiculo', 'tipo_reclamacion', 'culpabilidad', 'causa_raiz', 'autorizado_por', 'cargo_autorizador'].includes(key)}
                 className="h-8 text-xs bg-background"
                 placeholder="N/A"
               />
@@ -421,7 +432,7 @@ export function ParametrizacionView() {
   }
 
   // Define keys for each step to handle resets/saves grouped
-  const step1Keys = ['fecha_incidente', 'placa', 'numero_interno', 'tipo_servicio', 'propietarios', 'tipo_reclamacion', 'ciudad_origen', 'ciudad_destino', 'concepto'];
+  const step1Keys = ['fecha_incidente', 'placa', 'numero_interno', 'tipo_servicio', 'clase_vehiculo', 'propietarios', 'tipo_reclamacion', 'ciudad_origen', 'ciudad_destino', 'concepto'];
   const step2Keys = ['cotizaciones_proveedor', 'cotizaciones_tipo_documento', 'cotizaciones_numero_documento', 'valor_cotizacion', 'valor_negociado', 'valor_deducible', 'valor_a_pagar', 'valor_salvamento', 'valor_final_aprobado'];
   const step3Keys = ['nombre_conductor', 'id_conductor', 'celular_conductor', 'culpabilidad', 'valor_descuento_conductor', 'memorando_descuento', 'valor_recobro_vehiculo', 'valor_recobro_abogado', 'valor_recobro_empresa'];
   const step4Keys = ['fecha_comite', 'numero_acta', 'causa_raiz', 'observaciones_comite', 'autorizado_por', 'cargo_autorizador', 'fecha_autorizacion', 'memorando_pago_nombre', 'memorando_pago_archivo'];
@@ -575,7 +586,7 @@ export function ParametrizacionView() {
             </Card>
 
             {/* Catalog Editors for Paso 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Tipos de Reclamación */}
               <CatalogoEditorCard
                 title="Tipos de Reclamación"
@@ -606,6 +617,23 @@ export function ParametrizacionView() {
                 onReset={() => {
                   setLocalTiposServicio(DEFAULT_CATALOGS.tiposServicio);
                   saveCatalog('fam_config_tipos_servicio', DEFAULT_CATALOGS.tiposServicio, 'Lista de servicios restablecida.');
+                }}
+                isReadOnly={isReadOnly}
+              />
+
+              {/* Clases de Vehículo */}
+              <CatalogoEditorCard
+                title="Clases de Vehículo"
+                description="Clase del vehículo (Bus, Buseta, Microbus, etc.)"
+                list={localClasesVehiculo}
+                onAdd={(label) => addCatalogItem(localClasesVehiculo, setLocalClasesVehiculo, label)}
+                onDelete={(idx) => deleteCatalogItem(localClasesVehiculo, setLocalClasesVehiculo, idx)}
+                onToggleActive={(idx, val) => updateCatalogItem(localClasesVehiculo, setLocalClasesVehiculo, 'fam_config_clases_vehiculo', idx, 'activo', val)}
+                onMove={(idx, dir) => moveCatalogItem(localClasesVehiculo, setLocalClasesVehiculo, idx, dir)}
+                onSave={() => saveCatalog('fam_config_clases_vehiculo', localClasesVehiculo, 'Clases de vehículo guardadas correctamente.')}
+                onReset={() => {
+                  setLocalClasesVehiculo(DEFAULT_CATALOGS.claseVehiculo);
+                  saveCatalog('fam_config_clases_vehiculo', DEFAULT_CATALOGS.claseVehiculo, 'Lista de clases de vehículo restablecida.');
                 }}
                 isReadOnly={isReadOnly}
               />

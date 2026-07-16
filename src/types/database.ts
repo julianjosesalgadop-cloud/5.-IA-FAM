@@ -13,6 +13,8 @@ export interface Expediente {
   placa: string;
   numero_interno: string | null;
   tipo_servicio: string | null;
+  clase_vehiculo?: string | null;
+  clase_vehiculo_otro?: string | null;
   propietario: string;
   tipo_reclamacion: TipoReclamacion;
   ciudad_origen: string | null;

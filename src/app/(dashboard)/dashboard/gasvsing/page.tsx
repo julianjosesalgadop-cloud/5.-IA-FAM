@@ -70,6 +70,7 @@ export default function GasVsIngPage() {
   const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4]); // Default Ene-May matching active 2026 data
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
   const [filterEstado, setFilterEstado] = useState<string[]>(['Pendiente', 'Revisado', 'Aprobado']);
+  const [filterTipoReclamacion, setFilterTipoReclamacion] = useState<string[]>([]);
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -151,6 +152,7 @@ export default function GasVsIngPage() {
     const activeExp = expedientes.filter(e => {
       if (e.deleted_at !== null) return false;
       if (filterEstado.length > 0 && !filterEstado.includes(e.estado)) return false;
+      if (filterTipoReclamacion.length > 0 && !filterTipoReclamacion.includes(e.tipo_reclamacion)) return false;
       if (filterMonth !== null && getMonth(e) !== filterMonth) return false;
       return true;
     });
@@ -261,7 +263,7 @@ export default function GasVsIngPage() {
       totals,
       lastActiveMonthIndex2026: lastIncomeMonthIndex2026
     };
-  }, [expedientes, ingresos, selectedMonths, filterEstado, filterMonth]);
+  }, [expedientes, ingresos, selectedMonths, filterEstado, filterMonth, filterTipoReclamacion]);
 
   const { monthlyData, fullMonthlyData, totals, lastActiveMonthIndex2026 } = financialData;
   // Variations Calculation
@@ -360,7 +362,7 @@ export default function GasVsIngPage() {
           <Bar name="Ingresos 2025" dataKey="income2025" fill="#94a3b8" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="income2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
-          <Bar name="Gastos 2025" dataKey="expense2025" fill="hsl(217, 70%, 35%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Gastos 2025" dataKey="expense2025" fill="#64748b" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="expense2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
         </BarChart>
@@ -395,7 +397,7 @@ export default function GasVsIngPage() {
           <Bar name="Ingresos 2026" dataKey="income2026" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="income2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
-          <Bar name="Gastos 2026" dataKey="expense2026" fill="hsl(217, 70%, 35%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
+          <Bar name="Gastos 2026" dataKey="expense2026" fill="hsl(217, 91%, 42%)" radius={[3, 3, 0, 0]} maxBarSize={20}>
             <LabelList dataKey="expense2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
           </Bar>
         </BarChart>
@@ -457,8 +459,8 @@ export default function GasVsIngPage() {
               <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.01}/>
             </linearGradient>
             <linearGradient id="colorExp25" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.2}/>
-              <stop offset="95%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="#64748b" stopOpacity={0.2}/>
+              <stop offset="95%" stopColor="#64748b" stopOpacity={0.01}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
@@ -469,7 +471,7 @@ export default function GasVsIngPage() {
           <Area name="Ingresos Acum. 2025" type="monotone" dataKey="cumIncome2025" stroke="#94a3b8" fillOpacity={1} fill="url(#colorInc25)" strokeWidth={2}>
             <LabelList dataKey="cumIncome2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
           </Area>
-          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2}>
+          <Area name="Gastos Acum. 2025" type="monotone" dataKey="cumExpense2025" stroke="#64748b" fillOpacity={1} fill="url(#colorExp25)" strokeWidth={2}>
             <LabelList dataKey="cumExpense2025" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
           </Area>
         </AreaChart>
@@ -501,8 +503,8 @@ export default function GasVsIngPage() {
               <stop offset="95%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.01}/>
             </linearGradient>
             <linearGradient id="colorExp26" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.2}/>
-              <stop offset="95%" stopColor="hsl(217, 70%, 35%)" stopOpacity={0.01}/>
+              <stop offset="5%" stopColor="hsl(217, 91%, 42%)" stopOpacity={0.2}/>
+              <stop offset="95%" stopColor="hsl(217, 91%, 42%)" stopOpacity={0.01}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
@@ -513,7 +515,7 @@ export default function GasVsIngPage() {
           <Area name="Ingresos Acum. 2026" type="monotone" dataKey="cumIncome2026" stroke="hsl(203, 100%, 50%)" fillOpacity={1} fill="url(#colorInc26)" strokeWidth={2}>
             <LabelList dataKey="cumIncome2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
           </Area>
-          <Area name="Gastos Acum. 2026" type="monotone" dataKey="cumExpense2026" stroke="hsl(217, 70%, 35%)" fillOpacity={1} fill="url(#colorExp26)" strokeWidth={2}>
+          <Area name="Gastos Acum. 2026" type="monotone" dataKey="cumExpense2026" stroke="hsl(217, 91%, 42%)" fillOpacity={1} fill="url(#colorExp26)" strokeWidth={2}>
             <LabelList dataKey="cumExpense2026" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.75 }} />
           </Area>
         </AreaChart>
@@ -570,116 +572,119 @@ export default function GasVsIngPage() {
           </div>
         ) : (
           <>
-            {/* Month Selector & Filters Card */}
-            <Card className="bg-card border-border shadow-sm">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-                <div className="flex flex-col gap-1">
-                  <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    Periodo y Filtros de Análisis
-                  </CardTitle>
-                  <CardDescription>Selecciona los meses y parámetros de estado para el análisis comparativo</CardDescription>
+            {/* Toolbar & Month Filters */}
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-bold text-foreground">
+                    Selección de Meses para Comparativa y Acumulado YTD:
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleSelectAllMonths} className="text-xs h-8">
-                    Todos los Meses
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleSelectAllMonths} 
+                    className="text-[11px] h-7 px-3 bg-secondary/20 hover:bg-secondary/40 text-foreground"
+                  >
+                    Seleccionar Todos
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleSelectNoMonths} className="text-xs h-8">
-                    Ninguno
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleSelectNoMonths} 
+                    className="text-[11px] h-7 px-3 bg-secondary/20 hover:bg-secondary/40 text-foreground"
+                  >
+                    Limpiar Selección
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={loadData} className="h-7 px-2.5 sm:px-3 text-[11px] flex items-center gap-1.5">
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">Actualizar</span>
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="py-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Month Selector Buttons */}
-                  {MONTHS_NAMES.map((name, idx) => {
-                    const isSelected = selectedMonths.includes(idx);
-                    const is2026Active = idx <= lastActiveMonthIndex2026;
-                    return (
-                      <Button
-                        key={name}
-                        variant={isSelected ? 'default' : 'outline'}
-                        onClick={() => handleToggleMonth(idx)}
-                        className={cn(
-                          "text-xs px-2.5 h-8 rounded-full transition-all duration-200",
-                          isSelected ? "bg-primary hover:bg-primary/95 text-white shadow-glow-brand" : "hover:bg-secondary/50",
-                          !is2026Active && isSelected && "bg-slate-500 hover:bg-slate-600" // visually indicate data limit for 2026
-                        )}
-                      >
-                        {name} {!is2026Active && <span className="text-[9px] opacity-75">(Solo 2025)</span>}
-                      </Button>
-                    );
-                  })}
-
-                  {/* Vertical Separator */}
-                  <div className="hidden lg:block h-6 w-[1px] bg-border mx-1" />
-
-                  {/* Right Side: MultiSelect dropdown & Clean Button */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-[180px]">
-                      <MultiSelect
-                        label=""
-                        options={[
-                          { label: 'Pendiente', value: 'Pendiente' },
-                          { label: 'Revisado', value: 'Revisado' },
-                          { label: 'Aprobado', value: 'Aprobado' },
-                          { label: 'Rechazado', value: 'Rechazado' }
-                        ]}
-                        selectedValues={filterEstado}
-                        onChange={setFilterEstado}
-                        placeholder="Estado Expediente"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Active Status Badges */}
-                  {(filterMonth !== null || filterEstado.length > 0) && (
-                    <div className="flex items-center gap-1.5 flex-wrap ml-2">
-                      <span className="text-xs font-semibold text-muted-foreground">Filtros Activos:</span>
-                      {filterMonth !== null && (
-                        <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md flex items-center gap-1">
-                          Mes: {MONTHS_NAMES[filterMonth]}
-                          <button 
-                            onClick={() => setFilterMonth(null)} 
-                            className="hover:text-red-500 font-bold ml-1 text-xs"
-                            title="Quitar filtro de mes"
-                          >
-                            ×
-                          </button>
-                        </span>
+              </div>
+              
+              <div className="flex flex-wrap gap-1.5">
+                {MONTHS_NAMES.map((name, index) => {
+                  const isSelected = selectedMonths.includes(index);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleToggleMonth(index)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 relative",
+                        isSelected
+                          ? "bg-primary text-white border-transparent shadow-glow-brand"
+                          : "bg-secondary/10 border-border text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
                       )}
-
-                      {filterEstado.length > 0 && (
-                        <span className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
-                          Estados ({filterEstado.length})
-                          <button 
-                            onClick={() => setFilterEstado([])} 
-                            className="hover:text-red-500 font-bold ml-1 text-xs"
-                            title="Limpiar estados"
-                          >
-                            ×
-                          </button>
-                        </span>
+                    >
+                      {MONTHS_SHORT[index]}
+                      {index > lastActiveMonthIndex2026 && (
+                        <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-yellow-500 rounded-full" title="Mes sin datos para 2026 todavía" />
                       )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setFilterEstado([]);
-                          setFilterMonth(null);
-                        }}
-                        className="text-xs text-red-400 hover:text-red-500 h-8 px-2 shrink-0"
-                      >
-                        Limpiar Todo
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Dynamic Filters Toolbar */}
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm flex flex-col md:flex-row flex-wrap items-stretch md:items-end gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <MultiSelect
+                  label="Tipo de Reclamación"
+                  options={[
+                    { label: 'Siniestro', value: 'Siniestro' },
+                    { label: 'Vidrios', value: 'Vidrios' },
+                    { label: 'Carrocería', value: 'Carrocería' },
+                    { label: 'Repuestos', value: 'Repuestos' },
+                    { label: 'Pérdida parcial', value: 'Pérdida parcial' },
+                    { label: 'Otro', value: 'Otro' }
+                  ]}
+                  selectedValues={filterTipoReclamacion}
+                  onChange={setFilterTipoReclamacion}
+                  placeholder="Todos los tipos"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <MultiSelect
+                  label="Estado de Expediente"
+                  options={[
+                    { label: 'Pendiente', value: 'Pendiente' },
+                    { label: 'Revisado', value: 'Revisado' },
+                    { label: 'Aprobado', value: 'Aprobado' },
+                    { label: 'Rechazado', value: 'Rechazado' }
+                  ]}
+                  selectedValues={filterEstado}
+                  onChange={setFilterEstado}
+                  placeholder="Todos los estados"
+                />
+              </div>
+              {(filterTipoReclamacion.length > 0 || filterEstado.length > 0 || filterMonth !== null) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilterTipoReclamacion([]);
+                    setFilterEstado([]);
+                    setFilterMonth(null);
+                  }}
+                  className="text-xs text-red-400 hover:text-red-500 h-10 px-3 shrink-0"
+                >
+                  Limpiar Filtros
+                </Button>
+              )}
+            </div>
 
-            {/* KPI Cards */}
+            {selectedMonths.length === 0 ? (
+              <div className="py-24 text-center glass border border-border rounded-xl">
+                <Info className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground font-semibold">Selecciona al menos un mes en el filtro de arriba para visualizar las gráficas y KPIs.</p>
+              </div>
+            ) : (
+              <>
+                {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Card 1: Ingresos Totales */}
               <Card className="bg-card border-border shadow-sm">
@@ -998,6 +1003,8 @@ export default function GasVsIngPage() {
               </CardContent>
             </Card>
 
+              </>
+            )}
             <Footer />
           </>
         )}

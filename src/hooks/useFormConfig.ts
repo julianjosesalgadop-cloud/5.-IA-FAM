@@ -34,6 +34,7 @@ export interface FormConfig {
   causasRaiz: string[]; // string[] for compatibility with ConfiguracionView
   autorizadosPor: { label: string; activo: boolean }[];
   cargos: { label: string; activo: boolean }[];
+  claseVehiculo: CatalogoItem[];
   campoConfig: Record<string, CampoConfig>;
 }
 
@@ -59,6 +60,15 @@ const defaultTiposServicio: CatalogoItem[] = [
   { label: 'Especial', activo: true, orden: 1 },
   { label: 'Urbano', activo: true, orden: 2 },
   { label: 'Otro', activo: true, orden: 3 },
+];
+
+const defaultClasesVehiculo: CatalogoItem[] = [
+  { label: 'Bus', activo: true, orden: 0 },
+  { label: 'Buseta', activo: true, orden: 1 },
+  { label: 'Microbus', activo: true, orden: 2 },
+  { label: 'Camioneta', activo: true, orden: 3 },
+  { label: 'Servicio Especial', activo: true, orden: 4 },
+  { label: 'Otro (Cúal...)', activo: true, orden: 5 },
 ];
 
 const defaultTiposDocPaso1 = [
@@ -115,6 +125,8 @@ const defaultCamposConfig: Record<string, CampoConfig> = {
   placa: { label: 'Placa', placeholder: 'Ej: ABC123', visible: true, requerido: true },
   numero_interno: { label: 'Número Interno', placeholder: 'Ej: 1024', visible: true, requerido: true },
   tipo_servicio: { label: 'Tipo de Servicio', placeholder: '', visible: true, requerido: true },
+  clase_vehiculo: { label: 'Clase de Vehículo', placeholder: '', visible: true, requerido: true },
+  clase_vehiculo_otro: { label: 'Clase de Vehículo (Otro)', placeholder: 'Especifique clase...', visible: true, requerido: false },
   propietarios: { label: 'Propietarios', placeholder: '', visible: true, requerido: true },
   tipo_reclamacion: { label: 'Tipo de Reclamación', placeholder: '', visible: true, requerido: true },
   ciudad_origen: { label: 'Ciudad Origen', placeholder: 'EJ: SOGAMOSO', visible: true, requerido: false },
@@ -167,6 +179,7 @@ export function useFormConfig() {
     causasRaiz: defaultCausasRaiz,
     autorizadosPor: defaultAutorizadosPor,
     cargos: defaultCargos,
+    claseVehiculo: defaultClasesVehiculo,
     campoConfig: defaultCamposConfig,
   });
 
@@ -218,6 +231,7 @@ export function useFormConfig() {
 
               dbConfigs['fam_config_tipos_reclamacion'] = mapCatalog('TIPO_RECLAMACION');
               dbConfigs['fam_config_tipos_servicio'] = mapCatalog('TIPO_SERVICIO');
+              dbConfigs['fam_config_clases_vehiculo'] = mapCatalog('CLASE_VEHICULO');
               dbConfigs['fam_config_tipos_doc_paso1'] = mapCatalog('TIPO_DOC_PASO1');
               dbConfigs['fam_config_conceptos_cot'] = mapCatalog('CONCEPTO_COTIZACION');
               dbConfigs['fam_config_deducibles'] = mapCatalog('OPCIONES_DEDUCIBLE');
@@ -279,6 +293,7 @@ export function useFormConfig() {
         const storedPasos = getJSON<PasoConfig[]>('fam_config_pasos_form', defaultPasos);
         const storedTiposReclamacion = getJSON<CatalogoItem[]>('fam_config_tipos_reclamacion', defaultTiposReclamacion);
         const storedTiposServicio = getJSON<CatalogoItem[]>('fam_config_tipos_servicio', defaultTiposServicio);
+        const storedClasesVehiculo = getJSON<CatalogoItem[]>('fam_config_clases_vehiculo', defaultClasesVehiculo);
         const storedTiposDocPaso1 = getJSON<{ label: string; activo: boolean }[]>('fam_config_tipos_doc_paso1', defaultTiposDocPaso1);
         const storedConceptosCot = getJSON<CatalogoItem[]>('fam_config_conceptos_cot', defaultConceptosCot);
         const storedDeducibles = getJSON<{ label: string; value: number; activo: boolean }[]>('fam_config_deducibles', defaultDeducibles);
@@ -322,6 +337,7 @@ export function useFormConfig() {
           causasRaiz: storedCausasRaiz,
           autorizadosPor: storedAutorizadosPor,
           cargos: storedCargos,
+          claseVehiculo: storedClasesVehiculo,
           campoConfig: storedCampos,
         });
       } catch (err) {
@@ -352,6 +368,7 @@ export function useFormConfig() {
         else if (key === 'fam_config_causas') updated.causasRaiz = value;
         else if (key === 'fam_config_autorizados_por') updated.autorizadosPor = value;
         else if (key === 'fam_config_cargos') updated.cargos = value;
+        else if (key === 'fam_config_clases_vehiculo') updated.claseVehiculo = value;
         else if (key === 'fam_config_campos') updated.campoConfig = value;
         return updated;
       });
@@ -420,7 +437,8 @@ export function useFormConfig() {
                       'fam_config_culpabilidades': 'CULPABILIDAD',
                       'fam_config_causas': 'CAUSA_RAIZ',
                       'fam_config_autorizados_por': 'AUTORIZADO_POR',
-                      'fam_config_cargos': 'CARGO_AUTORIZADOR'
+                      'fam_config_cargos': 'CARGO_AUTORIZADOR',
+                      'fam_config_clases_vehiculo': 'CLASE_VEHICULO'
                     };
 
                     const dbType = keyMap[key];

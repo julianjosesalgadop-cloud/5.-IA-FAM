@@ -76,6 +76,8 @@ const baseSchema = z.object({
   numero_interno: z.string().optional(),
   tipo_servicio: z.string().default('Intermunicipal'),
   tipo_servicio_otro: z.string().optional(),
+  clase_vehiculo: z.string().optional(),
+  clase_vehiculo_otro: z.string().optional(),
   propietario: z.string().optional(),
   propietarios: z.array(z.object({
     nombre: z.string().min(1, 'Requerido'),
@@ -175,6 +177,10 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
       : z.string().optional().nullable(),
     tipo_servicio: z.string().default('Intermunicipal'),
     tipo_servicio_otro: z.string().optional().nullable(),
+    clase_vehiculo: isRequired('clase_vehiculo', true)
+      ? z.string().min(1, 'Requerido')
+      : z.string().optional().nullable(),
+    clase_vehiculo_otro: z.string().optional().nullable(),
     propietario: z.string().optional().nullable(),
     propietarios: isRequired('propietarios', true)
       ? z.array(z.object({
@@ -319,6 +325,14 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
   }, {
     message: 'Debe especificar el tipo de servicio',
     path: ['tipo_servicio_otro']
+  }).refine(val => {
+    if (val.clase_vehiculo === 'Otro (Cúal...)') {
+      return !!val.clase_vehiculo_otro && val.clase_vehiculo_otro.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: 'Debe especificar la clase de vehículo',
+    path: ['clase_vehiculo_otro']
   }).refine(val => {
     if (val.tipo_reclamacion === 'Otro') {
       return !!val.tipo_reclamacion_otro && val.tipo_reclamacion_otro.trim().length > 0;
@@ -465,6 +479,11 @@ export function ExpedienteForm({
     [formConfig.tiposServicio]
   );
 
+  const activeClasesVehiculo = React.useMemo(() => 
+    formConfig.claseVehiculo?.filter(t => t?.activo && t?.label?.trim()?.toLowerCase() !== 'otro (cúal...)').sort((a, b) => (a?.orden || 0) - (b?.orden || 0)).map(t => t.label) || [],
+    [formConfig.claseVehiculo]
+  );
+
   const activeCulpabilidades = React.useMemo(() => 
     formConfig.culpabilidades?.filter(c => c?.activo).sort((a, b) => (a?.orden || 0) - (b?.orden || 0)).map(c => c.label) || [],
     [formConfig.culpabilidades]
@@ -559,6 +578,10 @@ export function ExpedienteForm({
   const initialTipoServicio = (defaultValues as any)?.tipo_servicio;
   const isCustomTipoServicio = initialTipoServicio && !activeTiposServicio.includes(initialTipoServicio);
 
+  // Check if initial clase_vehiculo is custom
+  const initialClaseVehiculo = (defaultValues as any)?.clase_vehiculo;
+  const isCustomClaseVehiculo = initialClaseVehiculo && !activeClasesVehiculo.includes(initialClaseVehiculo);
+
   const form = useForm<ExpedienteFormData>({
     resolver: zodResolver(dynamicSchema),
     defaultValues: {
@@ -566,6 +589,8 @@ export function ExpedienteForm({
       tipo_reclamacion_otro: isCustomTipoReclamacion ? initialTipoReclamacion : '',
       tipo_servicio: isCustomTipoServicio ? 'Otro' : (initialTipoServicio || 'Intermunicipal'),
       tipo_servicio_otro: isCustomTipoServicio ? initialTipoServicio : '',
+      clase_vehiculo: isCustomClaseVehiculo ? 'Otro (Cúal...)' : (initialClaseVehiculo || ''),
+      clase_vehiculo_otro: isCustomClaseVehiculo ? initialClaseVehiculo : '',
       culpabilidad: '',
       propietarios: defaultValues?.propietarios && defaultValues.propietarios.length > 0
         ? defaultValues.propietarios
@@ -629,6 +654,7 @@ export function ExpedienteForm({
         propietarios: 'Propietarios',
         tipo_reclamacion_otro: 'Otro Tipo de Reclamación',
         tipo_servicio_otro: 'Otro Tipo de Servicio',
+        clase_vehiculo_otro: 'Clase de Vehículo (Otro)',
         causa_raiz_otra: 'Otra Causa Raíz',
       };
       return specialLabels[key] || key;
@@ -637,6 +663,7 @@ export function ExpedienteForm({
     const step1Fields = [
       'fecha_incidente', 'tipo_reclamacion', 'tipo_reclamacion_otro', 
       'placa', 'numero_interno', 'tipo_servicio', 'tipo_servicio_otro', 
+      'clase_vehiculo', 'clase_vehiculo_otro',
       'propietarios', 'ciudad_origen', 'ciudad_destino', 'concepto'
     ];
     const step2Fields = [
@@ -762,15 +789,18 @@ export function ExpedienteForm({
 
       const firstActiveCot = activeCotsData[0];
 
-      const { causa_raiz_otra, tipo_reclamacion_otro, tipo_servicio_otro, ...restData } = data;
+      const { causa_raiz_otra, tipo_reclamacion_otro, tipo_servicio_otro, clase_vehiculo_otro, ...restData } = data;
       const finalCausaRaiz = data.causa_raiz === 'Otro' ? (causa_raiz_otra || 'Otro') : data.causa_raiz;
       const finalTipoReclamacion = data.tipo_reclamacion === 'Otro' ? (tipo_reclamacion_otro || 'Otro') : data.tipo_reclamacion;
       const finalTipoServicio = data.tipo_servicio === 'Otro' ? (tipo_servicio_otro || 'Otro') : data.tipo_servicio;
+      const finalClaseVehiculo = data.clase_vehiculo === 'Otro (Cúal...)' ? (clase_vehiculo_otro || 'Otro') : data.clase_vehiculo;
       const finalData = {
         ...restData,
         causa_raiz: finalCausaRaiz,
         tipo_reclamacion: finalTipoReclamacion,
         tipo_servicio: finalTipoServicio,
+        clase_vehiculo: finalClaseVehiculo,
+        clase_vehiculo_otro: data.clase_vehiculo === 'Otro (Cúal...)' ? clase_vehiculo_otro : '',
         fecha_comite: data.fecha_comite ? data.fecha_comite : null,
         fecha_autorizacion: data.fecha_autorizacion ? data.fecha_autorizacion : null,
         numero_acta: data.numero_acta ? data.numero_acta.trim().toUpperCase() : null,
@@ -1015,6 +1045,32 @@ export function ExpedienteForm({
                       <FormField label="Especifique Tipo de Servicio" required>
                         <Input placeholder="¿Cuál?" {...register('tipo_servicio_otro')} className={inputClass} />
                         {errors.tipo_servicio_otro && <p className="text-red-400 text-xs">{errors.tipo_servicio_otro.message}</p>}
+                      </FormField>
+                    ) : (
+                      <div />
+                    )}
+                  </FieldGroup>
+                )}
+
+                {formConfig.campoConfig.clase_vehiculo?.visible && (
+                  <FieldGroup>
+                    <FormField label={formConfig.campoConfig.clase_vehiculo.label} required={formConfig.campoConfig.clase_vehiculo.requerido}>
+                      <select
+                        {...register('clase_vehiculo')}
+                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">Seleccione clase...</option>
+                        {activeClasesVehiculo.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                      {errors.clase_vehiculo && <p className="text-red-400 text-xs">{errors.clase_vehiculo.message}</p>}
+                    </FormField>
+                    
+                    {watch('clase_vehiculo') === 'Otro (Cúal...)' ? (
+                      <FormField label="Especifique Clase de Vehículo" required>
+                        <Input placeholder="¿Cuál?" {...register('clase_vehiculo_otro')} className={inputClass} />
+                        {errors.clase_vehiculo_otro && <p className="text-red-400 text-xs">{errors.clase_vehiculo_otro.message}</p>}
                       </FormField>
                     ) : (
                       <div />

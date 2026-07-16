@@ -2494,7 +2494,7 @@ export function DashboardCharts({
           <Bar 
             dataKey="negociado" 
             name="negociado" 
-            fill="hsl(43, 96%, 52%)" 
+            fill="#94a3b8" 
             radius={[2, 2, 0, 0]}
             onClick={(data) => {
               const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
@@ -2523,7 +2523,7 @@ export function DashboardCharts({
           <Bar 
             dataKey="aprobado" 
             name="aprobado" 
-            fill="hsl(142, 71%, 45%)" 
+            fill="hsl(203, 100%, 50%)" 
             radius={[2, 2, 0, 0]}
             onClick={(data) => {
               const monthIdx = data?.monthIndex !== undefined ? data.monthIndex : (data?.payload?.monthIndex);
