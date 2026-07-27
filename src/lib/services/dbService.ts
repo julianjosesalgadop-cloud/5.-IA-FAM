@@ -444,7 +444,7 @@ export const dbService = {
     const supabase = createBrowserClient();
     const { data, error } = await supabase
       .from('expedientes')
-      .select('*')
+      .select('*, cotizaciones(*)')
       .is('deleted_at', null)
       .order('numero_expediente', { ascending: false });
 

@@ -211,7 +211,30 @@ export function ExpedientesList() {
           'Propietario': e.propietario,
           'Ciudad Origen': e.ciudad_origen || '',
           'Ciudad Destino': e.ciudad_destino || '',
-          'Concepto': e.concepto || '',
+          'Concepto': (() => {
+            if (e.concepto && e.concepto.trim()) {
+              return e.concepto.trim();
+            }
+            if (e.cotizaciones && e.cotizaciones.length > 0) {
+              const activeCots = e.cotizaciones.filter((c: any) => !c.deleted_at);
+              const selectedCots = activeCots.filter((c: any) => c.seleccionada);
+              const targetCots = selectedCots.length > 0 ? selectedCots : activeCots;
+              const concepts = targetCots
+                .map((c: any) => {
+                  if (!c) return '';
+                  let name = (c.concepto || '').trim();
+                  if (name.toUpperCase() === 'OTROS' && c.concepto_otro) {
+                    name = c.concepto_otro.trim();
+                  }
+                  return name;
+                })
+                .filter(Boolean);
+              if (concepts.length > 0) {
+                return Array.from(new Set(concepts)).join(', ');
+              }
+            }
+            return '';
+          })(),
           'Valor Cotización': e.valor_cotizacion || 0,
           'Valor Negociado': e.valor_negociado || 0,
           'Deducible %': e.porcentaje_deducible ? `${e.porcentaje_deducible}%` : '0%',
