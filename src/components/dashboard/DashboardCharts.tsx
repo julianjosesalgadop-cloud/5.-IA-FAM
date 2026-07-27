@@ -3927,6 +3927,80 @@ export function DashboardCharts({
         </Card>
       </motion.div>
 
+      {/* Siniestralidad por Serie de Vehículo */}
+      <motion.div
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Siniestralidad por Serie de Vehículo</CardTitle>
+              <CardDescription>Cantidad de reclamaciones y monto $ por prefijo de número interno</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setSerieMetricFilter('todos')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    serieMetricFilter === 'todos'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Ambos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSerieMetricFilter('cantidad')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    serieMetricFilter === 'cantidad'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Cantidad
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSerieMetricFilter('monto')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    serieMetricFilter === 'monto'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Monto
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'serie-vehiculos',
+                  title: 'Siniestralidad por Serie de Vehículo',
+                  description: 'Cantidad de reclamaciones y monto $ por prefijo de número interno',
+                  render: renderVehiculosInterno
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderVehiculosInterno(360)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* By status */}
       <motion.div
         className="lg:col-span-3 min-w-0 w-full overflow-hidden"
@@ -4217,81 +4291,6 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderCausasRaiz(240)}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-
-      {/* Siniestralidad por Serie de Vehículo */}
-      <motion.div
-        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.65, duration: 0.4 }}
-      >
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Siniestralidad por Serie de Vehículo</CardTitle>
-              <CardDescription>Cantidad de reclamaciones y monto $ por prefijo de número interno</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
-                <button
-                  type="button"
-                  onClick={() => setSerieMetricFilter('todos')}
-                  className={cn(
-                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
-                    serieMetricFilter === 'todos'
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Ambos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSerieMetricFilter('cantidad')}
-                  className={cn(
-                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
-                    serieMetricFilter === 'cantidad'
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Cantidad
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSerieMetricFilter('monto')}
-                  className={cn(
-                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
-                    serieMetricFilter === 'monto'
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Monto
-                </button>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
-                title="Expandir gráfico"
-                onClick={() => setExpandedChart({
-                  id: 'serie-vehiculos',
-                  title: 'Siniestralidad por Serie de Vehículo',
-                  description: 'Cantidad de reclamaciones y monto $ por prefijo de número interno',
-                  render: renderVehiculosInterno
-                })}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {renderVehiculosInterno(360)}
           </CardContent>
         </Card>
       </motion.div>
