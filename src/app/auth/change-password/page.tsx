@@ -306,7 +306,7 @@ export default function ChangePasswordPage() {
               </button>
             </div>
 
-            <div className="text-center text-xs text-muted-foreground/80 mt-6 pt-4 border-t border-border/50 font-semibold">
+            <div className="text-center text-xs text-muted-foreground/80 mt-4 pt-2 pb-0.5 -mb-2 border-t border-border/50 font-semibold">
               Desarrollado Por Julián Salgado | Flota Sugamuxi S.A.
             </div>
           </CardContent>
