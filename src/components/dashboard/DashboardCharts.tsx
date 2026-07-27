@@ -1061,37 +1061,52 @@ export function DashboardCharts({
   const getInternalNumberCategory = (numStr: string | null | undefined): string => {
     if (!numStr) return 'Otros';
     const cleanNum = numStr.trim();
+    const map: Record<string, string> = {
+      '10': 'Vehículos 1000',
+      '32': 'Vehículos 32',
+      '4': 'Vehículos 400',
+      '6': 'Vehículos 600',
+      '7': 'Vehículos 700',
+      '71': 'Vehículos 71',
+      '80': 'Vehículos 8000',
+      '90': 'Vehículos 9000',
+    };
     const prefixes = ['71', '80', '10', '90', '4', '32', '6', '7'];
     for (const prefix of prefixes) {
       if (cleanNum.startsWith(prefix)) {
-        return `Serie ${prefix}`;
+        return map[prefix] || `Vehículos ${prefix}`;
       }
     }
     return 'Otros';
   };
 
   const internalCategoriesMap: Record<string, { name: string; cantidad: number; monto: number }> = {
-    'Serie 10': { name: 'Serie 10', cantidad: 0, monto: 0 },
-    'Serie 32': { name: 'Serie 32', cantidad: 0, monto: 0 },
-    'Serie 4': { name: 'Serie 4', cantidad: 0, monto: 0 },
-    'Serie 6': { name: 'Serie 6', cantidad: 0, monto: 0 },
-    'Serie 7': { name: 'Serie 7', cantidad: 0, monto: 0 },
-    'Serie 71': { name: 'Serie 71', cantidad: 0, monto: 0 },
-    'Serie 80': { name: 'Serie 80', cantidad: 0, monto: 0 },
-    'Serie 90': { name: 'Serie 90', cantidad: 0, monto: 0 },
+    'Vehículos 1000': { name: 'Vehículos 1000', cantidad: 0, monto: 0 },
+    'Vehículos 32': { name: 'Vehículos 32', cantidad: 0, monto: 0 },
+    'Vehículos 400': { name: 'Vehículos 400', cantidad: 0, monto: 0 },
+    'Vehículos 600': { name: 'Vehículos 600', cantidad: 0, monto: 0 },
+    'Vehículos 700': { name: 'Vehículos 700', cantidad: 0, monto: 0 },
+    'Vehículos 71': { name: 'Vehículos 71', cantidad: 0, monto: 0 },
+    'Vehículos 8000': { name: 'Vehículos 8000', cantidad: 0, monto: 0 },
+    'Vehículos 9000': { name: 'Vehículos 9000', cantidad: 0, monto: 0 },
     'Otros': { name: 'Otros', cantidad: 0, monto: 0 },
   };
 
   es.forEach((e) => {
     const cat = getInternalNumberCategory(e.numero_interno);
-    internalCategoriesMap[cat].cantidad += 1;
-    internalCategoriesMap[cat].monto += (e.valor_final_aprobado || 0);
+    if (internalCategoriesMap[cat]) {
+      internalCategoriesMap[cat].cantidad += 1;
+      internalCategoriesMap[cat].monto += (e.valor_final_aprobado || 0);
+    } else {
+      internalCategoriesMap['Otros'].cantidad += 1;
+      internalCategoriesMap['Otros'].monto += (e.valor_final_aprobado || 0);
+    }
   });
 
   const esTotalQty = es.length;
   const esTotalVal = es.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
 
-  const orderList = ['Serie 10', 'Serie 32', 'Serie 4', 'Serie 6', 'Serie 7', 'Serie 71', 'Serie 80', 'Serie 90', 'Otros'];
+  const orderList = ['Vehículos 1000', 'Vehículos 32', 'Vehículos 400', 'Vehículos 600', 'Vehículos 700', 'Vehículos 71', 'Vehículos 8000', 'Vehículos 9000', 'Otros'];
   const internalCategoriesData = Object.values(internalCategoriesMap)
     .map(item => ({
       ...item,

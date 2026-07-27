@@ -83,10 +83,20 @@ export default function DashboardPage() {
   const getInternalNumberCategory = (numStr: string | null | undefined): string => {
     if (!numStr) return 'Otros';
     const cleanNum = numStr.trim();
+    const map: Record<string, string> = {
+      '10': 'Vehículos 1000',
+      '32': 'Vehículos 32',
+      '4': 'Vehículos 400',
+      '6': 'Vehículos 600',
+      '7': 'Vehículos 700',
+      '71': 'Vehículos 71',
+      '80': 'Vehículos 8000',
+      '90': 'Vehículos 9000',
+    };
     const prefixes = ['71', '80', '10', '90', '4', '32', '6', '7'];
     for (const prefix of prefixes) {
       if (cleanNum.startsWith(prefix)) {
-        return `Serie ${prefix}`;
+        return map[prefix] || `Vehículos ${prefix}`;
       }
     }
     return 'Otros';
