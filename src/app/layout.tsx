@@ -9,8 +9,8 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 
 export const metadata: Metadata = {
   title: {
-    default: 'SIGFAM – Flota Sugamuxi S.A.',
-    template: '%s | SIGFAM'
+    default: 'SIGFAM | Flota Sugamuxi S.A.',
+    template: 'SIGFAM | %s'
   },
   description: 'Sistema Integrado de Gestión del Fondo de Auxilio Mutuo – Flota Sugamuxi S.A.',
   keywords: ['SIGFAM', 'FAM', 'Flota Sugamuxi', 'expedientes', 'siniestros', 'seguridad vial'],
