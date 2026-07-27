@@ -4291,7 +4291,7 @@ export function DashboardCharts({
             </div>
           </CardHeader>
           <CardContent>
-            {renderVehiculosInterno(240)}
+            {renderVehiculosInterno(360)}
           </CardContent>
         </Card>
       </motion.div>
