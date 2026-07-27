@@ -841,7 +841,7 @@ export default function ComparativoPage() {
         >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
           <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
-          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={65} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={95} tickLine={false} />
           <Tooltip content={<CustomAmountTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
           <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
@@ -872,7 +872,7 @@ export default function ComparativoPage() {
         >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
           <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
-          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={65} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={95} tickLine={false} />
           <Tooltip content={<CustomCountTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
           <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>

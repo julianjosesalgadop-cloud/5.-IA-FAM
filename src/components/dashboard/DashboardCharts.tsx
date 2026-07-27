@@ -1566,11 +1566,13 @@ export function DashboardCharts({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={internalCategoriesData}
-          margin={{ left: -10, right: 10, top: 20, bottom: 5 }}
+          margin={{ left: -10, right: 10, top: 20, bottom: 25 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis 
             dataKey="name" 
+            interval={0}
+            height={48}
             tick={(props: any) => {
               const { x, y, payload } = props;
               const value = payload?.value || '';
@@ -1588,9 +1590,9 @@ export function DashboardCharts({
                 >
                   <text
                     x={x}
-                    y={y}
-                    dy={12}
-                    textAnchor="middle"
+                    y={y + 6}
+                    textAnchor="end"
+                    transform={`rotate(-25, ${x}, ${y + 6})`}
                     fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
                     className="hover:fill-primary font-semibold text-[9px] transition-colors"
                   >
