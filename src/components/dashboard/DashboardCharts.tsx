@@ -829,10 +829,10 @@ export function DashboardCharts({
   // 4. Culpabilidad Distribution
   const CULPABILIDAD_TYPES = ['Conductor', 'Tercero', 'Compartida', 'Sin definir'] as const;
   const CULPABILIDAD_COLORS = {
-    'Conductor': 'hsl(0, 72%, 55%)',
-    'Tercero': 'hsl(142, 71%, 45%)',
-    'Compartida': 'hsl(43, 96%, 52%)',
-    'Sin definir': 'hsl(215, 20%, 55%)',
+    'Conductor': 'hsl(217, 91%, 45%)',   // Azul Oscuro Corporativo
+    'Tercero': 'hsl(203, 100%, 50%)',    // Azul Claro Corporativo (reemplaza al verde)
+    'Compartida': 'hsl(43, 96%, 52%)',   // Dorado / Ámbar
+    'Sin definir': 'hsl(215, 20%, 55%)', // Gris
   };
   const culpabilidadData = CULPABILIDAD_TYPES.map((type) => {
     const count = expedientes.filter((e) => (e.culpabilidad || 'Sin definir') === type).length;
