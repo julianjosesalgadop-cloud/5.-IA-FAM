@@ -51,6 +51,9 @@ interface DashboardChartsProps {
   selectedCausaRaiz?: string;
   onSelectSerie?: (serie: string) => void;
   selectedSerie?: string;
+  onSelectClaseVehiculo?: (clase: string) => void;
+  selectedClaseVehiculo?: string;
+  expedientesForClaseVehiculo?: Expediente[];
   onSelectRoute?: (route: string) => void;
   selectedRoute?: string;
   onSelectProveedor?: (proveedor: string) => void;
@@ -250,6 +253,7 @@ export function DashboardCharts({
   expedientesForDrivers: rawExpedientesForDrivers,
   expedientesForPropietarios: rawExpedientesForPropietarios,
   expedientesForSeries: rawExpedientesForSeries,
+  expedientesForClaseVehiculo: rawExpedientesForClaseVehiculo,
   expedientesForRoutes: rawExpedientesForRoutes,
   expedientesForActas: rawExpedientesForActas,
   expedientesForMonths: rawExpedientesForMonths,
@@ -271,6 +275,8 @@ export function DashboardCharts({
   selectedCausaRaiz,
   onSelectSerie,
   selectedSerie,
+  onSelectClaseVehiculo,
+  selectedClaseVehiculo,
   onSelectRoute,
   selectedRoute,
   onSelectProveedor,
@@ -293,6 +299,7 @@ export function DashboardCharts({
   const ed = rawExpedientesForDrivers ? filterAllowed(rawExpedientesForDrivers) : expedientes;
   const ep = rawExpedientesForPropietarios ? filterAllowed(rawExpedientesForPropietarios) : expedientes;
   const es = rawExpedientesForSeries ? filterAllowed(rawExpedientesForSeries) : expedientes;
+  const ec = rawExpedientesForClaseVehiculo ? filterAllowed(rawExpedientesForClaseVehiculo) : expedientes;
   const er = rawExpedientesForRoutes ? filterAllowed(rawExpedientesForRoutes) : expedientes;
   const ea = rawExpedientesForActas ? filterAllowed(rawExpedientesForActas) : expedientes;
   const em = rawExpedientesForMonths ? filterAllowed(rawExpedientesForMonths) : expedientes;
@@ -341,6 +348,7 @@ export function DashboardCharts({
   const [serviceMetric, setServiceMetric] = useState<'cantidad' | 'monto'>('cantidad');
   const [timeUnit, setTimeUnit] = useState<'year' | 'month' | 'day'>('month');
   const [serieMetricFilter, setSerieMetricFilter] = useState<'todos' | 'cantidad' | 'monto'>('todos');
+  const [claseMetricFilter, setClaseMetricFilter] = useState<'todos' | 'cantidad' | 'monto'>('todos');
 
   useEffect(() => {
     if (presetRange === 'todo') {
@@ -1119,6 +1127,34 @@ export function DashboardCharts({
       return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
     });
 
+  // 12b. Clase de Vehículo categorization
+  const claseVehiculoMap: Record<string, { name: string; cantidad: number; monto: number }> = {};
+
+  ec.forEach((e) => {
+    const rawClase = (e as any).clase_vehiculo;
+    const cat = (rawClase && typeof rawClase === 'string' && rawClase.trim()) ? rawClase.trim() : 'Sin Especificar';
+    if (!claseVehiculoMap[cat]) {
+      claseVehiculoMap[cat] = { name: cat, cantidad: 0, monto: 0 };
+    }
+    claseVehiculoMap[cat].cantidad += 1;
+    claseVehiculoMap[cat].monto += (e.valor_final_aprobado || 0);
+  });
+
+  const ecTotalQty = ec.length;
+  const ecTotalVal = ec.reduce((acc, e) => acc + (e.valor_final_aprobado || 0), 0);
+
+  const claseVehiculoData = Object.values(claseVehiculoMap)
+    .map(item => ({
+      ...item,
+      totalCantidad: ecTotalQty,
+      totalMonto: ecTotalVal,
+    }))
+    .sort((a, b) => {
+      if (a.name === 'Sin Especificar' || a.name === 'Otros') return 1;
+      if (b.name === 'Sin Especificar' || b.name === 'Otros') return -1;
+      return b.monto - a.monto || b.cantidad - a.cantidad;
+    });
+
   // Helper to extract route key
   const getRouteKey = (e: Expediente): string => {
     const origin = (e.ciudad_origen || '').trim().toUpperCase();
@@ -1680,6 +1716,140 @@ export function DashboardCharts({
                 <Cell 
                   key={index} 
                   fill={selectedSerie === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                />
+              ))}
+              <LabelList
+                dataKey="monto"
+                position="top"
+                formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''}
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }}
+              />
+            </Bar>
+          )}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  const renderClaseVehiculo = (height: number) => (
+    <div style={{ height }} className="w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={claseVehiculoData}
+          margin={{ left: -10, right: 10, top: 20, bottom: 25 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis 
+            dataKey="name" 
+            interval={0}
+            height={48}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const value = payload?.value || '';
+              const isSelected = selectedClaseVehiculo === value;
+              return (
+                <g 
+                  style={{ pointerEvents: 'auto' }} 
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectClaseVehiculo) {
+                      onSelectClaseVehiculo(value);
+                    }
+                  }}
+                >
+                  <text
+                    x={x}
+                    y={y + 6}
+                    textAnchor="end"
+                    transform={`rotate(-25, ${x}, ${y + 6})`}
+                    fill={isSelected ? 'hsl(43, 96%, 52%)' : 'hsl(var(--muted-foreground))'}
+                    className="hover:fill-primary font-semibold text-[9px] transition-colors"
+                  >
+                    {value}
+                  </text>
+                </g>
+              );
+            }}
+          />
+          {(claseMetricFilter === 'todos' || claseMetricFilter === 'cantidad') && (
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+              axisLine={false}
+              tickLine={false}
+            />
+          )}
+          {(claseMetricFilter === 'todos' || claseMetricFilter === 'monto') && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+            />
+          )}
+          <Tooltip content={<CustomTooltipSeries />} />
+          <Legend
+            iconSize={8}
+            onClick={(props) => {
+              const { dataKey } = props;
+              setClaseMetricFilter((prev) => {
+                if (prev === dataKey) return 'todos';
+                return dataKey as 'cantidad' | 'monto';
+              });
+            }}
+            formatter={(value) => (
+              <span className="text-[10px] text-muted-foreground font-medium uppercase cursor-pointer hover:text-foreground transition-colors select-none">
+                {value === 'monto' ? 'MONTO APROBADO' : 'CANTIDAD DE EXPEDIENTES'}
+              </span>
+            )}
+          />
+          {(claseMetricFilter === 'todos' || claseMetricFilter === 'cantidad') && (
+            <Bar 
+              yAxisId="left" 
+              dataKey="cantidad" 
+              name="cantidad" 
+              fill="#94a3b8" 
+              radius={[2, 2, 0, 0]}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectClaseVehiculo) {
+                  onSelectClaseVehiculo(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {claseVehiculoData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedClaseVehiculo === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
+                />
+              ))}
+              <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
+            </Bar>
+          )}
+          {(claseMetricFilter === 'todos' || claseMetricFilter === 'monto') && (
+            <Bar 
+              yAxisId="right" 
+              dataKey="monto" 
+              name="monto" 
+              fill="hsl(203, 100%, 50%)" 
+              radius={[2, 2, 0, 0]}
+              onClick={(data) => {
+                const val = data?.name || data?.payload?.name;
+                if (val && onSelectClaseVehiculo) {
+                  onSelectClaseVehiculo(val);
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {claseVehiculoData.map((d, index) => (
+                <Cell 
+                  key={index} 
+                  fill={selectedClaseVehiculo === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
                 />
               ))}
               <LabelList
@@ -3997,6 +4167,80 @@ export function DashboardCharts({
           </CardHeader>
           <CardContent>
             {renderVehiculosInterno(360)}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Siniestralidad por Clase de Vehículo */}
+      <motion.div
+        className="lg:col-span-3 min-w-0 w-full overflow-hidden"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.36, duration: 0.4 }}
+      >
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Siniestralidad por Clase de Vehículo</CardTitle>
+              <CardDescription>Cantidad de reclamaciones y monto $ por clase de vehículo (Bus, Buseta, Microbús, etc.)</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setClaseMetricFilter('todos')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    claseMetricFilter === 'todos'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Ambos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClaseMetricFilter('cantidad')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    claseMetricFilter === 'cantidad'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Cantidad
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClaseMetricFilter('monto')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-semibold rounded-md transition-all duration-200",
+                    claseMetricFilter === 'monto'
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Monto
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-lg"
+                title="Expandir gráfico"
+                onClick={() => setExpandedChart({
+                  id: 'clase-vehiculo',
+                  title: 'Siniestralidad por Clase de Vehículo',
+                  description: 'Cantidad de reclamaciones y monto $ por clase de vehículo',
+                  render: renderClaseVehiculo
+                })}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderClaseVehiculo(360)}
           </CardContent>
         </Card>
       </motion.div>
