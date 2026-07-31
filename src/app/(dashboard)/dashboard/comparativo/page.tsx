@@ -73,6 +73,7 @@ export default function ComparativoPage() {
   const [filterReclamacion, setFilterReclamacion] = useState('');
   const [filterCulpabilidad, setFilterCulpabilidad] = useState('');
   const [filterSerie, setFilterSerie] = useState('');
+  const [filterClase, setFilterClase] = useState('');
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
   const [filterTipoServicio, setFilterTipoServicio] = useState('');
   const [filterTipoReclamacion, setFilterTipoReclamacion] = useState<string[]>([]);
@@ -194,12 +195,18 @@ export default function ComparativoPage() {
       }
       if (filterCulpabilidad && culp !== filterCulpabilidad) return false;
       if (filterSerie && serie !== filterSerie) return false;
+      const clase = e.clase_vehiculo 
+        ? (e.clase_vehiculo === 'Otro (Cúal...)' || e.clase_vehiculo === 'Otro' 
+            ? (e.clase_vehiculo_otro || 'Otro') 
+            : e.clase_vehiculo)
+        : 'Sin definir';
+      if (filterClase && clase !== filterClase) return false;
       if (filterMonth !== null && mo !== filterMonth) return false;
       if (filterTipoServicio && tipoServ !== filterTipoServicio) return false;
 
       return true;
     });
-  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterMonth, filterTipoServicio, filterTipoReclamacion, filterEstado]);
+  }, [activeExpedientes, filterReclamacion, filterCulpabilidad, filterSerie, filterClase, filterMonth, filterTipoServicio, filterTipoReclamacion, filterEstado]);
 
   // Process data for monthly charts based on dynamic filters
   const { 
@@ -209,6 +216,7 @@ export default function ComparativoPage() {
     culpabilidadData,
     seriesData,
     tipoServicioData,
+    claseVehiculoData,
   } = React.useMemo(() => {
     // 1. Monthly data structure
     const months = Array.from({ length: 12 }).map((_, i) => ({
@@ -244,6 +252,7 @@ export default function ComparativoPage() {
     const culpabilidadMap: Record<string, { name: string; cases2025: number; cases2026: number }> = {};
     const seriesMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
     const tipoServicioMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
+    const claseVehiculoMap: Record<string, { name: string; cases2025: number; cases2026: number; amount2025: number; amount2026: number }> = {};
 
     filteredActiveExpedientes.forEach((e) => {
       const yr = getYear(e);
@@ -254,6 +263,11 @@ export default function ComparativoPage() {
       const culp = e.culpabilidad || 'Sin definir';
       const serie = getInternalNumberCategory(e.numero_interno);
       const tipoServ = e.tipo_servicio || 'No especificado';
+      const clase = e.clase_vehiculo 
+        ? (e.clase_vehiculo === 'Otro (Cúal...)' || e.clase_vehiculo === 'Otro' 
+            ? (e.clase_vehiculo_otro || 'Otro') 
+            : e.clase_vehiculo)
+        : 'Sin definir';
 
       // Monthly aggregation
       if (mo !== null && mo >= 0 && mo < 12) {
@@ -337,6 +351,13 @@ export default function ComparativoPage() {
         }
         if (yr === 2025) { tipoServicioMap[tipoServ].cases2025 += 1; tipoServicioMap[tipoServ].amount2025 += approved; }
         else { tipoServicioMap[tipoServ].cases2026 += 1; tipoServicioMap[tipoServ].amount2026 += approved; }
+
+        // Group by Clase Vehículo
+        if (!claseVehiculoMap[clase]) {
+          claseVehiculoMap[clase] = { name: clase, cases2025: 0, cases2026: 0, amount2025: 0, amount2026: 0 };
+        }
+        if (yr === 2025) { claseVehiculoMap[clase].cases2025 += 1; claseVehiculoMap[clase].amount2025 += approved; }
+        else { claseVehiculoMap[clase].cases2026 += 1; claseVehiculoMap[clase].amount2026 += approved; }
       }
     });
 
@@ -372,6 +393,7 @@ export default function ComparativoPage() {
       culpabilidadData: Object.values(culpabilidadMap).sort((a, b) => b.cases2026 - a.cases2026),
       seriesData: Object.values(seriesMap).sort((a, b) => b.amount2026 - a.amount2026),
       tipoServicioData: Object.values(tipoServicioMap).sort((a, b) => b.amount2026 - a.amount2026),
+      claseVehiculoData: Object.values(claseVehiculoMap).sort((a, b) => (b.amount2026 + b.amount2025) - (a.amount2026 + a.amount2025)),
     };
   }, [filteredActiveExpedientes, selectedMonths]);
 
@@ -886,7 +908,69 @@ export default function ComparativoPage() {
     );
   };
 
-  const hasActiveFilters = filterReclamacion || filterCulpabilidad || filterSerie || filterMonth !== null || filterTipoServicio || filterTipoReclamacion.length > 0 || filterEstado.length > 0;
+  const renderClaseVehiculoMontoChart = (isMaximized = false) => {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={claseVehiculoData.slice(0, 6)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 40, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterClase(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={105} tickLine={false} />
+          <Tooltip content={<CustomAmountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderClaseVehiculoCasesChart = (isMaximized = false) => {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={claseVehiculoData.slice(0, 6)} 
+          layout="vertical" 
+          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          onClick={(state) => {
+            if (state && state.activeLabel) {
+              const label = String(state.activeLabel);
+              setFilterClase(current => current === label ? '' : label);
+            }
+          }}
+          className="cursor-pointer"
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} horizontal={false} />
+          <XAxis type="number" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
+          <YAxis dataKey="name" type="category" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} width={105} tickLine={false} />
+          <Tooltip content={<CustomCountTooltip />} />
+          <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
+          <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+          </Bar>
+          <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
+            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const hasActiveFilters = filterReclamacion || filterCulpabilidad || filterSerie || filterClase || filterMonth !== null || filterTipoServicio || filterTipoReclamacion.length > 0 || filterEstado.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -1504,7 +1588,76 @@ export default function ComparativoPage() {
               </motion.div>
             </div>
 
-            {/* Row 7: Siniestros por Culpabilidad */}
+            {/* Row 7: Siniestralidad por Clase de Vehículo (Monto | Cantidad) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.61 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Monto Aprobado por Clase de Vehículo</CardTitle>
+                        {filterClase && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterClase}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Costo total $ por clase de vehículo (Bus, Buseta, Camioneta, etc.)</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'clase-vehiculo-monto',
+                        title: 'Monto Aprobado por Clase de Vehículo (2025 vs 2026)',
+                        description: 'Comparativa del costo total por tipo/clase de vehículo'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[260px]">
+                    {renderClaseVehiculoMontoChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.63 }}>
+                <Card className="bg-card border-border shadow-sm h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-foreground">Cantidad por Clase de Vehículo</CardTitle>
+                        {filterClase && (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                            Filtro: {filterClase}
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription>Número de incidentes por clase de vehículo (2025 vs 2026)</CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                      onClick={() => setExpandedChart({
+                        id: 'clase-vehiculo-cases',
+                        title: 'Cantidad de Expedientes por Clase de Vehículo (2025 vs 2026)',
+                        description: 'Comparativa de número de incidentes por tipo/clase de vehículo'
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="h-[260px]">
+                    {renderClaseVehiculoCasesChart(false)}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Row 8: Siniestros por Culpabilidad */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.65 }}>
               <Card className="bg-card border-border shadow-sm w-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -1586,6 +1739,7 @@ export default function ComparativoPage() {
                   setFilterReclamacion('');
                   setFilterCulpabilidad('');
                   setFilterSerie('');
+                  setFilterClase('');
                   setFilterMonth(null);
                   setFilterTipoServicio('');
                   setFilterTipoReclamacion([]);
@@ -1639,6 +1793,22 @@ export default function ComparativoPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setFilterSerie('')}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
+              )}
+              {filterClase && (
+                <div className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-lg border border-border/30">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase">Clase Vehículo</p>
+                    <p className="text-[11px] font-semibold text-foreground truncate">{filterClase}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterClase('')}
                     className="h-4 w-4 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 p-0"
                   >
                     <X className="h-2.5 w-2.5" />
@@ -1759,6 +1929,8 @@ export default function ComparativoPage() {
                   {expandedChart.id === 'culpabilidad' && renderCulpabilidadChart(true)}
                   {expandedChart.id === 'series' && renderSeriesChart(true)}
                   {expandedChart.id === 'series-cases' && renderSeriesCasesChart(true)}
+                  {expandedChart.id === 'clase-vehiculo-monto' && renderClaseVehiculoMontoChart(true)}
+                  {expandedChart.id === 'clase-vehiculo-cases' && renderClaseVehiculoCasesChart(true)}
                 </div>
               </div>
             </motion.div>
