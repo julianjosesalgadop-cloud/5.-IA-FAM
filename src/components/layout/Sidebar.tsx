@@ -19,7 +19,7 @@ import {
   ShieldCheck,
   X,
   Users,
-  GitCompare,
+  ArrowLeftRight,
   CircleDollarSign,
 } from 'lucide-react';
 import { getMockUser } from '@/lib/services/dbService';
@@ -32,7 +32,7 @@ const NAV_GROUPS = [
     title: 'Principal',
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
-      { href: '/dashboard/comparativo', label: 'Comparativo', icon: 'GitCompare', roles: ['admin', 'analista', 'consultor'] },
+      { href: '/dashboard/comparativo', label: 'Comparativo', icon: 'ArrowLeftRight', roles: ['admin', 'analista', 'consultor'] },
       { href: '/dashboard/gasvsing', label: 'Gastos Vs Ingresos', icon: 'CircleDollarSign', roles: ['admin', 'analista', 'consultor'] },
     ],
   },
@@ -64,7 +64,7 @@ const ICONS: Record<string, React.ElementType> = {
   SlidersHorizontal,
   Shield,
   Users,
-  GitCompare,
+  ArrowLeftRight,
   CircleDollarSign,
 };
 

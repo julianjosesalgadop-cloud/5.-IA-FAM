@@ -10,7 +10,7 @@ import {
   Calendar, 
   DollarSign, 
   FileText, 
-  GitCompare, 
+  ArrowLeftRight, 
   Info,
   ArrowUpRight,
   ArrowDownRight,
@@ -1062,7 +1062,7 @@ export default function ComparativoPage() {
                   <CardHeader className="pb-2">
                     <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                       <span>Expedientes YTD (2026)</span>
-                      <GitCompare className="w-4 h-4 text-slate-400" />
+                      <ArrowLeftRight className="w-4 h-4 text-slate-400" />
                     </CardDescription>
                     <CardTitle className="text-3xl font-bold font-mono tracking-tight text-primary mt-1">
                       {totals.ytdCases2026}
