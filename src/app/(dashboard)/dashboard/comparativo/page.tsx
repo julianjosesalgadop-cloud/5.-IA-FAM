@@ -16,7 +16,8 @@ import {
   ArrowDownRight,
   Maximize2,
   Minimize2,
-  X
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -1103,20 +1104,23 @@ export default function ComparativoPage() {
           </div>
           {(filterTipoReclamacion.length > 0 || filterEstado.length > 0 || hasActiveFilters) && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
+              title="Limpiar todos los filtros"
               onClick={() => {
                 setFilterTipoReclamacion([]);
                 setFilterEstado([]);
                 setFilterReclamacion('');
                 setFilterCulpabilidad('');
                 setFilterSerie('');
+                setFilterClase('');
                 setFilterMonth(null);
                 setFilterTipoServicio('');
               }}
-              className="text-xs text-red-400 hover:text-red-500 h-10 px-3 shrink-0"
+              className="h-9 px-2.5 text-xs text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 shrink-0 flex items-center gap-1.5 rounded-lg font-semibold"
             >
-              Limpiar Filtros
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Limpiar Filtros</span>
             </Button>
           )}
         </div>
@@ -1134,7 +1138,7 @@ export default function ComparativoPage() {
         ) : (
           <>
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
               {/* Card 1: Total Cases YTD */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -1142,26 +1146,26 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
-                  <CardHeader className="pb-2">
-                    <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
+                  <CardHeader className="p-3 px-3.5 pb-1">
+                    <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                       <span>Expedientes YTD (2026)</span>
                       <ArrowLeftRight className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-3xl font-bold font-mono tracking-tight text-primary mt-1">
+                    <CardTitle className="text-lg sm:text-xl xl:text-2xl font-bold font-mono tracking-tight text-primary mt-0.5">
                       {totals.ytdCases2026}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
-                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs">vs <span className="font-semibold text-foreground font-mono">{totals.ytdCases2025}</span> en 2025</span>
+                  <CardContent className="px-3.5 pb-2.5 pt-0">
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]">vs <span className="font-semibold text-foreground font-mono">{totals.ytdCases2025}</span> en 2025</span>
                       {casesVariationYTD > 0 ? (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
                           <ArrowUpRight className="w-3 h-3 mr-0.5" />
                           +{casesVariationYTD.toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                           <ArrowDownRight className="w-3 h-3 mr-0.5" />
                           {casesVariationYTD.toFixed(1)}%
                         </div>
@@ -1178,28 +1182,28 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.05 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
-                  <CardHeader className="pb-2">
-                    <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
+                  <CardHeader className="p-3 px-3.5 pb-1">
+                    <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                       <span>Monto Aprobado YTD (2026)</span>
                       <DollarSign className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-lg xs:text-xl lg:text-lg xl:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(totals.ytdAmount2026)}>
+                    <CardTitle className="text-lg sm:text-xl xl:text-2xl font-bold font-mono tracking-tight text-primary mt-0.5 truncate" title={formatCOP(totals.ytdAmount2026)}>
                       {formatCOP(totals.ytdAmount2026)}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
-                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs" title={formatCOP(totals.ytdAmount2025)}>
+                  <CardContent className="px-3.5 pb-2.5 pt-0">
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]" title={formatCOP(totals.ytdAmount2025)}>
                         vs <span className="font-semibold text-foreground font-mono">{formatCOP(totals.ytdAmount2025)}</span> en 2025
                       </span>
                       {amountVariationYTD > 0 ? (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
                           <ArrowUpRight className="w-3 h-3 mr-0.5" />
                           +{amountVariationYTD.toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                           <ArrowDownRight className="w-3 h-3 mr-0.5" />
                           {amountVariationYTD.toFixed(1)}%
                         </div>
@@ -1216,28 +1220,28 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.1 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
-                  <CardHeader className="pb-2">
-                    <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
+                  <CardHeader className="p-3 px-3.5 pb-1">
+                    <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                       <span>Costo Medio por Caso (2026)</span>
                       <FileText className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-lg xs:text-xl lg:text-lg xl:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(avgCost2026)}>
+                    <CardTitle className="text-lg sm:text-xl xl:text-2xl font-bold font-mono tracking-tight text-primary mt-0.5 truncate" title={formatCOP(avgCost2026)}>
                       {formatCOP(avgCost2026)}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
-                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs" title={formatCOP(avgCost2025)}>
+                  <CardContent className="px-3.5 pb-2.5 pt-0">
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]" title={formatCOP(avgCost2025)}>
                         vs <span className="font-semibold text-foreground font-mono">{formatCOP(avgCost2025)}</span> en 2025
                       </span>
                       {avgCostVariation > 0 ? (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
                           <ArrowUpRight className="w-3 h-3 mr-0.5" />
                           +{avgCostVariation.toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                           <ArrowDownRight className="w-3 h-3 mr-0.5" />
                           {avgCostVariation.toFixed(1)}%
                         </div>
@@ -1254,21 +1258,21 @@ export default function ComparativoPage() {
                 transition={{ duration: 0.3, delay: 0.15 }}
                 className="flex"
               >
-                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px]">
-                  <CardHeader className="pb-2">
-                    <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
+                  <CardHeader className="p-3 px-3.5 pb-1">
+                    <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                       <span>Eficiencia Ahorro (2026)</span>
                       <TrendingUp className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-3xl font-bold font-mono tracking-tight text-primary mt-1">
+                    <CardTitle className="text-lg sm:text-xl xl:text-2xl font-bold font-mono tracking-tight text-primary mt-0.5">
                       {saving2026.toFixed(1)}%
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
-                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs">vs <span className="font-semibold text-foreground font-mono">{saving2025.toFixed(1)}%</span> en 2025</span>
+                  <CardContent className="px-3.5 pb-2.5 pt-0">
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]">vs <span className="font-semibold text-foreground font-mono">{saving2025.toFixed(1)}%</span> en 2025</span>
                       <div className={cn(
-                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0",
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold shrink-0",
                         saving2026 > saving2025 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"
                       )}>
                         {saving2026 > saving2025 ? 'Mejoró' : 'Estable'}

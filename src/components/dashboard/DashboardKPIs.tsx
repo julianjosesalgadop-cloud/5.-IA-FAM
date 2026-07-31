@@ -127,24 +127,24 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
         const Icon = kpi.icon;
         return (
           <motion.div key={kpi.label} variants={itemVariants} className="flex">
-            <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px] transition-all duration-200 hover:shadow-md">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+            <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
+              <CardHeader className="p-3 px-3.5 pb-1">
+                <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                   <span>{kpi.label}</span>
                   <Icon className="w-4 h-4 text-slate-400" />
                 </CardDescription>
                 <CardTitle 
-                  className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate"
+                  className="text-lg sm:text-xl xl:text-2xl font-bold font-mono tracking-tight text-primary mt-0.5 truncate"
                   title={String(kpi.value)}
                 >
                   {kpi.value}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 pt-0">
-                <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
-                  <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs">{kpi.change}</span>
+              <CardContent className="px-3.5 pb-2.5 pt-0">
+                <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
+                  <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]">{kpi.change}</span>
                   {kpi.badge && (
-                    <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${kpi.badge.color}`}>
+                    <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold shrink-0 ${kpi.badge.color}`}>
                       {kpi.badge.text}
                     </div>
                   )}

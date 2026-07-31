@@ -6,7 +6,7 @@ import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import { Footer } from '@/components/layout/Footer';
 import { dbService } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
-import { RefreshCw, X, Maximize2, Minimize2 } from 'lucide-react';
+import { RefreshCw, X, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -357,13 +357,13 @@ export default function DashboardPage() {
       />
       <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-auto">
         {/* Filters Toolbar */}
-        <div className="bg-card border border-border p-4 rounded-xl flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-3 sm:gap-4 shadow-sm">
-          <div className="w-full sm:flex-1 sm:min-w-[150px] space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Rango Rápido</span>
+        <div className="bg-card border border-border p-3 sm:p-3.5 rounded-xl flex flex-wrap items-end gap-2.5 sm:gap-3 shadow-sm">
+          <div className="flex-1 min-w-[120px] max-w-[160px] space-y-1">
+            <span className="text-[11px] font-semibold text-muted-foreground">Rango Rápido</span>
             <select
               value={presetRange}
               onChange={(e) => setPresetRange(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+              className="flex h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
             >
               <option value="todo">Histórico Completo</option>
               <option value="este-mes">Este Mes</option>
@@ -373,8 +373,8 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="w-full sm:w-[140px] space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Desde</span>
+          <div className="w-[120px] sm:w-[130px] space-y-1">
+            <span className="text-[11px] font-semibold text-muted-foreground">Desde</span>
             <input
               type="date"
               value={fechaInicio}
@@ -382,12 +382,12 @@ export default function DashboardPage() {
                 setFechaInicio(e.target.value);
                 setPresetRange('custom');
               }}
-              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+              className="flex h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
             />
           </div>
 
-          <div className="w-full sm:w-[140px] space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Hasta</span>
+          <div className="w-[120px] sm:w-[130px] space-y-1">
+            <span className="text-[11px] font-semibold text-muted-foreground">Hasta</span>
             <input
               type="date"
               value={fechaFin}
@@ -395,16 +395,16 @@ export default function DashboardPage() {
                 setFechaFin(e.target.value);
                 setPresetRange('custom');
               }}
-              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+              className="flex h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
             />
           </div>
 
-          <div className="w-full sm:flex-1 sm:min-w-[160px] space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Tipo Reclamación</span>
+          <div className="flex-1 min-w-[130px] max-w-[170px] space-y-1">
+            <span className="text-[11px] font-semibold text-muted-foreground">Tipo Reclamación</span>
             <select
               value={tipoReclamacion}
               onChange={(e) => setTipoReclamacion(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+              className="flex h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
             >
               <option value="todos">Todos los tipos</option>
               <option value="Siniestro">Siniestro</option>
@@ -417,19 +417,19 @@ export default function DashboardPage() {
           </div>
 
           {tipoReclamacion === 'Otro' && (
-            <div className="w-full sm:w-[200px] space-y-1.5 animate-fade-in">
-              <span className="text-xs font-semibold text-muted-foreground">Especificar Tipo</span>
+            <div className="w-[140px] space-y-1 animate-fade-in">
+              <span className="text-[11px] font-semibold text-muted-foreground">Especificar Tipo</span>
               <input
                 type="text"
-                placeholder="Especificar tipo..."
-                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+                placeholder="Especificar..."
+                className="flex h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                 value={customTipoFilter}
                 onChange={(e) => setCustomTipoFilter(e.target.value)}
               />
             </div>
           )}
 
-          <div className="w-full sm:flex-1 sm:min-w-[160px]">
+          <div className="flex-1 min-w-[130px] max-w-[180px]">
             <MultiSelect
               label="Estado"
               options={[
@@ -444,22 +444,23 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="w-full sm:flex-1 sm:min-w-[140px] space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Buscar por Placa / Interno</span>
+          <div className="flex-1 min-w-[130px] max-w-[180px] space-y-1">
+            <span className="text-[11px] font-semibold text-muted-foreground">Buscar Placa / Interno</span>
             <input
               type="text"
               placeholder="Ej: ABC-123 o 0042"
               value={placaSearch}
               onChange={(e) => setPlacaSearch(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground font-mono uppercase"
+              className="flex h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring text-foreground font-mono uppercase"
               autoComplete="off"
             />
           </div>
 
           {(fechaInicio || fechaFin || tipoReclamacion !== 'todos' || customTipoFilter || placaSearch || !isDefaultEstado || selectedChartPlaca || selectedChartConductor || selectedChartProprietario || selectedChartMonth !== null || selectedChartStatus || selectedChartCulpabilidad || selectedChartCausaRaiz || selectedChartSerie || selectedChartRoute || selectedChartProveedor || selectedChartTipoServicio) && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
+              title="Limpiar todos los filtros"
               onClick={() => {
                 setFechaInicio('');
                 setFechaFin('');
@@ -479,10 +480,13 @@ export default function DashboardPage() {
                 setSelectedChartRoute('');
                 setSelectedChartProveedor('');
                 setSelectedChartTipoServicio('');
+                setSelectedChartConcepto('');
+                setSelectedChartActa('');
               }}
-              className="w-full sm:w-auto text-xs text-red-400 hover:text-red-500 h-10 px-3"
+              className="h-9 px-2.5 text-xs text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 shrink-0 flex items-center gap-1.5 rounded-lg font-semibold"
             >
-              Limpiar
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Limpiar</span>
             </Button>
           )}
         </div>
