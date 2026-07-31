@@ -120,7 +120,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
       initial={false}
       animate={{ width: collapsed ? 72 : 256 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="relative flex flex-col h-screen border-r border-white/10 z-30 overflow-hidden text-slate-300"
+      className="relative flex flex-col h-screen h-[100dvh] border-r border-white/10 z-30 overflow-hidden text-slate-300"
     >
       {/* Background gradient and ambient glow matching Login */}
       <div className="absolute inset-0 bg-gradient-to-b from-brand-950 via-slate-950 to-[#00263e] pointer-events-none" />
