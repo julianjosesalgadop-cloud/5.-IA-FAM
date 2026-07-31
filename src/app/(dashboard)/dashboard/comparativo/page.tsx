@@ -1069,15 +1069,15 @@ export default function ComparativoPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
-                      <span className="text-muted-foreground">vs <span className="font-semibold text-foreground font-mono">{totals.ytdCases2025}</span> en 2025</span>
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs">vs <span className="font-semibold text-foreground font-mono">{totals.ytdCases2025}</span> en 2025</span>
                       {casesVariationYTD > 0 ? (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
                           <ArrowUpRight className="w-3 h-3 mr-0.5" />
                           +{casesVariationYTD.toFixed(1)}%
                         </div>
                       ) : (
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                           <ArrowDownRight className="w-3 h-3 mr-0.5" />
                           {casesVariationYTD.toFixed(1)}%
                         </div>
@@ -1100,13 +1100,13 @@ export default function ComparativoPage() {
                       <span>Monto Aprobado YTD (2026)</span>
                       <DollarSign className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(totals.ytdAmount2026)}>
+                    <CardTitle className="text-lg xs:text-xl lg:text-lg xl:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(totals.ytdAmount2026)}>
                       {formatCOP(totals.ytdAmount2026)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
-                      <span className="text-muted-foreground truncate mr-2" title={formatCOP(totals.ytdAmount2025)}>
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs" title={formatCOP(totals.ytdAmount2025)}>
                         vs <span className="font-semibold text-foreground font-mono">{formatCOP(totals.ytdAmount2025)}</span> en 2025
                       </span>
                       {amountVariationYTD > 0 ? (
@@ -1138,13 +1138,13 @@ export default function ComparativoPage() {
                       <span>Costo Medio por Caso (2026)</span>
                       <FileText className="w-4 h-4 text-slate-400" />
                     </CardDescription>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(avgCost2026)}>
+                    <CardTitle className="text-lg xs:text-xl lg:text-lg xl:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate" title={formatCOP(avgCost2026)}>
                       {formatCOP(avgCost2026)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
-                      <span className="text-muted-foreground truncate mr-2" title={formatCOP(avgCost2025)}>
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs" title={formatCOP(avgCost2025)}>
                         vs <span className="font-semibold text-foreground font-mono">{formatCOP(avgCost2025)}</span> en 2025
                       </span>
                       {avgCostVariation > 0 ? (
@@ -1181,10 +1181,10 @@ export default function ComparativoPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 pt-0">
-                    <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2.5 mt-1">
-                      <span className="text-muted-foreground">vs <span className="font-semibold text-foreground font-mono">{saving2025.toFixed(1)}%</span> en 2025</span>
+                    <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
+                      <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs">vs <span className="font-semibold text-foreground font-mono">{saving2025.toFixed(1)}%</span> en 2025</span>
                       <div className={cn(
-                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold",
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0",
                         saving2026 > saving2025 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"
                       )}>
                         {saving2026 > saving2025 ? 'Mejoró' : 'Estable'}
