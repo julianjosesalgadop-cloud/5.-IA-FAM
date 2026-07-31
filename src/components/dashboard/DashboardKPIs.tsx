@@ -7,11 +7,11 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle,
+  FileText,
   DollarSign,
   Car,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCOP } from '@/lib/utils';
 import type { Expediente } from '@/types/database';
 
@@ -21,7 +21,7 @@ interface DashboardKPIsProps {
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.04 } },
 };
 
 const itemVariants = {
@@ -62,73 +62,57 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
       label: 'Total Expedientes',
       value: totalCases,
       change: 'Casos registrados',
-      changeType: 'neutral' as const,
+      badge: null,
       icon: FolderOpen,
-      color: 'text-brand-500',
-      bg: 'bg-brand-500/10',
     },
     {
       label: 'Valor Total Aprobado',
       value: formatCOP(totalApprovedVal),
       change: 'Desembolsado SIGFAM',
-      changeType: 'positive' as const,
+      badge: null,
       icon: DollarSign,
-      color: 'text-gold-500',
-      bg: 'bg-gold-500/10',
     },
     {
       label: 'Pendientes',
       value: pendingCount,
-      change: `${pctPending}% del total`,
-      changeType: 'neutral' as const,
+      change: 'En revisión de comité',
+      badge: { text: `${pctPending}% del total`, color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
       icon: Clock,
-      color: 'text-yellow-400',
-      bg: 'bg-yellow-500/10',
     },
     {
       label: 'Aprobados',
       value: approvedCount,
-      change: `${pctApproved}% del total`,
-      changeType: 'positive' as const,
+      change: 'Liquidados y procesados',
+      badge: { text: `${pctApproved}% del total`, color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
       icon: CheckCircle2,
-      color: 'text-green-400',
-      bg: 'bg-green-500/10',
     },
     {
       label: 'Rechazados',
       value: rejectedCount,
-      change: `${pctRejected}% del total`,
-      changeType: 'negative' as const,
+      change: 'No procedentes',
+      badge: { text: `${pctRejected}% del total`, color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
       icon: XCircle,
-      color: 'text-red-400',
-      bg: 'bg-red-500/10',
     },
     {
       label: 'Afectación Promedio',
       value: formatCOP(avgApproved),
       change: 'Costo medio por caso',
-      changeType: 'neutral' as const,
-      icon: DollarSign,
-      color: 'text-blue-400',
-      bg: 'bg-blue-500/10',
+      badge: null,
+      icon: FileText,
     },
     {
       label: 'Recobros Totales',
       value: formatCOP(totalRecobros),
       change: 'Recuperado / Recobrado',
-      changeType: 'positive' as const,
+      badge: null,
       icon: TrendingUp,
-      color: 'text-purple-400',
-      bg: 'bg-purple-500/10',
     },
     {
       label: 'Vehículos Afectados',
       value: uniquePlacas,
-      change: 'Placas únicas',
-      changeType: 'neutral' as const,
+      change: 'Placas únicas en periodo',
+      badge: null,
       icon: Car,
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-500/10',
     },
   ];
 
@@ -142,33 +126,28 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
       {kpis.map((kpi) => {
         const Icon = kpi.icon;
         return (
-          <motion.div key={kpi.label} variants={itemVariants}>
-            <Card className="card-hover border-border bg-card">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground font-medium truncate">{kpi.label}</p>
-                    <p 
-                      className="text-[15px] sm:text-base xl:text-lg font-bold mt-1 number-font text-foreground truncate"
-                      title={String(kpi.value)}
-                    >
-                      {kpi.value}
-                    </p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        kpi.changeType === 'positive'
-                          ? 'text-green-400'
-                          : kpi.changeType === 'negative'
-                          ? 'text-red-400'
-                          : 'text-muted-foreground'
-                      }`}
-                    >
-                      {kpi.change}
-                    </p>
-                  </div>
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${kpi.bg} ml-2`}>
-                    <Icon className={`w-5 h-5 ${kpi.color}`} />
-                  </div>
+          <motion.div key={kpi.label} variants={itemVariants} className="flex">
+            <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[140px] transition-all duration-200 hover:shadow-md">
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                  <span>{kpi.label}</span>
+                  <Icon className="w-4 h-4 text-slate-400" />
+                </CardDescription>
+                <CardTitle 
+                  className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-primary mt-1 truncate"
+                  title={String(kpi.value)}
+                >
+                  {kpi.value}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-3 pt-0">
+                <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-2.5 mt-1 gap-1">
+                  <span className="text-muted-foreground whitespace-nowrap text-[10.5px] xl:text-xs">{kpi.change}</span>
+                  {kpi.badge && (
+                    <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${kpi.badge.color}`}>
+                      {kpi.badge.text}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
