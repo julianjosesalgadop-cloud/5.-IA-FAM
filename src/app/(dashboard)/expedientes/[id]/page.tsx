@@ -751,6 +751,12 @@ export default function ExpedienteDetailPage() {
                           {(expediente as any).tipo_servicio || '—'}
                         </span>
                       </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Clase de Vehículo</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {(expediente as any).clase_vehiculo || '—'}
+                        </span>
+                      </div>
                       <div className="space-y-1.5 md:col-span-2">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider block">Propietarios Asociados</span>
                         {expediente.propietarios && expediente.propietarios.length > 0 ? (

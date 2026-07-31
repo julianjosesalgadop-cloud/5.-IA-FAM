@@ -208,6 +208,7 @@ export function ExpedientesList() {
           'Tipo Reclamación': e.tipo_reclamacion,
           'Placa': e.placa,
           'No. Interno': e.numero_interno || '',
+          'Clase de Vehículo': (e as any).clase_vehiculo || '',
           'Propietario': e.propietario,
           'Ciudad Origen': e.ciudad_origen || '',
           'Ciudad Destino': e.ciudad_destino || '',

@@ -1026,8 +1026,8 @@ export function ExpedienteForm({
                   )}
                 </FieldGroup>
 
-                {formConfig.campoConfig.tipo_servicio?.visible && (
-                  <FieldGroup>
+                <FieldGroup>
+                  {formConfig.campoConfig.tipo_servicio?.visible && (
                     <FormField label={formConfig.campoConfig.tipo_servicio.label} required={formConfig.campoConfig.tipo_servicio.requerido}>
                       <select
                         {...register('tipo_servicio')}
@@ -1040,20 +1040,9 @@ export function ExpedienteForm({
                       </select>
                       {errors.tipo_servicio && <p className="text-red-400 text-xs">{errors.tipo_servicio.message}</p>}
                     </FormField>
-                    
-                    {watch('tipo_servicio') === 'Otro' ? (
-                      <FormField label="Especifique Tipo de Servicio" required>
-                        <Input placeholder="¿Cuál?" {...register('tipo_servicio_otro')} className={inputClass} />
-                        {errors.tipo_servicio_otro && <p className="text-red-400 text-xs">{errors.tipo_servicio_otro.message}</p>}
-                      </FormField>
-                    ) : (
-                      <div />
-                    )}
-                  </FieldGroup>
-                )}
+                  )}
 
-                {formConfig.campoConfig.clase_vehiculo?.visible && (
-                  <FieldGroup>
+                  {formConfig.campoConfig.clase_vehiculo?.visible && (
                     <FormField label={formConfig.campoConfig.clase_vehiculo.label} required={formConfig.campoConfig.clase_vehiculo.requerido}>
                       <select
                         {...register('clase_vehiculo')}
@@ -1066,7 +1055,20 @@ export function ExpedienteForm({
                       </select>
                       {errors.clase_vehiculo && <p className="text-red-400 text-xs">{errors.clase_vehiculo.message}</p>}
                     </FormField>
-                    
+                  )}
+                </FieldGroup>
+
+                {(watch('tipo_servicio') === 'Otro' || watch('clase_vehiculo') === 'Otro (Cúal...)') && (
+                  <FieldGroup>
+                    {watch('tipo_servicio') === 'Otro' ? (
+                      <FormField label="Especifique Tipo de Servicio" required>
+                        <Input placeholder="¿Cuál?" {...register('tipo_servicio_otro')} className={inputClass} />
+                        {errors.tipo_servicio_otro && <p className="text-red-400 text-xs">{errors.tipo_servicio_otro.message}</p>}
+                      </FormField>
+                    ) : (
+                      <div />
+                    )}
+
                     {watch('clase_vehiculo') === 'Otro (Cúal...)' ? (
                       <FormField label="Especifique Clase de Vehículo" required>
                         <Input placeholder="¿Cuál?" {...register('clase_vehiculo_otro')} className={inputClass} />
