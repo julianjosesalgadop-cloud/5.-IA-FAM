@@ -48,6 +48,19 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
     0
   );
 
+  const totalDeducibles = expedientes.reduce(
+    (sum, e) => {
+      if (e.valor_deducible !== null && e.valor_deducible !== undefined && e.valor_deducible > 0) {
+        return sum + e.valor_deducible;
+      }
+      if (e.cotizaciones && e.cotizaciones.length > 0) {
+        return sum + e.cotizaciones.reduce((acc, c) => acc + (c.valor_deducible || 0), 0);
+      }
+      return sum;
+    },
+    0
+  );
+
   const uniquePlacas = new Set(expedientes.map((e) => e.placa).filter(Boolean)).size;
 
   // Percentage Calculations
@@ -106,6 +119,10 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
       change: 'Recuperado / Recobrado',
       badge: null,
       icon: TrendingUp,
+      isRecobros: true,
+      recobrosVal: formatCOP(totalRecobros),
+      deduciblesVal: formatCOP(totalDeducibles),
+      totalRecuperadoVal: formatCOP(totalRecobros + totalDeducibles),
     },
     {
       label: 'Vehículos Afectados',
@@ -125,6 +142,43 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
     >
       {kpis.map((kpi) => {
         const Icon = kpi.icon;
+        if (kpi.isRecobros) {
+          return (
+            <motion.div key={kpi.label} variants={itemVariants} className="flex">
+              <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
+                <CardHeader className="p-3 px-3.5 pb-1">
+                  <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                    <span>{kpi.label}</span>
+                    <Icon className="w-4 h-4 text-slate-400" />
+                  </CardDescription>
+                  <div className="mt-1 space-y-0.5">
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className="text-[11px] font-semibold text-muted-foreground">Recobros:</span>
+                      <span className="text-sm sm:text-base font-bold font-mono tracking-tight text-primary truncate" title={kpi.recobrosVal}>
+                        {kpi.recobrosVal}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className="text-[11px] font-semibold text-muted-foreground">Deducibles:</span>
+                      <span className="text-sm sm:text-base font-bold font-mono tracking-tight text-amber-500 dark:text-amber-400 truncate" title={kpi.deduciblesVal}>
+                        {kpi.deduciblesVal}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-3.5 pb-2.5 pt-0">
+                  <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
+                    <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]">Total Recuperado:</span>
+                    <span className="font-bold font-mono text-[10.5px] text-emerald-600 dark:text-emerald-400 truncate" title={kpi.totalRecuperadoVal}>
+                      {kpi.totalRecuperadoVal}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        }
+
         return (
           <motion.div key={kpi.label} variants={itemVariants} className="flex">
             <Card className="relative overflow-hidden bg-card border-border shadow-sm flex flex-col justify-between h-full w-full min-h-[105px] transition-all duration-200 hover:shadow-md">
