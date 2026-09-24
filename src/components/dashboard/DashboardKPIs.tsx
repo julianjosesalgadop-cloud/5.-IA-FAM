@@ -122,7 +122,6 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
       isRecobros: true,
       recobrosVal: formatCOP(totalRecobros),
       deduciblesVal: formatCOP(totalDeducibles),
-      totalRecuperadoVal: formatCOP(totalRecobros + totalDeducibles),
     },
     {
       label: 'Vehículos Afectados',
@@ -160,7 +159,7 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
                     </div>
                     <div className="flex items-baseline justify-between gap-1">
                       <span className="text-[11px] font-semibold text-muted-foreground">Deducibles:</span>
-                      <span className="text-sm sm:text-base font-bold font-mono tracking-tight text-amber-500 dark:text-amber-400 truncate" title={kpi.deduciblesVal}>
+                      <span className="text-sm sm:text-base font-bold font-mono tracking-tight text-primary truncate" title={kpi.deduciblesVal}>
                         {kpi.deduciblesVal}
                       </span>
                     </div>
@@ -168,10 +167,7 @@ export function DashboardKPIs({ expedientes }: DashboardKPIsProps) {
                 </CardHeader>
                 <CardContent className="px-3.5 pb-2.5 pt-0">
                   <div className="flex items-center justify-between text-[11px] xl:text-xs border-t border-border/40 pt-1.5 mt-0.5 gap-1">
-                    <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]">Total Recuperado:</span>
-                    <span className="font-bold font-mono text-[10.5px] text-emerald-600 dark:text-emerald-400 truncate" title={kpi.totalRecuperadoVal}>
-                      {kpi.totalRecuperadoVal}
-                    </span>
+                    <span className="text-muted-foreground whitespace-nowrap text-[10px] xl:text-[11px]">{kpi.change}</span>
                   </div>
                 </CardContent>
               </Card>

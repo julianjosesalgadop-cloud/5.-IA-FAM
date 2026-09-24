@@ -723,7 +723,7 @@ export default function GasVsIngPage() {
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gastos Aprobados</CardTitle>
-                  <HandCoins className="h-4 w-4 text-rose-500" />
+                  <HandCoins className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="space-y-1.5">
                   <div className="flex items-baseline justify-between">
@@ -751,7 +751,7 @@ export default function GasVsIngPage() {
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Resultado Neto (FAM)</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  <TrendingUp className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="space-y-1.5">
                   <div className="flex items-baseline justify-between">
@@ -783,7 +783,7 @@ export default function GasVsIngPage() {
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Relación Afectación</CardTitle>
-                  <Percent className="h-4 w-4 text-amber-500" />
+                  <Percent className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="space-y-1.5">
                   <div className="flex items-baseline justify-between">

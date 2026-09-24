@@ -598,10 +598,30 @@ export default function ComparativoPage() {
             wrapperStyle={{ fontSize: 11, color: 'var(--foreground)' }} 
           />
           <Bar name="Año 2025" dataKey="cases2025" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={32}>
-            <LabelList dataKey="cases2025" position="top" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+            <LabelList 
+              dataKey="cases2025" 
+              position="top" 
+              fill="currentColor" 
+              style={{ fontSize: 9, opacity: 0.8 }} 
+              formatter={(v: number) => {
+                if (!v || v === 0) return '';
+                const pct = totals.cases2025 > 0 ? ((v / totals.cases2025) * 100).toFixed(1) : '0';
+                return `${v} (${pct}%)`;
+              }} 
+            />
           </Bar>
           <Bar name="Año 2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[4, 4, 0, 0]} maxBarSize={32}>
-            <LabelList dataKey="cases2026" position="top" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+            <LabelList 
+              dataKey="cases2026" 
+              position="top" 
+              fill="currentColor" 
+              style={{ fontSize: 9, opacity: 0.8 }} 
+              formatter={(v: number) => {
+                if (!v || v === 0) return '';
+                const pct = totals.cases2026 > 0 ? ((v / totals.cases2026) * 100).toFixed(1) : '0';
+                return `${v} (${pct}%)`;
+              }} 
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

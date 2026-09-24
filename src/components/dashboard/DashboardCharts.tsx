@@ -1876,86 +1876,93 @@ export function DashboardCharts({
 
   // --- Chart Renderers (reused in normal cards and inside maximized modal) ---
 
-  const renderExpedientesPorMes = (height: number) => (
-    <div style={{ height }} className="w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart 
-          data={currentChartData} 
-          margin={{ left: -20, right: 10, top: 20, bottom: 0 }}
-          onClick={(data) => {
-            if (timeUnit !== 'month') return;
-            const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
-            if (monthIdx !== undefined && onSelectMonth) {
-              onSelectMonth(monthIdx);
-            }
-          }}
-          className="cursor-pointer"
-        >
-          <defs>
-            <linearGradient id="colorExpedientes" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis 
-            dataKey="mes" 
-            tick={timeUnit === 'month' ? (props: any) => {
-              const { x, y, payload } = props;
-              const value = payload?.value || '';
-              const parts = String(value).split(' ');
-              const monthName = parts[0];
-              const idx = MONTH_NAMES.indexOf(monthName);
-              const isSelected = selectedMonth === idx;
-              return (
-                <g 
-                  style={{ pointerEvents: 'auto' }} 
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onSelectMonth && idx !== -1) {
-                      onSelectMonth(idx);
-                    }
-                  }}
-                >
-                  <text
-                    x={x}
-                    y={y}
-                    dy={12}
-                    textAnchor="middle"
-                    fill={isSelected ? 'hsl(203, 100%, 50%)' : 'hsl(var(--muted-foreground))'}
-                    className="hover:fill-primary font-semibold text-[11px] transition-colors"
-                  >
-                    {value}
-                  </text>
-                </g>
-              );
-            } : { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 600 }}
-            axisLine={false} 
-            tickLine={false} 
-          />
-          <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-          <Tooltip content={<CustomTooltipBar />} />
-          <Area
-            type="monotone"
-            dataKey="expedientes"
-            stroke="hsl(203, 100%, 50%)"
-            strokeWidth={2}
-            fill="url(#colorExpedientes)"
-            dot={{ fill: 'hsl(203, 100%, 50%)', strokeWidth: 0, r: 3 }}
-            activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(203, 100%, 50%)' : 'hsl(43, 96%, 52%)' }}
+  const renderExpedientesPorMes = (height: number) => {
+    const totalCasesInChart = currentChartData.reduce((acc, d) => acc + (d.expedientes || 0), 0) || totalFilteredCount || 1;
+    return (
+      <div style={{ height }} className="w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart 
+            data={currentChartData} 
+            margin={{ left: -20, right: 15, top: 25, bottom: 0 }}
+            onClick={(data) => {
+              if (timeUnit !== 'month') return;
+              const monthIdx = data?.activePayload?.[0]?.payload?.monthIndex;
+              if (monthIdx !== undefined && onSelectMonth) {
+                onSelectMonth(monthIdx);
+              }
+            }}
+            className="cursor-pointer"
           >
-            <LabelList
-              dataKey="expedientes"
-              position="top"
-              formatter={(v: number) => v > 0 ? v : ''}
-              style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+            <defs>
+              <linearGradient id="colorExpedientes" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="hsl(203, 100%, 50%)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis 
+              dataKey="mes" 
+              tick={timeUnit === 'month' ? (props: any) => {
+                const { x, y, payload } = props;
+                const value = payload?.value || '';
+                const parts = String(value).split(' ');
+                const monthName = parts[0];
+                const idx = MONTH_NAMES.indexOf(monthName);
+                const isSelected = selectedMonth === idx;
+                return (
+                  <g 
+                    style={{ pointerEvents: 'auto' }} 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectMonth && idx !== -1) {
+                        onSelectMonth(idx);
+                      }
+                    }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      dy={12}
+                      textAnchor="middle"
+                      fill={isSelected ? 'hsl(203, 100%, 50%)' : 'hsl(var(--muted-foreground))'}
+                      className="hover:fill-primary font-semibold text-[11px] transition-colors"
+                    >
+                      {value}
+                    </text>
+                  </g>
+                );
+              } : { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 600 }}
+              axisLine={false} 
+              tickLine={false} 
             />
-          </Area>
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
+            <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <Tooltip content={<CustomTooltipBar />} />
+            <Area
+              type="monotone"
+              dataKey="expedientes"
+              stroke="hsl(203, 100%, 50%)"
+              strokeWidth={2}
+              fill="url(#colorExpedientes)"
+              dot={{ fill: 'hsl(203, 100%, 50%)', strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: selectedMonth !== null ? 'hsl(203, 100%, 50%)' : 'hsl(43, 96%, 52%)' }}
+            >
+              <LabelList
+                dataKey="expedientes"
+                position="top"
+                formatter={(v: number) => {
+                  if (!v || v <= 0) return '';
+                  const pct = ((v / totalCasesInChart) * 100).toFixed(1);
+                  return `${v} (${pct}%)`;
+                }}
+                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+              />
+            </Area>
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
 
   const renderTipoReclamacion = (height: number) => (
     <div style={{ height }} className="w-full">
