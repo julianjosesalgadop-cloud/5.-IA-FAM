@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
+import path from 'path';
 import * as XLSX from 'xlsx';
 
 // Fallback values in case the file is missing or unreadable
@@ -9,7 +10,7 @@ const FALLBACK_INGRESOS = {
     197096022, 197736597, 192642742, 190050340, 190625812, 205896275
   ],
   "2026": [
-    203926938, 201609101, 203342553, 199665656, 203079923, 0, 0, 0, 0, 0, 0, 0
+    203926938, 201609101, 203342553, 205968914, 206231552, 200453564, 198089841, 198089841, 0, 0, 0, 0
   ]
 };
 
@@ -21,7 +22,11 @@ const MONTH_MAP: Record<string, number> = {
 };
 
 export async function GET() {
-  const filePath = "C:\\Users\\USER\\Desktop\\1. Antigravity\\5. IA-FAM\\1. Documentos Base\\Ingresos FAM 2025-2026.xlsx";
+  const possiblePaths = [
+    path.join(process.cwd(), '1. Documentos Base', 'Ingresos FAM 2025-2026.xlsx'),
+    "C:\\Users\\USER\\Desktop\\1. Antigravity\\5. IA-FAM\\1. Documentos Base\\Ingresos FAM 2025-2026.xlsx"
+  ];
+  const filePath = possiblePaths.find(p => fs.existsSync(p)) || possiblePaths[0];
 
   try {
     if (!fs.existsSync(filePath)) {

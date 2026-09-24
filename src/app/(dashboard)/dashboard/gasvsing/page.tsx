@@ -59,7 +59,7 @@ const FALLBACK_INGRESOS = {
     197096022, 197736597, 192642742, 190050340, 190625812, 205896275
   ],
   "2026": [
-    203926938, 201609101, 203342553, 199665656, 203079923, 0, 0, 0, 0, 0, 0, 0
+    203926938, 201609101, 203342553, 205968914, 206231552, 200453564, 198089841, 198089841, 0, 0, 0, 0
   ]
 };
 
@@ -67,7 +67,7 @@ export default function GasVsIngPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [ingresos, setIngresos] = useState<Record<string, number[]>>(FALLBACK_INGRESOS);
   const [loading, setLoading] = useState(true);
-  const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4]); // Default Ene-May matching active 2026 data
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7]); // Default Ene-Ago matching active 2026 data
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
   const [filterEstado, setFilterEstado] = useState<string[]>(['Pendiente', 'Revisado', 'Aprobado']);
   const [filterTipoReclamacion, setFilterTipoReclamacion] = useState<string[]>([]);
@@ -98,6 +98,11 @@ export default function GasVsIngPage() {
       setExpedientes(expData);
       if (ingResponse && (ingResponse['2025'] || ingResponse['2026'])) {
         setIngresos(ingResponse);
+        const inc26 = ingResponse['2026'] || [];
+        const lastActiveIndex = inc26.reduce((acc: number, val: number, idx: number) => val > 0 ? idx : acc, 0);
+        if (lastActiveIndex >= 0) {
+          setSelectedMonths(Array.from({ length: lastActiveIndex + 1 }, (_, i) => i));
+        }
       }
     } catch (err) {
       console.error(err);
