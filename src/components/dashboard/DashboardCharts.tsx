@@ -1998,21 +1998,34 @@ export function DashboardCharts({
         <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart margin={{ top: 8, right: 12, bottom: 8, left: 12 }}>
             <Pie
               data={tipoData}
               cx="50%"
               cy="45%"
-              innerRadius={height > 300 ? 80 : 55}
-              outerRadius={height > 300 ? 120 : 80}
+              innerRadius={height > 300 ? 75 : 38}
+              outerRadius={height > 300 ? 115 : 58}
               paddingAngle={3}
               dataKey="value"
-              label={({ value, percent }: any) => {
-                if (!value || value <= 0) return '';
+              label={(props: any) => {
+                const { x, y, textAnchor, value, percent } = props;
+                if (!value || value <= 0) return null;
                 const pct = percent != null 
                   ? (percent * 100).toFixed(1) 
                   : (totalFilteredCount > 0 ? ((value / totalFilteredCount) * 100).toFixed(1) : '0');
-                return `${value} (${pct}%)`;
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    textAnchor={textAnchor}
+                    dominantBaseline="central"
+                    fill="hsl(var(--foreground))"
+                    fontSize={height > 300 ? 11 : 9.5}
+                    fontWeight={600}
+                  >
+                    {`${value} (${pct}%)`}
+                  </text>
+                );
               }}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
               onClick={(data) => {
@@ -2823,21 +2836,34 @@ export function DashboardCharts({
         <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No hay datos</div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart margin={{ top: 8, right: 12, bottom: 8, left: 12 }}>
             <Pie
               data={culpabilidadData}
               cx="50%"
               cy="45%"
-              innerRadius={height > 300 ? 80 : 55}
-              outerRadius={height > 300 ? 120 : 80}
+              innerRadius={height > 300 ? 75 : 38}
+              outerRadius={height > 300 ? 115 : 58}
               paddingAngle={3}
               dataKey="value"
-              label={({ value, percent }: any) => {
-                if (!value || value <= 0) return '';
+              label={(props: any) => {
+                const { x, y, textAnchor, value, percent } = props;
+                if (!value || value <= 0) return null;
                 const pct = percent != null 
                   ? (percent * 100).toFixed(1) 
                   : (totalFilteredCount > 0 ? ((value / totalFilteredCount) * 100).toFixed(1) : '0');
-                return `${value} (${pct}%)`;
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    textAnchor={textAnchor}
+                    dominantBaseline="central"
+                    fill="hsl(var(--foreground))"
+                    fontSize={height > 300 ? 11 : 9.5}
+                    fontWeight={600}
+                  >
+                    {`${value} (${pct}%)`}
+                  </text>
+                );
               }}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
               onClick={(data) => {
@@ -3985,7 +4011,14 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Culpabilidad de Incidentes</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>Culpabilidad de Incidentes</CardTitle>
+                {selectedCulpabilidad && (
+                  <span className="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-medium">
+                    {selectedCulpabilidad}
+                  </span>
+                )}
+              </div>
               <CardDescription>Distribución de responsabilidad en siniestros</CardDescription>
             </div>
             <Button
@@ -4003,7 +4036,7 @@ export function DashboardCharts({
               <Maximize2 className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-1 sm:px-2 pb-4 pt-0">
             {renderCulpabilidad(260)}
           </CardContent>
         </Card>
@@ -4071,7 +4104,7 @@ export function DashboardCharts({
               <Maximize2 className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-1 sm:px-2 pb-4 pt-0">
             {renderTipoReclamacion(260)}
           </CardContent>
         </Card>
