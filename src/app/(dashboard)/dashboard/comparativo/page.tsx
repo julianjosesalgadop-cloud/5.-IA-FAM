@@ -53,7 +53,7 @@ const MONTHS_SHORT = [
 export default function ComparativoPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4, 5]);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7]);
   const [expandedChart, setExpandedChart] = useState<{ id: string; title: string; description: string } | null>(null);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -86,6 +86,18 @@ export default function ComparativoPage() {
     try {
       const data = await dbService.getExpedientes();
       setExpedientes(data);
+      // Auto-select active months up to latest 2026 month
+      let maxMo = 7;
+      data.forEach((e: Expediente) => {
+        if (e.deleted_at === null && e.fecha_incidente) {
+          const [y, m] = e.fecha_incidente.split('-');
+          if (parseInt(y, 10) === 2026) {
+            const mo = parseInt(m, 10) - 1;
+            if (mo >= 0 && mo < 12 && mo > maxMo) maxMo = mo;
+          }
+        }
+      });
+      setSelectedMonths(Array.from({ length: maxMo + 1 }, (_, i) => i));
     } catch (err) {
       console.error(err);
       toast.error('Error al cargar datos comparativos');
@@ -157,9 +169,19 @@ export default function ComparativoPage() {
     return expedientes.filter((e) => e.deleted_at === null);
   }, [expedientes]);
 
-  // Current year & month for YTD limits
+  // Current year & month for YTD limits (dynamic based on registered 2026 cases)
   const currentYear = 2026;
-  const currentMonthIndex = 5; // Junio
+  const currentMonthIndex = React.useMemo(() => {
+    let maxMonth = 7; // Agosto at minimum
+    activeExpedientes.forEach((e) => {
+      const yr = getYear(e);
+      const mo = getMonth(e);
+      if (yr === 2026 && mo !== null && mo >= 0 && mo < 12) {
+        if (mo > maxMonth) maxMonth = mo;
+      }
+    });
+    return maxMonth;
+  }, [activeExpedientes]);
 
   // Dynamic filter application (exactly like Dashboard)
   const filteredActiveExpedientes = React.useMemo(() => {
