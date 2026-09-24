@@ -1972,7 +1972,13 @@ export function DashboardCharts({
               outerRadius={height > 300 ? 120 : 80}
               paddingAngle={3}
               dataKey="value"
-              label={({ value }) => value}
+              label={({ value, percent }: any) => {
+                if (!value || value <= 0) return '';
+                const pct = percent != null 
+                  ? (percent * 100).toFixed(1) 
+                  : (totalFilteredCount > 0 ? ((value / totalFilteredCount) * 100).toFixed(1) : '0');
+                return `${value} (${pct}%)`;
+              }}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
               onClick={(data) => {
                 const val = data?.name || data?.payload?.name;
@@ -2035,7 +2041,13 @@ export function DashboardCharts({
               outerRadius={height > 300 ? 120 : 80}
               paddingAngle={3}
               dataKey="value"
-              label={({ value }) => value > 0 ? `$${(value / 1000000).toFixed(1)}M` : ''}
+              label={({ value, percent }: any) => {
+                if (!value || value <= 0) return '';
+                const pct = percent != null 
+                  ? (percent * 100).toFixed(1) 
+                  : (totalFilteredApproved > 0 ? ((value / totalFilteredApproved) * 100).toFixed(1) : '0');
+                return `$${(value / 1000000).toFixed(1)}M (${pct}%)`;
+              }}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
               onClick={(data) => {
                 const val = data?.name || data?.payload?.name;
@@ -2085,6 +2097,7 @@ export function DashboardCharts({
 
   const renderDetalleTipoReclamacion = (height: number, isExpanded = false) => {
     const dataToUse = isExpanded ? conceptoCountData : conceptoCountData.slice(0, 6);
+    const totalCount = totalFilteredCount > 0 ? totalFilteredCount : (conceptoCountData.reduce((acc, d) => acc + d.value, 0) || 1);
     return (
       <div style={{ height }} className="w-full">
         {dataToUse.length === 0 ? (
@@ -2094,7 +2107,7 @@ export function DashboardCharts({
             <BarChart
               layout="vertical"
               data={dataToUse}
-              margin={{ left: 100, right: 30, top: 10, bottom: 5 }}
+              margin={{ left: 100, right: 65, top: 10, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
               <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -2155,7 +2168,16 @@ export function DashboardCharts({
                     />
                   );
                 })}
-                <LabelList dataKey="value" position="right" style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 'bold' }} />
+                <LabelList 
+                  dataKey="value" 
+                  position="right" 
+                  formatter={(v: number) => {
+                    if (!v || v <= 0) return '';
+                    const pct = ((v / totalCount) * 100).toFixed(1);
+                    return `${v} (${pct}%)`;
+                  }}
+                  style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 'bold' }} 
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -2166,6 +2188,7 @@ export function DashboardCharts({
 
   const renderDetalleGastosTipoReclamacion = (height: number, isExpanded = false) => {
     const dataToUse = isExpanded ? conceptoGastosData : conceptoGastosData.slice(0, 6);
+    const totalGasto = totalFilteredApproved > 0 ? totalFilteredApproved : (conceptoGastosData.reduce((acc, d) => acc + d.value, 0) || 1);
     return (
       <div style={{ height }} className="w-full">
         {dataToUse.length === 0 ? (
@@ -2175,7 +2198,7 @@ export function DashboardCharts({
             <BarChart
               layout="vertical"
               data={dataToUse}
-              margin={{ left: 100, right: 35, top: 10, bottom: 5 }}
+              margin={{ left: 100, right: 85, top: 10, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
               <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
@@ -2236,7 +2259,16 @@ export function DashboardCharts({
                     />
                   );
                 })}
-                <LabelList dataKey="value" position="right" formatter={(v: number) => v > 0 ? `$${(v / 1000000).toFixed(1)}M` : ''} style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 'bold' }} />
+                <LabelList 
+                  dataKey="value" 
+                  position="right" 
+                  formatter={(v: number) => {
+                    if (!v || v <= 0) return '';
+                    const pct = ((v / totalGasto) * 100).toFixed(1);
+                    return `$${(v / 1000000).toFixed(1)}M (${pct}%)`;
+                  }} 
+                  style={{ fill: 'hsl(var(--foreground))', fontSize: 9, fontWeight: 'bold' }} 
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

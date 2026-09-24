@@ -730,7 +730,7 @@ export default function ComparativoPage() {
         <BarChart 
           data={claimsTypeData.slice(0, 8)} 
           layout="vertical" 
-          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          margin={{ top: 15, right: 65, left: 10, bottom: isMaximized ? 20 : 5 }}
           onClick={(state) => {
             if (state && state.activeLabel) {
               const label = String(state.activeLabel);
@@ -745,10 +745,30 @@ export default function ComparativoPage() {
           <Tooltip content={<CustomCountTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
           <Bar name="2025" dataKey="cases2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
-            <LabelList dataKey="cases2025" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+            <LabelList 
+              dataKey="cases2025" 
+              position="right" 
+              fill="currentColor" 
+              style={{ fontSize: 9, opacity: 0.8 }} 
+              formatter={(v: number) => {
+                if (!v || v === 0) return '';
+                const pct = totals.cases2025 > 0 ? ((v / totals.cases2025) * 100).toFixed(1) : '0';
+                return `${v} (${pct}%)`;
+              }} 
+            />
           </Bar>
           <Bar name="2026" dataKey="cases2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
-            <LabelList dataKey="cases2026" position="right" fill="currentColor" style={{ fontSize: 9, opacity: 0.8 }} formatter={(v: number) => v === 0 ? '' : v} />
+            <LabelList 
+              dataKey="cases2026" 
+              position="right" 
+              fill="currentColor" 
+              style={{ fontSize: 9, opacity: 0.8 }} 
+              formatter={(v: number) => {
+                if (!v || v === 0) return '';
+                const pct = totals.cases2026 > 0 ? ((v / totals.cases2026) * 100).toFixed(1) : '0';
+                return `${v} (${pct}%)`;
+              }} 
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -762,7 +782,7 @@ export default function ComparativoPage() {
         <BarChart 
           data={claimsTypeData.slice(0, 8)} 
           layout="vertical" 
-          margin={{ top: 15, right: 30, left: 10, bottom: isMaximized ? 20 : 5 }}
+          margin={{ top: 15, right: 85, left: 10, bottom: isMaximized ? 20 : 5 }}
           onClick={(state) => {
             if (state && state.activeLabel) {
               const label = String(state.activeLabel);
@@ -777,10 +797,32 @@ export default function ComparativoPage() {
           <Tooltip content={<CustomAmountTooltip />} />
           <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
           <Bar name="2025" dataKey="amount2025" fill="#94a3b8" radius={[0, 3, 3, 0]}>
-            <LabelList dataKey="amount2025" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+            <LabelList 
+              dataKey="amount2025" 
+              position="right" 
+              formatter={(v: number) => {
+                const base = formatLabelAmount(v);
+                if (!base) return '';
+                const pct = totals.amount2025 > 0 ? ((v / totals.amount2025) * 100).toFixed(1) : '0';
+                return `${base} (${pct}%)`;
+              }} 
+              fill="currentColor" 
+              style={{ fontSize: 8, opacity: 0.8 }} 
+            />
           </Bar>
           <Bar name="2026" dataKey="amount2026" fill="hsl(203, 100%, 50%)" radius={[0, 3, 3, 0]}>
-            <LabelList dataKey="amount2026" position="right" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+            <LabelList 
+              dataKey="amount2026" 
+              position="right" 
+              formatter={(v: number) => {
+                const base = formatLabelAmount(v);
+                if (!base) return '';
+                const pct = totals.amount2026 > 0 ? ((v / totals.amount2026) * 100).toFixed(1) : '0';
+                return `${base} (${pct}%)`;
+              }} 
+              fill="currentColor" 
+              style={{ fontSize: 8, opacity: 0.8 }} 
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
