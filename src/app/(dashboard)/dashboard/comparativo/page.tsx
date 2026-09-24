@@ -601,8 +601,8 @@ export default function ComparativoPage() {
             <LabelList 
               dataKey="cases2025" 
               position="top" 
-              fill="currentColor" 
-              style={{ fontSize: 9, opacity: 0.8 }} 
+              fill="hsl(var(--muted-foreground))" 
+              style={{ fontSize: 9, fontWeight: 500 }} 
               formatter={(v: number) => {
                 if (!v || v === 0) return '';
                 const pct = totals.cases2025 > 0 ? ((v / totals.cases2025) * 100).toFixed(1) : '0';
@@ -614,8 +614,8 @@ export default function ComparativoPage() {
             <LabelList 
               dataKey="cases2026" 
               position="top" 
-              fill="currentColor" 
-              style={{ fontSize: 9, opacity: 0.8 }} 
+              fill="hsl(var(--muted-foreground))" 
+              style={{ fontSize: 9, fontWeight: 500 }} 
               formatter={(v: number) => {
                 if (!v || v === 0) return '';
                 const pct = totals.cases2026 > 0 ? ((v / totals.cases2026) * 100).toFixed(1) : '0';

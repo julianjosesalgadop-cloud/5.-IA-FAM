@@ -1139,9 +1139,17 @@ export function DashboardCharts({
   // 12b. Clase de Vehículo categorization
   const claseVehiculoMap: Record<string, { name: string; cantidad: number; monto: number }> = {};
 
+  const getClaseVehiculoCategory = (e: any): string => {
+    const rawClase = e.clase_vehiculo;
+    let cat = (rawClase && typeof rawClase === 'string' && rawClase.trim()) ? rawClase.trim() : 'Sin Especificar';
+    if ((cat === 'Otro (Cúal...)' || cat === 'Otro') && e.clase_vehiculo_otro) {
+      cat = e.clase_vehiculo_otro.trim();
+    }
+    return cat;
+  };
+
   ec.forEach((e) => {
-    const rawClase = (e as any).clase_vehiculo;
-    const cat = (rawClase && typeof rawClase === 'string' && rawClase.trim()) ? rawClase.trim() : 'Sin Especificar';
+    const cat = getClaseVehiculoCategory(e);
     if (!claseVehiculoMap[cat]) {
       claseVehiculoMap[cat] = { name: cat, cantidad: 0, monto: 0 };
     }
@@ -1746,6 +1754,12 @@ export function DashboardCharts({
         <BarChart
           data={claseVehiculoData}
           margin={{ left: -10, right: 10, top: 20, bottom: 25 }}
+          onClick={(state: any) => {
+            const val = state?.activePayload?.[0]?.payload?.name;
+            if (val && onSelectClaseVehiculo) {
+              onSelectClaseVehiculo(val);
+            }
+          }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis 
@@ -1823,7 +1837,7 @@ export function DashboardCharts({
               name="cantidad" 
               fill="#94a3b8" 
               radius={[2, 2, 0, 0]}
-              onClick={(data) => {
+              onClick={(data: any) => {
                 const val = data?.name || data?.payload?.name;
                 if (val && onSelectClaseVehiculo) {
                   onSelectClaseVehiculo(val);
@@ -1835,6 +1849,13 @@ export function DashboardCharts({
                 <Cell 
                   key={index} 
                   fill={selectedClaseVehiculo === d.name ? 'hsl(43, 96%, 52%)' : '#94a3b8'}
+                  opacity={selectedClaseVehiculo && selectedClaseVehiculo !== d.name ? 0.45 : 1}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    if (onSelectClaseVehiculo) {
+                      onSelectClaseVehiculo(d.name);
+                    }
+                  }}
                 />
               ))}
               <LabelList dataKey="cantidad" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 8, fontWeight: 600 }} />
@@ -1847,7 +1868,7 @@ export function DashboardCharts({
               name="monto" 
               fill="hsl(203, 100%, 50%)" 
               radius={[2, 2, 0, 0]}
-              onClick={(data) => {
+              onClick={(data: any) => {
                 const val = data?.name || data?.payload?.name;
                 if (val && onSelectClaseVehiculo) {
                   onSelectClaseVehiculo(val);
@@ -1859,6 +1880,13 @@ export function DashboardCharts({
                 <Cell 
                   key={index} 
                   fill={selectedClaseVehiculo === d.name ? 'hsl(43, 96%, 52%)' : 'hsl(203, 100%, 50%)'}
+                  opacity={selectedClaseVehiculo && selectedClaseVehiculo !== d.name ? 0.45 : 1}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    if (onSelectClaseVehiculo) {
+                      onSelectClaseVehiculo(d.name);
+                    }
+                  }}
                 />
               ))}
               <LabelList
@@ -1955,7 +1983,7 @@ export function DashboardCharts({
                   const pct = ((v / totalCasesInChart) * 100).toFixed(1);
                   return `${v} (${pct}%)`;
                 }}
-                style={{ fill: 'hsl(var(--foreground))', fontSize: 10, fontWeight: 600 }}
+                style={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9.5, fontWeight: 500 }}
               />
             </Area>
           </AreaChart>
@@ -4235,7 +4263,14 @@ export function DashboardCharts({
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle>Siniestralidad por Clase de Vehículo</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>Siniestralidad por Clase de Vehículo</CardTitle>
+                {selectedClaseVehiculo && (
+                  <span className="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-medium">
+                    {selectedClaseVehiculo}
+                  </span>
+                )}
+              </div>
               <CardDescription>Cantidad de reclamaciones y monto $ por clase de vehículo (Bus, Buseta, Microbús, etc.)</CardDescription>
             </div>
             <div className="flex items-center gap-2">
