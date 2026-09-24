@@ -2797,7 +2797,13 @@ export function DashboardCharts({
               outerRadius={height > 300 ? 120 : 80}
               paddingAngle={3}
               dataKey="value"
-              label={({ value }) => value}
+              label={({ value, percent }: any) => {
+                if (!value || value <= 0) return '';
+                const pct = percent != null 
+                  ? (percent * 100).toFixed(1) 
+                  : (totalFilteredCount > 0 ? ((value / totalFilteredCount) * 100).toFixed(1) : '0');
+                return `${value} (${pct}%)`;
+              }}
               labelLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
               onClick={(data) => {
                 const val = data?.name || data?.payload?.name;
