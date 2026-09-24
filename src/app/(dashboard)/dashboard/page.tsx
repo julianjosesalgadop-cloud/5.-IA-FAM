@@ -195,6 +195,9 @@ export default function DashboardPage() {
         if (name === 'OTROS' && c.concepto_otro) {
           name = c.concepto_otro.trim().toUpperCase();
         }
+        if (name === 'ACCIDENTE' || name === 'ACSIDENTE') {
+          name = 'SINIESTRO';
+        }
         return name === selectedChartConcepto;
       });
       if (!hasConcepto) return false;

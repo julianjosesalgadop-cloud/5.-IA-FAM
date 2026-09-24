@@ -375,10 +375,16 @@ export function DashboardCharts({
         if (conceptName === 'OTROS' && c.concepto_otro) {
           conceptName = c.concepto_otro.trim().toUpperCase();
         }
+        if (conceptName === 'ACCIDENTE' || conceptName === 'ACSIDENTE') {
+          conceptName = 'SINIESTRO';
+        }
         conceptExpenses[conceptName] = (conceptExpenses[conceptName] || 0) + (c.valor_a_pagar || 0);
       });
     } else {
-      const conceptName = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+      let conceptName = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+      if (conceptName === 'ACCIDENTE' || conceptName === 'ACSIDENTE') {
+        conceptName = 'SINIESTRO';
+      }
       conceptExpenses[conceptName] = (conceptExpenses[conceptName] || 0) + (e.valor_final_aprobado || 0);
     }
   });
@@ -756,6 +762,9 @@ export function DashboardCharts({
         let conceptName = (c.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
         if (conceptName === 'OTROS' && c.concepto_otro) {
           conceptName = c.concepto_otro.trim().toUpperCase();
+        }
+        if (conceptName === 'ACCIDENTE' || conceptName === 'ACSIDENTE') {
+          conceptName = 'SINIESTRO';
         }
         if (!conceptoGroups[conceptName]) {
           conceptoGroups[conceptName] = { count: 0, value: 0 };

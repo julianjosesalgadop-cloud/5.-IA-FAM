@@ -179,7 +179,10 @@ export default function ComparativoPage() {
 
       if (filterReclamacion) {
         if (!e.cotizaciones || e.cotizaciones.length === 0) {
-          const name = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+          let name = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+          if (name === 'ACCIDENTE' || name === 'ACSIDENTE') {
+            name = 'SINIESTRO';
+          }
           if (name !== filterReclamacion.toUpperCase()) return false;
         } else {
           const selectedCots = e.cotizaciones.filter((c) => c.seleccionada);
@@ -188,6 +191,9 @@ export default function ComparativoPage() {
             let name = (c.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
             if (name === 'OTROS' && c.concepto_otro) {
               name = c.concepto_otro.trim().toUpperCase();
+            }
+            if (name === 'ACCIDENTE' || name === 'ACSIDENTE') {
+              name = 'SINIESTRO';
             }
             return name === filterReclamacion.toUpperCase();
           });
@@ -315,10 +321,16 @@ export default function ComparativoPage() {
             if (conceptName === 'OTROS' && activeCots[0].concepto_otro) {
               conceptName = activeCots[0].concepto_otro.trim().toUpperCase();
             }
+            if (conceptName === 'ACCIDENTE' || conceptName === 'ACSIDENTE') {
+              conceptName = 'SINIESTRO';
+            }
             conceptValue = activeCots[0].valor_a_pagar || approved;
           }
         } else {
           conceptName = (e.concepto || 'SIN ESPECIFICAR').trim().toUpperCase();
+          if (conceptName === 'ACCIDENTE' || conceptName === 'ACSIDENTE') {
+            conceptName = 'SINIESTRO';
+          }
         }
 
         if (!claimsMap[conceptName]) {
