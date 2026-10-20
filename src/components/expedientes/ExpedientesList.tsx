@@ -249,6 +249,8 @@ export function ExpedientesList() {
           'Culpabilidad': e.culpabilidad || 'Sin definir',
           'Descuento Conductor': e.valor_descuento_conductor || 0,
           'Estado Pago Conductor': e.tipo_reclamacion === 'Siniestro' ? (e.estado_pago_conductor || 'Pendiente') : (e.estado_pago_conductor || '—'),
+          'Fecha Pago Conductor': e.fecha_pago_conductor ? formatDate(e.fecha_pago_conductor) : '',
+          'Soporte Pago Conductor': e.soporte_pago_conductor || '',
           'Memo Descuento': e.memorando_descuento || '',
           'Recobro Vehículo': e.valor_recobro_vehiculo || 0,
           'Recobro Abogado': e.valor_recobro_abogado || 0,

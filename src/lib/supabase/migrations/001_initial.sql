@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   valor_descuento_conductor NUMERIC(15,2),
   memorando_descuento TEXT,
   estado_pago_conductor TEXT CHECK (estado_pago_conductor IN ('Pendiente', 'Pagado')),
+  fecha_pago_conductor DATE,
+  soporte_pago_conductor TEXT,
 
   -- Recobros
   valor_recobro_vehiculo NUMERIC(15,2),

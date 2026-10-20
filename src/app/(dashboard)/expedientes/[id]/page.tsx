@@ -429,10 +429,17 @@ export default function ExpedienteDetailPage() {
       doc.setTextColor(27, 54, 93);
       doc.text('RESPONSABILIDAD Y RECUPERACIÓN (RECOBROS)', 12, (doc as any).lastAutoTable.finalY + 10);
 
+      const estadoPagoTexto = expediente.tipo_reclamacion === 'Siniestro'
+        ? ` (${expediente.estado_pago_conductor || 'Pendiente'}${expediente.estado_pago_conductor === 'Pagado' && expediente.fecha_pago_conductor ? ` - ${formatDate(expediente.fecha_pago_conductor)}` : ''})`
+        : '';
+      const memoSoporteTexto = expediente.memorando_descuento
+        ? expediente.memorando_descuento + (expediente.soporte_pago_conductor ? ` | Soporte: ${expediente.soporte_pago_conductor}` : '')
+        : (expediente.soporte_pago_conductor ? `Soporte: ${expediente.soporte_pago_conductor}` : '—');
+
       const condData = [
         ['Conductor:', expediente.nombre_conductor || '—', 'Identificación:', (expediente.tipo_documento_conductor ? `${expediente.tipo_documento_conductor} ` : '') + (expediente.id_conductor || '—')],
         ['Celular:', expediente.celular_conductor || '—', 'Culpabilidad:', expediente.culpabilidad || 'Sin definir'],
-        ['Descuento Conductor' + (expediente.tipo_reclamacion === 'Siniestro' ? ' (10%):' : ':'), `${formatCOP(expediente.valor_descuento_conductor)}${expediente.tipo_reclamacion === 'Siniestro' ? ` (${expediente.estado_pago_conductor || 'Pendiente'})` : ''}`, 'Memo Descuento:', expediente.memorando_descuento || '—'],
+        ['Descuento Conductor' + (expediente.tipo_reclamacion === 'Siniestro' ? ' (10%):' : ':'), `${formatCOP(expediente.valor_descuento_conductor)}${estadoPagoTexto}`, 'Memo / Soporte:', memoSoporteTexto],
         ['Recobro Vehículo:', `${formatCOP(expediente.valor_recobro_vehiculo)} (${expediente.porcentaje_recobro_vehiculo || 0}%)`, 'Recobro Empresa:', `${formatCOP(expediente.valor_recobro_empresa)} (${expediente.porcentaje_recobro_empresa || 0}%)`],
         ['Recobro Abogado:', `${formatCOP(expediente.valor_recobro_abogado)} (${expediente.porcentaje_recobro_abogado || 0}%)`, '', ''],
       ];
@@ -931,6 +938,16 @@ export default function ExpedienteDetailPage() {
                               </Badge>
                             </div>
                           </div>
+                          {expediente.estado_pago_conductor === 'Pagado' && (expediente.fecha_pago_conductor || expediente.soporte_pago_conductor) && (
+                            <div className="text-xs text-muted-foreground pt-1 flex items-center justify-end gap-3 flex-wrap">
+                              {expediente.fecha_pago_conductor && (
+                                <span>📅 Fecha de Pago: <strong className="text-foreground">{formatDate(expediente.fecha_pago_conductor)}</strong></span>
+                              )}
+                              {expediente.soporte_pago_conductor && (
+                                <span>🧾 Soporte: <strong className="text-foreground">{expediente.soporte_pago_conductor}</strong></span>
+                              )}
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -1012,6 +1029,27 @@ export default function ExpedienteDetailPage() {
                           <span className="text-sm font-semibold text-foreground font-mono">{expediente.memorando_descuento || '—'}</span>
                         </div>
                       </div>
+
+                      {expediente.tipo_reclamacion === 'Siniestro' && expediente.estado_pago_conductor === 'Pagado' && (expediente.fecha_pago_conductor || expediente.soporte_pago_conductor) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                          {expediente.fecha_pago_conductor && (
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground block">Fecha de Pago Conductor</span>
+                              <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                                <span>📅</span> {formatDate(expediente.fecha_pago_conductor)}
+                              </span>
+                            </div>
+                          )}
+                          {expediente.soporte_pago_conductor && (
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground block">N° Recibo / Soporte de Caja</span>
+                              <span className="text-sm font-semibold text-foreground font-mono flex items-center gap-1.5">
+                                <span>🧾</span> {expediente.soporte_pago_conductor}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <Separator />

@@ -125,6 +125,8 @@ const baseSchema = z.object({
   culpabilidad: z.string().optional().nullable(),
   valor_descuento_conductor: z.number().min(0).optional().nullable(),
   estado_pago_conductor: z.enum(['Pendiente', 'Pagado']).optional().nullable(),
+    fecha_pago_conductor: z.string().optional().nullable(),
+    soporte_pago_conductor: z.string().optional().nullable(),
   memorando_descuento: z.string().optional(),
   valor_recobro_vehiculo: z.number().min(0).optional().nullable(),
   valor_recobro_abogado: z.number().min(0).optional().nullable(),
@@ -272,6 +274,8 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
       ? z.number().min(0, 'Monto debe ser positivo')
       : z.number().min(0).optional().nullable(),
     estado_pago_conductor: z.enum(['Pendiente', 'Pagado']).optional().nullable(),
+    fecha_pago_conductor: z.string().optional().nullable(),
+    soporte_pago_conductor: z.string().optional().nullable(),
     memorando_descuento: isRequired('memorando_descuento', false)
       ? z.string().min(1, 'Requerido')
       : z.string().optional().nullable(),
@@ -402,6 +406,22 @@ export function ExpedienteForm({
     if (savedVal === undefined || savedVal === null) return false;
     
     return savedVal !== calculatedTotal;
+  });
+
+  const [isDescuentoConductorManual, setIsDescuentoConductorManual] = useState(() => {
+    if (!defaultValues) return false;
+    const cots = defaultValues.cotizaciones || [];
+    const selectedCots = cots.filter((c) => c.seleccionada);
+    const activeCots = selectedCots.length > 0 ? selectedCots : (cots[0] ? [cots[0]] : []);
+    const totalNegociado = activeCots.reduce((acc, c) => acc + (c.valor_negociado || 0), 0);
+    const totalDeducible = activeCots.reduce((acc, c) => acc + Math.round(((c.valor_negociado || 0) * (c.porcentaje_deducible || 0)) / 100), 0);
+    const calculatedTotal = Math.max(0, totalNegociado - totalDeducible);
+    const calculatedDescuento = Math.round(calculatedTotal * 0.10);
+    
+    const savedVal = defaultValues.valor_descuento_conductor;
+    if (savedVal === undefined || savedVal === null) return false;
+    
+    return savedVal !== calculatedDescuento;
   });
 
   useEffect(() => {
@@ -599,6 +619,8 @@ export function ExpedienteForm({
         : [{ nombre: defaultValues?.propietario || '', tipo_documento: 'CC', numero_documento: '' }],
       tipo_documento_conductor: defaultValues?.tipo_documento_conductor || 'CC',
       estado_pago_conductor: defaultValues?.estado_pago_conductor || 'Pendiente',
+      fecha_pago_conductor: defaultValues?.fecha_pago_conductor || '',
+      soporte_pago_conductor: defaultValues?.soporte_pago_conductor || '',
       cotizaciones: defaultValues?.cotizaciones || [{ 
         id: '1', 
         proveedor: '', 
@@ -659,6 +681,9 @@ export function ExpedienteForm({
         tipo_servicio_otro: 'Otro Tipo de Servicio',
         clase_vehiculo_otro: 'Clase de Vehículo (Otro)',
         causa_raiz_otra: 'Otra Causa Raíz',
+        estado_pago_conductor: 'Estado de Pago Conductor',
+        fecha_pago_conductor: 'Fecha de Pago Conductor',
+        soporte_pago_conductor: 'Soporte de Pago Conductor',
       };
       return specialLabels[key] || key;
     };
@@ -671,7 +696,9 @@ export function ExpedienteForm({
     ];
     const step2Fields = [
       'cotizaciones', 'valor_cotizacion', 'valor_negociado', 
-      'valor_salvamento', 'valor_final_aprobado'
+      'valor_salvamento', 'valor_final_aprobado',
+      'valor_descuento_conductor', 'estado_pago_conductor',
+      'fecha_pago_conductor', 'soporte_pago_conductor'
     ];
     const step3Fields = [
       'nombre_conductor', 'tipo_documento_conductor', 'id_conductor', 
@@ -761,9 +788,11 @@ export function ExpedienteForm({
       if (!watch('estado_pago_conductor')) {
         setValue('estado_pago_conductor', 'Pendiente');
       }
-      setValue('valor_descuento_conductor', valorPagarConductor);
+      if (!isDescuentoConductorManual) {
+        setValue('valor_descuento_conductor', valorPagarConductor);
+      }
     }
-  }, [isSiniestro, valorPagarConductor, setValue, watch]);
+  }, [isSiniestro, valorPagarConductor, setValue, watch, isDescuentoConductorManual]);
 
   // Sincronizar valor_final_aprobado con el cálculo neto a pagar (totalAPagar) si no es manual
   React.useEffect(() => {
@@ -815,10 +844,14 @@ export function ExpedienteForm({
       const isSiniestroSubmit = finalTipoReclamacion === 'Siniestro';
       const finalEstadoPago = isSiniestroSubmit ? (data.estado_pago_conductor || 'Pendiente') : (data.estado_pago_conductor || null);
       const finalValorDescuento = isSiniestroSubmit ? (data.valor_descuento_conductor ?? Math.round(finalAPagar * 0.10)) : (data.valor_descuento_conductor || 0);
+      const finalFechaPago = isSiniestroSubmit && finalEstadoPago === 'Pagado' ? (data.fecha_pago_conductor || null) : null;
+      const finalSoportePago = isSiniestroSubmit && finalEstadoPago === 'Pagado' ? (data.soporte_pago_conductor || null) : null;
 
       const finalData = {
         ...restData,
         estado_pago_conductor: finalEstadoPago,
+        fecha_pago_conductor: finalFechaPago,
+        soporte_pago_conductor: finalSoportePago,
         valor_descuento_conductor: finalValorDescuento,
         causa_raiz: finalCausaRaiz,
         tipo_reclamacion: finalTipoReclamacion,
@@ -1599,22 +1632,57 @@ export function ExpedienteForm({
                         <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-3">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-xs font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
                                   <span>👤</span> Valor a Pagar Conductor (10%)
                                 </span>
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/20">
                                   Siniestro
                                 </span>
+                                {isDescuentoConductorManual ? (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/25">
+                                    ✍️ Manual
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/25">
+                                    ⚙️ Autocalculado (10%)
+                                  </span>
+                                )}
                               </div>
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 10% adicional calculado sobre el total del Valor a Pagar ({formatCOPInput(totalAPagar)})
                               </p>
                             </div>
-                            <div className="text-left sm:text-right">
-                              <span className="text-lg font-bold number-font text-amber-600 dark:text-amber-400">
-                                {formatCOPInput(valorPagarConductor)}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-40 sm:w-44">
+                                <CurrencyInputField
+                                  control={control}
+                                  name="valor_descuento_conductor"
+                                  placeholder="0"
+                                  className="h-9 text-right font-bold number-font text-amber-600 dark:text-amber-400 bg-background/90 border-amber-500/40 focus:border-amber-500 shadow-sm"
+                                  onChangeCustom={(val) => {
+                                    if (val === null || val === undefined) {
+                                      setIsDescuentoConductorManual(false);
+                                      setValue('valor_descuento_conductor', valorPagarConductor);
+                                    } else {
+                                      setIsDescuentoConductorManual(true);
+                                    }
+                                  }}
+                                />
+                              </div>
+                              {isDescuentoConductorManual && (
+                                <button
+                                  type="button"
+                                  title="Restablecer al 10% automático"
+                                  onClick={() => {
+                                    setIsDescuentoConductorManual(false);
+                                    setValue('valor_descuento_conductor', valorPagarConductor);
+                                  }}
+                                  className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 underline font-medium px-1 cursor-pointer whitespace-nowrap"
+                                >
+                                  ↻ Auto
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -1649,6 +1717,35 @@ export function ExpedienteForm({
                               </button>
                             </div>
                           </div>
+
+                          {/* Campos complementarios cuando el conductor ya pagó */}
+                          {watchEstadoPago === 'Pagado' && (
+                            <div className="pt-3 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-500/5 dark:bg-emerald-500/10 -mx-4 -mb-4 p-4 rounded-b-xl">
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                                  <span>📅</span> Fecha de Pago Conductor
+                                </label>
+                                <Input
+                                  type="date"
+                                  {...register('fecha_pago_conductor')}
+                                  className="h-9 bg-background text-sm"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                                  <span>🧾</span> N° Recibo / Soporte de Caja
+                                </label>
+                                <Input
+                                  placeholder="Ej: REC-10293 o Transferencia"
+                                  {...register('soporte_pago_conductor')}
+                                  className="h-9 bg-background text-sm"
+                                />
+                              </div>
+                              <p className="text-[11px] text-muted-foreground col-span-1 sm:col-span-2">
+                                Registre la fecha y el soporte/comprobante con el que el conductor canceló el 10% del siniestro.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1770,9 +1867,30 @@ export function ExpedienteForm({
                       required={formConfig.campoConfig.valor_descuento_conductor.requerido}
                       extra={
                         isSiniestro ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
-                            10% Siniestro ({watchEstadoPago || 'Pendiente'})
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {isDescuentoConductorManual ? (
+                              <>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                                  ✍️ Manual
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsDescuentoConductorManual(false);
+                                    setValue('valor_descuento_conductor', valorPagarConductor);
+                                  }}
+                                  className="text-[10px] text-amber-600 dark:text-amber-400 underline cursor-pointer"
+                                  title="Restablecer al 10% automático"
+                                >
+                                  ↻ Auto
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                                ⚙️ Autocalculado (10%)
+                              </span>
+                            )}
+                          </div>
                         ) : undefined
                       }
                     >
@@ -1781,6 +1899,14 @@ export function ExpedienteForm({
                         name="valor_descuento_conductor"
                         placeholder={formConfig.campoConfig.valor_descuento_conductor.placeholder}
                         className={`${inputClass} number-font`}
+                        onChangeCustom={(val) => {
+                          if (val === null || val === undefined) {
+                            setIsDescuentoConductorManual(false);
+                            setValue('valor_descuento_conductor', valorPagarConductor);
+                          } else {
+                            setIsDescuentoConductorManual(true);
+                          }
+                        }}
                       />
                       {errors.valor_descuento_conductor && <p className="text-red-400 text-xs">{errors.valor_descuento_conductor.message}</p>}
                     </FormField>
@@ -1823,6 +1949,16 @@ export function ExpedienteForm({
                     )
                   )}
                 </FieldGroup>
+                {isSiniestro && watchEstadoPago === 'Pagado' && (
+                  <FieldGroup>
+                    <FormField label="Fecha de Pago Conductor">
+                      <Input type="date" {...register('fecha_pago_conductor')} className={inputClass} />
+                    </FormField>
+                    <FormField label="N° Recibo / Soporte de Caja">
+                      <Input placeholder="Ej: REC-10293 o Transferencia" {...register('soporte_pago_conductor')} className={inputClass} />
+                    </FormField>
+                  </FieldGroup>
+                )}
                 {isSiniestro && formConfig.campoConfig.memorando_descuento?.visible && (
                   <FieldGroup>
                     <FormField label={formConfig.campoConfig.memorando_descuento.label} required={formConfig.campoConfig.memorando_descuento.requerido}>

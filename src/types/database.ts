@@ -59,6 +59,8 @@ export interface Expediente {
   valor_descuento_conductor: number | null;
   memorando_descuento: string | null;
   estado_pago_conductor?: EstadoPagoConductor | null;
+  fecha_pago_conductor?: string | null;
+  soporte_pago_conductor?: string | null;
   // Recobros
   valor_recobro_vehiculo: number | null;
   porcentaje_recobro_vehiculo: number | null;
