@@ -1,8 +1,9 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type TipoReclamacion = 'Siniestro' | 'Vidrios' | 'Carrocería' | 'Repuestos' | 'Pérdida parcial' | 'Otro';
+export type TipoReclamacion = 'Siniestro' | 'Vidrios' | 'Carrocería' | 'Repuestos' | 'Pérdida parcial' | 'Afectación por orden público' | 'Otro' | string;
 export type Culpabilidad = 'Conductor' | 'Tercero' | 'Compartida' | 'Sin definir';
-export type EstadoExpediente = 'Pendiente' | 'Revisado' | 'Aprobado' | 'Rechazado';
+export type EstadoExpediente = 'Pendiente' | 'Revisado' | 'Aprobado' | 'Rechazado' | 'Inactivo';
+export type EstadoPagoConductor = 'Pendiente' | 'Pagado';
 export type RolUsuario = 'admin' | 'analista' | 'consultor';
 export type AccionAuditoria = 'CREAR' | 'EDITAR' | 'ELIMINAR' | 'ESTADO' | 'FINANCIERO' | 'DOCUMENTO';
 
@@ -12,6 +13,9 @@ export interface Expediente {
   fecha_incidente: string;
   placa: string;
   numero_interno: string | null;
+  tipo_servicio: string | null;
+  clase_vehiculo?: string | null;
+  clase_vehiculo_otro?: string | null;
   propietario: string;
   tipo_reclamacion: TipoReclamacion;
   ciudad_origen: string | null;
@@ -39,6 +43,7 @@ export interface Expediente {
     valor_a_pagar: number;
     nombre_archivo?: string | null;
     storage_path?: string | null;
+    seleccionada?: boolean;
   }[] | null;
   propietarios?: {
     nombre: string;
@@ -53,6 +58,9 @@ export interface Expediente {
   culpabilidad: Culpabilidad | null;
   valor_descuento_conductor: number | null;
   memorando_descuento: string | null;
+  estado_pago_conductor?: EstadoPagoConductor | null;
+  fecha_pago_conductor?: string | null;
+  soporte_pago_conductor?: string | null;
   // Recobros
   valor_recobro_vehiculo: number | null;
   porcentaje_recobro_vehiculo: number | null;
@@ -64,6 +72,7 @@ export interface Expediente {
   fecha_comite: string | null;
   causa_raiz: string | null;
   observaciones_comite: string | null;
+  numero_acta: string | null;
   // Autorización
   autorizado_por: string | null;
   cargo_autorizador: string | null;
@@ -72,6 +81,7 @@ export interface Expediente {
   memorando_pago_storage_path?: string | null;
   memorando_pago_archivo_nombre?: string | null;
   estado: EstadoExpediente;
+  observacion_rechazo?: string | null;
   // Metadata
   created_at: string;
   updated_at: string;
@@ -117,7 +127,24 @@ export interface UsuarioPerfil {
   nombre: string | null;
   rol: RolUsuario;
   activo: boolean;
+  cargo?: string | null;
+  tipo_documento?: string | null;
+  numero_documento?: string | null;
+  must_change_password?: boolean;
   created_at: string;
+}
+
+export interface IngresoFAM {
+  id: string;
+  anio: number;
+  mes: number;
+  mes_nombre: string;
+  valor: number;
+  concepto?: string | null;
+  observaciones?: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
 }
 
 export type Database = {
@@ -147,6 +174,11 @@ export type Database = {
         Row: UsuarioPerfil;
         Insert: Omit<UsuarioPerfil, 'created_at'>;
         Update: Partial<UsuarioPerfil>;
+      };
+      ingresos_fam: {
+        Row: IngresoFAM;
+        Insert: Omit<IngresoFAM, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<IngresoFAM>;
       };
     };
   };

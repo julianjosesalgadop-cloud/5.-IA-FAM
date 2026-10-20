@@ -1,7 +1,7 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   Calendar,
@@ -12,6 +12,7 @@ import {
   Edit,
   Eye,
   CheckCircle,
+  XCircle,
   FileDown,
   UploadCloud,
   File,
@@ -20,6 +21,7 @@ import {
   TrendingUp,
   MapPin,
   FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -33,6 +35,8 @@ import type { Expediente, Documento, AuditoriaEntry } from '@/types/database';
 import { TIPOS_DOCUMENTO } from '@/lib/constants';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 type TabType = 'resumen' | 'financiero' | 'conductor' | 'comite' | 'documentos' | 'auditoria';
 
@@ -44,31 +48,54 @@ export default function ExpedienteDetailPage() {
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [auditorias, setAuditorias] = useState<AuditoriaEntry[]>([]);
+  const [perfiles, setPerfiles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('resumen');
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    if (loading) {
+      toast.loading('Cargando expediente...', { id: 'loading-expediente-detail' });
+    } else {
+      toast.dismiss('loading-expediente-detail');
+    }
+    return () => {
+      toast.dismiss('loading-expediente-detail');
+    };
+  }, [loading]);
   
   // Document Upload State
   const [uploading, setUploading] = useState(false);
   const [tipoDocumento, setTipoDocumento] = useState<string>('Solicitud');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // Document Preview State
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: 'pdf' | 'image' | 'other'; name: string } | null>(null);
+
+  // Rejection Observation State
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionObservation, setRejectionObservation] = useState('');
+
   const currentUser = getMockUser();
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const exp = await dbService.getExpedienteById(id);
+      const [exp, docs, audits, users] = await Promise.all([
+        dbService.getExpedienteById(id),
+        dbService.getDocumentos(id),
+        dbService.getAuditoria(id),
+        dbService.getPerfiles(),
+      ]);
       if (!exp) {
         toast.error('Expediente no encontrado');
         router.push('/expedientes');
         return;
       }
       setExpediente(exp);
-      const docs = await dbService.getDocumentos(id);
       setDocumentos(docs);
-      const audits = await dbService.getAuditoria(id);
       setAuditorias(audits);
+      setPerfiles(users);
     } catch (error) {
       console.error(error);
       toast.error('Error al cargar datos del expediente');
@@ -77,12 +104,34 @@ export default function ExpedienteDetailPage() {
     }
   }, [id, router]);
 
+  // User profiles lookup map (id or email -> name)
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>();
+    perfiles.forEach((p) => {
+      if (p.id) map.set(p.id, p.nombre || p.email);
+      if (p.email) map.set(p.email.toLowerCase(), p.nombre || p.email);
+    });
+    return map;
+  }, [perfiles]);
+
+  const getUsuarioNombre = useCallback((emailOrId: string | null) => {
+    if (!emailOrId) return 'Sistema';
+    const clean = emailOrId.toLowerCase();
+    return userMap.get(clean) || userMap.get(emailOrId) || emailOrId;
+  }, [userMap]);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const handleStatusChange = async (newEstado: any) => {
     if (!expediente) return;
+    if (newEstado === 'Rechazado') {
+      setRejectionObservation('');
+      setShowRejectionModal(true);
+      return;
+    }
+
     try {
       const updated = await dbService.updateExpediente(expediente.id, { estado: newEstado });
       setExpediente(updated);
@@ -96,18 +145,41 @@ export default function ExpedienteDetailPage() {
     }
   };
 
+  const handleConfirmRejection = async () => {
+    if (!expediente || !rejectionObservation.trim()) {
+      toast.error('La observación de rechazo es obligatoria.');
+      return;
+    }
+
+    try {
+      const updated = await dbService.updateExpediente(expediente.id, { 
+        estado: 'Rechazado',
+        observacion_rechazo: rejectionObservation.trim() 
+      });
+      setExpediente(updated);
+      setShowRejectionModal(false);
+      toast.success(`Estado actualizado a Rechazado`);
+      // Refresh audits
+      const audits = await dbService.getAuditoria(id);
+      setAuditorias(audits);
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al cambiar de estado a rechazado');
+    }
+  };
+
   const handleDelete = async () => {
     if (!expediente) return;
-    const confirmed = window.confirm('¿Está seguro de que desea eliminar este expediente de manera lógica?');
+    const confirmed = window.confirm('¿Está seguro de que desea inactivar este expediente?');
     if (!confirmed) return;
 
     try {
       await dbService.deleteExpedienteLogical(expediente.id);
-      toast.success('Expediente eliminado correctamente');
+      toast.success('Expediente inactivado correctamente');
       router.push('/expedientes');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Error al eliminar el expediente');
+      toast.error(error?.message || 'Error al inactivar el expediente');
     }
   };
 
@@ -145,7 +217,7 @@ export default function ExpedienteDetailPage() {
     if (!selectedFile || !expediente) return;
     setUploading(true);
     try {
-      const newDoc = await dbService.uploadDocumento(expediente.id, selectedFile, tipoDocumento);
+      const newDoc = await dbService.uploadDocumento(expediente.id, selectedFile, tipoDocumento, expediente.numero_expediente);
       setDocumentos((prev) => [newDoc, ...prev]);
       setSelectedFile(null);
       toast.success('Documento subido correctamente');
@@ -180,7 +252,7 @@ export default function ExpedienteDetailPage() {
 
   const handleDownloadDoc = async (storagePath: string, fileName: string) => {
     try {
-      const url = await dbService.getDownloadUrl(storagePath);
+      const url = await dbService.getDownloadUrl(storagePath, fileName);
       // Create element to trigger download or open tab
       const a = document.createElement('a');
       a.href = url;
@@ -190,6 +262,27 @@ export default function ExpedienteDetailPage() {
     } catch (err) {
       console.error(err);
       toast.error('Error al descargar documento');
+    }
+  };
+
+  const getFileType = (fileName: string): 'pdf' | 'image' | 'other' => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return 'pdf';
+    if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext || '')) return 'image';
+    return 'other';
+  };
+
+  const handlePreviewDoc = async (storagePath: string, fileName: string) => {
+    try {
+      const url = await dbService.getDownloadUrl(storagePath, fileName);
+      setPreviewFile({
+        url,
+        name: fileName,
+        type: getFileType(fileName),
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al abrir la vista previa');
     }
   };
 
@@ -204,8 +297,10 @@ export default function ExpedienteDetailPage() {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
         } else {
           resolve('');
         }
@@ -226,33 +321,13 @@ export default function ExpedienteDetailPage() {
         orientation: 'p',
         unit: 'mm',
         format: 'a4',
+        compress: true,
       });
 
       // Try loading logo
       const logoB64 = await loadLogoBase64();
 
-      // Membrete / Letterhead
-      if (logoB64) {
-        doc.addImage(logoB64, 'PNG', 12, 10, 20, 20);
-      }
-
-      // Title
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(27, 54, 93); // Primary Corporate Blue
-      doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
-      doc.setFontSize(10);
-      doc.setFont('Helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('Fondo de Auxilio Mutuo (FAM) — Nit. 891.800.201-1', 36, 21);
-      doc.text('Reporte Oficial de Expediente de Reclamación', 36, 26);
-
-      // Line separator
-      doc.setDrawColor(217, 91, 42); // Accent Amber/Gold
-      doc.setLineWidth(0.8);
-      doc.line(12, 33, 198, 33);
-
-      // Info General Block
+      // Info General Block title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -261,7 +336,7 @@ export default function ExpedienteDetailPage() {
       const generalData = [
         ['No. Expediente:', expediente.numero_expediente, 'Estado:', expediente.estado],
         ['Fecha Incidente:', formatDate(expediente.fecha_incidente), 'Tipo Reclamación:', expediente.tipo_reclamacion],
-        ['Vehículo Placa:', expediente.placa, 'Número Interno:', expediente.numero_interno || '—'],
+        ['Vehículo Placa:', expediente.placa, 'Número Interno:', `${expediente.numero_interno || '—'} / Servicio: ${(expediente as any).tipo_servicio || '—'}`],
         ['Propietario(s):', expediente.propietarios && expediente.propietarios.length > 0
           ? expediente.propietarios.map(p => `${p.nombre} (${p.tipo_documento}: ${p.numero_documento})`).join(', ')
           : expediente.propietario, 'Ruta:', `${expediente.ciudad_origen || '—'} a ${expediente.ciudad_destino || '—'}`],
@@ -279,9 +354,10 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 35 },
           3: { cellWidth: 58 },
         },
+        margin: { top: 38, bottom: 25 },
       });
 
-      // Financial Block
+      // Financial Block title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
@@ -306,6 +382,7 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 45 },
           3: { cellWidth: 50 },
         },
+        margin: { top: 38, bottom: 25 },
       });
 
       // Detalle de Cotizaciones
@@ -317,7 +394,7 @@ export default function ExpedienteDetailPage() {
 
         const cotHeaders = [['Proveedor / Taller', 'Concepto', 'V. Cotizado', 'V. Negociado', 'Deducible', 'V. Deducible', 'V. a Pagar']];
         const cotRows = expediente.cotizaciones.map((cot) => [
-          `${cot.proveedor}${cot.tipo_documento && cot.numero_documento ? ` (${cot.tipo_documento}: ${cot.numero_documento})` : ''}`,
+          `${cot.proveedor}${cot.tipo_documento && cot.numero_documento ? ` (${cot.tipo_documento}: ${cot.numero_documento})` : ''}${cot.seleccionada ? ' * [Desembolso]' : ''}`,
           cot.concepto === 'OTROS' ? (cot.concepto_otro || 'OTROS') : cot.concepto,
           formatCOP(cot.valor_cotizacion),
           formatCOP(cot.valor_negociado),
@@ -342,19 +419,27 @@ export default function ExpedienteDetailPage() {
             5: { halign: 'right' },
             6: { halign: 'right' },
           },
+          margin: { top: 38, bottom: 25 },
         });
       }
 
-      // Conductor & Recobros
+      // Conductor & Recobros title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
       doc.text('RESPONSABILIDAD Y RECUPERACIÓN (RECOBROS)', 12, (doc as any).lastAutoTable.finalY + 10);
 
+      const estadoPagoTexto = expediente.tipo_reclamacion === 'Siniestro'
+        ? ` (${expediente.estado_pago_conductor || 'Pendiente'}${expediente.estado_pago_conductor === 'Pagado' && expediente.fecha_pago_conductor ? ` - ${formatDate(expediente.fecha_pago_conductor)}` : ''})`
+        : '';
+      const memoSoporteTexto = expediente.memorando_descuento
+        ? expediente.memorando_descuento + (expediente.soporte_pago_conductor ? ` | Soporte: ${expediente.soporte_pago_conductor}` : '')
+        : (expediente.soporte_pago_conductor ? `Soporte: ${expediente.soporte_pago_conductor}` : '—');
+
       const condData = [
         ['Conductor:', expediente.nombre_conductor || '—', 'Identificación:', (expediente.tipo_documento_conductor ? `${expediente.tipo_documento_conductor} ` : '') + (expediente.id_conductor || '—')],
         ['Celular:', expediente.celular_conductor || '—', 'Culpabilidad:', expediente.culpabilidad || 'Sin definir'],
-        ['Descuento Conductor:', formatCOP(expediente.valor_descuento_conductor), 'Memo Descuento:', expediente.memorando_descuento || '—'],
+        ['Descuento Conductor' + (expediente.tipo_reclamacion === 'Siniestro' ? ' (10%):' : ':'), `${formatCOP(expediente.valor_descuento_conductor)}${estadoPagoTexto}`, 'Memo / Soporte:', memoSoporteTexto],
         ['Recobro Vehículo:', `${formatCOP(expediente.valor_recobro_vehiculo)} (${expediente.porcentaje_recobro_vehiculo || 0}%)`, 'Recobro Empresa:', `${formatCOP(expediente.valor_recobro_empresa)} (${expediente.porcentaje_recobro_empresa || 0}%)`],
         ['Recobro Abogado:', `${formatCOP(expediente.valor_recobro_abogado)} (${expediente.porcentaje_recobro_abogado || 0}%)`, '', ''],
       ];
@@ -370,20 +455,26 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
+        margin: { top: 38, bottom: 25 },
       });
 
-      // Committee
+      // Committee title
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(27, 54, 93);
       doc.text('COMITÉ DE SEGURIDAD VIAL & AUTORIZACIÓN', 12, (doc as any).lastAutoTable.finalY + 10);
 
       const comData = [
-        ['Fecha de Comité:', formatDate(expediente.fecha_comite), 'Causa Raíz:', expediente.causa_raiz || '—'],
+        ['Fecha de Comité:', formatDate(expediente.fecha_comite), 'Número de Acta:', expediente.numero_acta || '—'],
+        ['Causa Raíz:', { content: expediente.causa_raiz || '—', colSpan: 3 }, '', ''],
         ['Observaciones Comité:', { content: expediente.observaciones_comite || '—', colSpan: 3 }, '', ''],
         ['Autorizado Por:', expediente.autorizado_por || '—', 'Cargo Autorizador:', expediente.cargo_autorizador || '—'],
         ['Fecha Autorización:', formatDate(expediente.fecha_autorizacion), 'Memorando de Pago:', expediente.memorando_pago_nombre || '—'],
       ];
+
+      if (expediente.estado === 'Rechazado' && expediente.observacion_rechazo) {
+        comData.push(['Observación de Rechazo:', { content: expediente.observacion_rechazo, colSpan: 3 }, '', '']);
+      }
 
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 13,
@@ -396,15 +487,44 @@ export default function ExpedienteDetailPage() {
           2: { fontStyle: 'bold', cellWidth: 43 },
           3: { cellWidth: 50 },
         },
+        margin: { top: 38, bottom: 25 },
       });
 
-      // Footer signature
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text('Generado automáticamente por el Sistema FAM Control de Flota Sugamuxi S.A.', 12, 280);
-      doc.text(`Fecha y hora de generación: ${new Date().toLocaleString()}`, 12, 284);
+      // Pagination/Footer text + Header repetition on all pages
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
 
-      doc.save(`${expediente.numero_expediente}_FAM_Reporte.pdf`);
+        // Header logo
+        if (logoB64) {
+          doc.addImage(logoB64, 'JPEG', 12, 10, 20, 20);
+        }
+
+        // Header titles
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(27, 54, 93);
+        doc.text('FLOTA SUGAMUXI S.A.', 36, 16);
+        doc.setFontSize(10);
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo — Nit. 891.800.075-8', 36, 21);
+        doc.text('Reporte Oficial de Expediente de Reclamación', 36, 26);
+
+        // Orange line separator
+        doc.setDrawColor(217, 91, 42);
+        doc.setLineWidth(0.8);
+        doc.line(12, 33, 198, 33);
+
+        // Footer signature & page numbers
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Generado automáticamente por el Sistema SIGFAM de Flota Sugamuxi S.A. | Página ${i} de ${pageCount}`, 12, 280);
+        doc.text(`Fecha y hora de generación: ${new Date().toLocaleString()}`, 12, 284);
+      }
+
+      doc.save(`${expediente.numero_expediente}_SIGFAM_Reporte.pdf`);
       toast.success('Reporte PDF descargado');
     } catch (err) {
       console.error(err);
@@ -414,17 +534,31 @@ export default function ExpedienteDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
-        <p>Cargando detalles del expediente...</p>
-      </div>
+      <>
+        <Header title="Expediente" subtitle="Cargando detalles..." />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+          <p>Cargando detalles del expediente...</p>
+        </div>
+      </>
     );
   }
 
-  if (!expediente) return null;
+  if (!expediente) {
+    return (
+      <>
+        <Header title="Expediente" subtitle="No encontrado" />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
+          <p>El expediente solicitado no existe o no tiene permisos para verlo.</p>
+        </div>
+      </>
+    );
+  }
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <>
+      <Header title="Expediente" subtitle={`SIGFAM — Detalle de expediente ${expediente.numero_expediente}`} />
+      <div className="flex-1 p-6 space-y-6">
       {/* Top action bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -450,7 +584,7 @@ export default function ExpedienteDetailPage() {
               )}
             </div>
             <p className="text-sm text-muted-foreground font-mono">
-              Placa: {expediente.placa} | Propietario: {expediente.propietario}
+              Placa: {expediente.placa} | Interno: {expediente.numero_interno || '—'} | Propietario: {expediente.propietario}
             </p>
           </div>
         </div>
@@ -458,7 +592,7 @@ export default function ExpedienteDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           {!isEditMode ? (
             <>
-              {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
+              {(currentUser.rol === 'admin' || currentUser.rol === 'analista') && expediente.estado === 'Pendiente' && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Editar Caso
@@ -471,17 +605,17 @@ export default function ExpedienteDetailPage() {
               </Button>
 
               {currentUser.rol === 'admin' && (
-                <div className="flex items-center gap-1.5 ml-2 border border-border rounded-lg p-1 bg-secondary/20">
-                  <span className="text-xs text-muted-foreground px-2">Estado:</span>
+                <div className="flex flex-wrap items-center gap-1 border border-border rounded-lg p-1 bg-secondary/20 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-2">
+                  <span className="text-[11px] sm:text-xs text-muted-foreground px-1.5 sm:px-2">Estado:</span>
                   {['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'].map((status) => {
-                    const isLocked = expediente.estado === 'Aprobado' || expediente.estado === 'Rechazado';
+                    const isLocked = (expediente.estado === 'Aprobado' || expediente.estado === 'Rechazado') && currentUser.rol !== 'admin';
                     const isActive = expediente.estado === status;
                     return (
                       <button
                         key={status}
                         disabled={isLocked}
                         onClick={() => handleStatusChange(status)}
-                        className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                        className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-semibold transition-all ${
                           isActive
                             ? 'bg-primary text-white shadow-sm'
                             : isLocked
@@ -496,10 +630,10 @@ export default function ExpedienteDetailPage() {
                 </div>
               )}
 
-              {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
+              {currentUser.rol === 'admin' && (
                 <Button variant="destructive" size="sm" onClick={handleDelete}>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar Lógico
+                  Inactivar Expediente
                 </Button>
               )}
             </>
@@ -513,7 +647,16 @@ export default function ExpedienteDetailPage() {
 
       <Separator />
 
-      {/* Main Area */}
+      {/* Rejection observation banner */}
+      {!isEditMode && expediente.estado === 'Rechazado' && expediente.observacion_rechazo && (
+        <div className="bg-red-500/10 border-2 border-red-500/20 text-red-700 dark:text-red-300 p-4 rounded-xl flex items-start gap-3 shadow-sm animate-fade-in">
+          <XCircle className="w-5 h-5 mt-0.5 text-red-500 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold text-sm">Expediente Rechazado</h3>
+            <p className="text-xs mt-1 font-medium leading-relaxed">{expediente.observacion_rechazo}</p>
+          </div>
+        </div>
+      )}
       {isEditMode ? (
         <ExpedienteForm
           id={expediente.id}
@@ -609,6 +752,18 @@ export default function ExpedienteDetailPage() {
                           {expediente.numero_interno || '—'}
                         </span>
                       </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Tipo de Servicio</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {(expediente as any).tipo_servicio || '—'}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Clase de Vehículo</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {(expediente as any).clase_vehiculo || '—'}
+                        </span>
+                      </div>
                       <div className="space-y-1.5 md:col-span-2">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider block">Propietarios Asociados</span>
                         {expediente.propietarios && expediente.propietarios.length > 0 ? (
@@ -674,7 +829,7 @@ export default function ExpedienteDetailPage() {
                         <h4 className="text-sm font-bold text-foreground">Detalle de Cotizaciones Asociadas</h4>
                         <div className="border border-border rounded-xl overflow-hidden bg-card">
                           <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
+                            <table className="w-full min-w-[800px] text-sm text-left">
                               <thead className="text-xs uppercase bg-secondary/40 text-muted-foreground border-b border-border">
                                 <tr>
                                   <th className="px-4 py-3 font-semibold">Taller / Proveedor</th>
@@ -691,9 +846,16 @@ export default function ExpedienteDetailPage() {
                                 {expediente.cotizaciones.map((cot, i) => (
                                   <tr key={cot.id || i} className="hover:bg-secondary/10 transition-colors">
                                     <td className="px-4 py-3">
-                                      <span className="font-medium text-foreground block">{cot.proveedor}</span>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className="font-medium text-foreground">{cot.proveedor}</span>
+                                        {cot.seleccionada && (
+                                          <span className="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">
+                                            ✓ Desembolso
+                                          </span>
+                                        )}
+                                      </div>
                                       {cot.tipo_documento && cot.numero_documento && (
-                                        <span className="text-xs text-muted-foreground font-mono">
+                                        <span className="text-xs text-muted-foreground font-mono block mt-0.5">
                                           {cot.tipo_documento}: {cot.numero_documento}
                                         </span>
                                       )}
@@ -708,15 +870,26 @@ export default function ExpedienteDetailPage() {
                                     <td className="px-4 py-3 text-right font-mono text-green-400 font-bold">{formatCOP(cot.valor_a_pagar)}</td>
                                     <td className="px-4 py-3 text-center">
                                       {cot.storage_path ? (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="text-primary hover:text-primary/85 h-8 w-8 rounded-lg"
-                                          onClick={() => handleDownloadDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
-                                          title="Descargar PDF Cotización"
-                                        >
-                                          <FileText className="w-4 h-4" />
-                                        </Button>
+                                        <div className="flex items-center justify-center gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            className="text-primary hover:text-primary/85 h-8 w-8 rounded-lg"
+                                            onClick={() => handlePreviewDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
+                                            title="Ver PDF Cotización"
+                                          >
+                                            <Eye className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-lg"
+                                            onClick={() => handleDownloadDoc(cot.storage_path!, cot.nombre_archivo || 'cotizacion.pdf')}
+                                            title="Descargar PDF Cotización"
+                                          >
+                                            <Download className="w-4 h-4" />
+                                          </Button>
+                                        </div>
                                       ) : (
                                         <span className="text-muted-foreground text-xs">—</span>
                                       )}
@@ -731,7 +904,7 @@ export default function ExpedienteDetailPage() {
                     )}
 
                     <div className="rounded-xl border border-border p-5 bg-secondary/10 space-y-3">
-                      <h4 className="text-sm font-bold text-foreground">Cálculo de Cobertura FAM</h4>
+                      <h4 className="text-sm font-bold text-foreground">Cálculo de Cobertura SIGFAM</h4>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Valor Acordado Negociación:</span>
                         <span className="number-font text-foreground font-semibold">{formatCOP(expediente.valor_negociado)}</span>
@@ -745,6 +918,38 @@ export default function ExpedienteDetailPage() {
                         <span>Valor Neto a Pagar:</span>
                         <span className="number-font text-green-400">{formatCOP(expediente.valor_a_pagar)}</span>
                       </div>
+                      {expediente.tipo_reclamacion === 'Siniestro' && (
+                        <>
+                          <Separator />
+                          <div className="flex justify-between items-center text-sm pt-1">
+                            <div>
+                              <span className="text-amber-500 font-semibold block">Valor a Pagar Conductor (10%):</span>
+                              <span className="text-xs text-muted-foreground">Obligación a cargo del conductor por siniestro</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="number-font text-amber-500 font-bold block">
+                                {formatCOP(expediente.valor_descuento_conductor ?? Math.round((expediente.valor_a_pagar || 0) * 0.10))}
+                              </span>
+                              <Badge
+                                variant={expediente.estado_pago_conductor === 'Pagado' ? 'success' : 'warning'}
+                                className="text-[10px] px-2 py-0.5 mt-0.5"
+                              >
+                                {expediente.estado_pago_conductor || 'Pendiente'}
+                              </Badge>
+                            </div>
+                          </div>
+                          {expediente.estado_pago_conductor === 'Pagado' && (expediente.fecha_pago_conductor || expediente.soporte_pago_conductor) && (
+                            <div className="text-xs text-muted-foreground pt-1 flex items-center justify-end gap-3 flex-wrap">
+                              {expediente.fecha_pago_conductor && (
+                                <span>📅 Fecha de Pago: <strong className="text-foreground">{formatDate(expediente.fecha_pago_conductor)}</strong></span>
+                              )}
+                              {expediente.soporte_pago_conductor && (
+                                <span>🧾 Soporte: <strong className="text-foreground">{expediente.soporte_pago_conductor}</strong></span>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -793,7 +998,7 @@ export default function ExpedienteDetailPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                      <div className={`grid grid-cols-1 ${expediente.tipo_reclamacion === 'Siniestro' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 pt-2`}>
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">Culpabilidad Dictada</span>
                           <Badge variant={expediente.culpabilidad === 'Conductor' ? 'destructive' : 'outline'}>
@@ -801,16 +1006,50 @@ export default function ExpedienteDetailPage() {
                           </Badge>
                         </div>
                         <div className="space-y-1">
-                          <span className="text-xs text-muted-foreground block">Descuento al Conductor</span>
+                          <span className="text-xs text-muted-foreground block">
+                            {expediente.tipo_reclamacion === 'Siniestro' ? 'Descuento Conductor (10%)' : 'Descuento al Conductor'}
+                          </span>
                           <span className="text-sm font-semibold text-foreground number-font">
                             {formatCOP(expediente.valor_descuento_conductor)}
                           </span>
                         </div>
+                        {expediente.tipo_reclamacion === 'Siniestro' && (
+                          <div className="space-y-1">
+                            <span className="text-xs text-muted-foreground block">Estado Pago Conductor</span>
+                            <Badge
+                              variant={expediente.estado_pago_conductor === 'Pagado' ? 'success' : 'warning'}
+                              className={expediente.estado_pago_conductor === 'Pagado' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'}
+                            >
+                              {expediente.estado_pago_conductor || 'Pendiente'}
+                            </Badge>
+                          </div>
+                        )}
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">N° Memorando Descuento</span>
                           <span className="text-sm font-semibold text-foreground font-mono">{expediente.memorando_descuento || '—'}</span>
                         </div>
                       </div>
+
+                      {expediente.tipo_reclamacion === 'Siniestro' && expediente.estado_pago_conductor === 'Pagado' && (expediente.fecha_pago_conductor || expediente.soporte_pago_conductor) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                          {expediente.fecha_pago_conductor && (
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground block">Fecha de Pago Conductor</span>
+                              <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                                <span>📅</span> {formatDate(expediente.fecha_pago_conductor)}
+                              </span>
+                            </div>
+                          )}
+                          {expediente.soporte_pago_conductor && (
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground block">N° Recibo / Soporte de Caja</span>
+                              <span className="text-sm font-semibold text-foreground font-mono flex items-center gap-1.5">
+                                <span>🧾</span> {expediente.soporte_pago_conductor}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <Separator />
@@ -857,6 +1096,12 @@ export default function ExpedienteDetailPage() {
                         </span>
                       </div>
                       <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider block">Número de Acta</span>
+                        <span className="text-sm font-semibold flex items-center gap-2 font-mono text-yellow-400">
+                          {expediente.numero_acta || '—'}
+                        </span>
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
                         <span className="text-xs text-muted-foreground uppercase tracking-wider block">Causa Raíz Dictaminada</span>
                         <span className="text-sm font-semibold text-foreground block bg-secondary/50 p-2 rounded border border-border">
                           {expediente.causa_raiz || 'Pendiente de definir causa.'}
@@ -908,15 +1153,26 @@ export default function ExpedienteDetailPage() {
                               <span className="text-sm font-medium text-foreground truncate max-w-[200px]" title={expediente.memorando_pago_archivo_nombre || 'memorando.pdf'}>
                                 {expediente.memorando_pago_archivo_nombre || 'memorando.pdf'}
                               </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 py-1 px-3"
-                                onClick={() => handleDownloadDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
-                              >
-                                <Eye className="w-3.5 h-3.5 mr-1" />
-                                Ver PDF
-                              </Button>
+                              <div className="flex items-center gap-1.5">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 py-1 px-3 flex items-center gap-1 text-foreground"
+                                  onClick={() => handlePreviewDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  Ver PDF
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 py-1 px-3 flex items-center gap-1 text-foreground"
+                                  onClick={() => handleDownloadDoc(expediente.memorando_pago_storage_path!, expediente.memorando_pago_archivo_nombre || 'memorando.pdf')}
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  Descargar
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <span className="text-sm text-muted-foreground">—</span>
@@ -937,7 +1193,7 @@ export default function ExpedienteDetailPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Upload section */}
-                    {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
+                    {(currentUser.rol === 'admin' || currentUser.rol === 'analista') && expediente.estado === 'Pendiente' && (
                       <form onSubmit={handleUpload} className="p-4 rounded-xl border border-dashed border-border bg-secondary/5 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex-1 min-w-[200px] space-y-1.5">
@@ -996,16 +1252,16 @@ export default function ExpedienteDetailPage() {
                           </div>
                         ) : (
                           documentos.map((doc) => (
-                            <div key={doc.id} className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                            <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-secondary/20 transition-colors">
+                              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                                <div className="p-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
                                   <FileText className="w-5 h-5" />
                                 </div>
-                                <div>
-                                  <span className="font-semibold text-sm text-foreground block max-w-[250px] sm:max-w-md truncate" title={doc.nombre_archivo}>
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-semibold text-sm text-foreground block truncate" title={doc.nombre_archivo}>
                                     {doc.nombre_archivo}
                                   </span>
-                                  <div className="flex gap-3 text-xs text-muted-foreground">
+                                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-0.5">
                                     <span className="font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
                                       {doc.tipo_documento}
                                     </span>
@@ -1015,14 +1271,22 @@ export default function ExpedienteDetailPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 justify-start sm:justify-end pl-11 sm:pl-0 mt-1 sm:mt-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handlePreviewDoc(doc.storage_path, doc.nombre_archivo)}
+                                  title="Ver en plataforma"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
                                   onClick={() => handleDownloadDoc(doc.storage_path, doc.nombre_archivo)}
-                                  title="Ver / Descargar"
+                                  title="Descargar archivo"
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  <Download className="w-4 h-4" />
                                 </Button>
                                 {currentUser.rol === 'admin' && expediente.estado === 'Pendiente' && (
                                   <Button
@@ -1073,7 +1337,7 @@ export default function ExpedienteDetailPage() {
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-bold text-foreground">
-                                    {audit.usuario_email || 'Sistema'}
+                                    {getUsuarioNombre(audit.usuario_email)}
                                   </span>
                                   <Badge className="text-[10px] py-0 px-1 font-mono uppercase" variant="secondary">
                                     {audit.accion}
@@ -1098,6 +1362,138 @@ export default function ExpedienteDetailPage() {
           </div>
         </div>
       )}
+
+      {/* File Preview Modal */}
+      <AnimatePresence>
+        {previewFile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full max-w-4xl h-[85vh] bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/10">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-foreground truncate pr-4" title={previewFile.name}>
+                    {previewFile.name}
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5 font-medium">
+                    Vista Previa del Documento
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 py-1 px-3 flex items-center gap-1.5 text-foreground hover:bg-secondary/80"
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = previewFile.url;
+                      a.download = previewFile.name;
+                      a.target = '_blank';
+                      a.click();
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Descargar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full hover:bg-secondary/80 text-foreground"
+                    onClick={() => setPreviewFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 bg-secondary/5 p-4 flex items-center justify-center overflow-auto min-h-0">
+                {previewFile.type === 'pdf' ? (
+                  <iframe
+                    src={`${previewFile.url}#toolbar=1`}
+                    className="w-full h-full border-0 rounded-lg bg-card"
+                    title="Visor de PDF"
+                  />
+                ) : previewFile.type === 'image' ? (
+                  <img
+                    src={previewFile.url}
+                    alt={previewFile.name}
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-sm text-foreground font-semibold">
+                      La vista previa no está disponible para este tipo de archivo.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 mb-4">
+                      Por favor, descárguelo para visualizarlo en su dispositivo.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = previewFile.url;
+                        a.download = previewFile.name;
+                        a.target = '_blank';
+                        a.click();
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar archivo
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Rejection Observation Modal */}
+      <AnimatePresence>
+        {showRejectionModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 text-left"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-foreground">Rechazar Expediente</h3>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setShowRejectionModal(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Por favor, ingrese el motivo u observación por la cual se rechaza este expediente. Esta información será visible para el equipo y se incluirá en los reportes generados.
+              </p>
+              <textarea
+                value={rejectionObservation}
+                onChange={(e) => setRejectionObservation(e.target.value)}
+                placeholder="Escriba la observación aquí..."
+                rows={4}
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowRejectionModal(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleConfirmRejection} disabled={!rejectionObservation.trim()}>
+                  Confirmar Rechazo
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <Footer />
     </div>
+    </>
   );
 }

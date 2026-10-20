@@ -1,33 +1,31 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Tag, Plus, Trash2, Eye, ShieldAlert } from 'lucide-react';
+import { Users, Tag, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ROLES_USUARIO } from '@/lib/constants';
-import type { RolUsuario } from '@/types/database';
-import { getMockUser, setMockUser } from '@/lib/services/dbService';
+import { getMockUser } from '@/lib/services/dbService';
+import { useRouter } from 'next/navigation';
 
 export function ConfiguracionView() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState(getMockUser());
   const [catalogos, setCatalogos] = useState<string[]>([]);
   const [newCatalogo, setNewCatalogo] = useState('');
 
   if (currentUser.rol !== 'admin') {
     return (
-      <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center">
+      <Card className="max-w-4xl border-destructive bg-destructive/5 p-6 text-center mx-auto mt-8">
         <CardHeader>
           <CardTitle className="text-destructive font-bold text-xl">Acceso Denegado</CardTitle>
-          <CardDescription className="text-muted-foreground mt-2">
-            No tiene permisos para acceder al módulo de configuración.
+          <CardDescription className="text-muted-foreground mt-2 text-sm">
+            Solo los administradores tienen acceso al módulo de configuración del sistema.
           </CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
-          <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
+          <Button onClick={() => router.push('/dashboard')} variant="outline">
             Volver al Dashboard
           </Button>
         </CardContent>
@@ -74,58 +72,8 @@ export function ConfiguracionView() {
     toast.success('Causa de comité eliminada');
   };
 
-  const handleRoleSimulation = (role: RolUsuario) => {
-    const user = setMockUser(role);
-    setCurrentUser(user);
-    toast.success(`Rol cambiado a: ${ROLES_USUARIO[role].label}`, {
-      description: 'Los permisos de la interfaz se han actualizado.',
-    });
-    // Force refresh navbar or other items if needed
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  };
-
   return (
     <div className="max-w-4xl space-y-6">
-      {/* Role Simulator */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <ShieldAlert className="w-5 h-5 text-primary" />
-              Simulador de Roles de Usuario
-            </CardTitle>
-            <CardDescription>
-              Permite simular diferentes permisos y RLS para ver cómo reacciona la interfaz.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {(['admin', 'analista', 'consultor'] as RolUsuario[]).map((role) => (
-                <button
-                  key={role}
-                  onClick={() => handleRoleSimulation(role)}
-                  className={`flex-1 min-w-[140px] px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
-                    currentUser.rol === role
-                      ? 'gradient-brand text-white border-transparent shadow-glow-brand'
-                      : 'bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-                  }`}
-                >
-                  {ROLES_USUARIO[role].label}
-                </button>
-              ))}
-            </div>
-            <div className="rounded-lg bg-card border border-border p-3 text-xs text-muted-foreground">
-              <p>
-                <strong>Admin:</strong> Acceso completo (Crear, Editar, Eliminar, Configuración).<br />
-                <strong>Analista:</strong> Lectura y escritura. No puede eliminar expedientes ni documentos.<br />
-                <strong>Consultor:</strong> Solo lectura. No puede crear ni editar expedientes, ni subir documentos.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
       {/* Users info */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -133,32 +81,21 @@ export function ConfiguracionView() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
               <Users className="w-5 h-5 text-primary" />
-              Gestión de Cuentas (Simulado)
+              Gestión de Cuentas de Usuario
             </CardTitle>
-            <CardDescription>Cuentas disponibles para pruebas del sistema</CardDescription>
+            <CardDescription>Administración de perfiles, permisos y acceso al sistema</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                { name: 'Administrador FAM', email: 'admin@flotasugamuxi.co', rol: 'admin' as RolUsuario },
-                { name: 'Analista de Casos', email: 'analista@flotasugamuxi.co', rol: 'analista' as RolUsuario },
-                { name: 'Consultor Invitado', email: 'consultor@flotasugamuxi.co', rol: 'consultor' as RolUsuario },
-              ].map((user) => (
-                <div key={user.email} className="flex items-center gap-4 p-3 rounded-xl bg-secondary/35 border border-border/60">
-                  <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLES_USUARIO[user.rol].color}`}>
-                    {ROLES_USUARIO[user.rol].label}
-                  </span>
-                  <div className="w-2 h-2 rounded-full bg-green-400" />
-                </div>
-              ))}
-            </div>
+          <CardContent className="pt-2">
+            <p className="text-sm text-muted-foreground mb-4">
+              Para agregar nuevos usuarios, cambiar sus roles (Administrador, Analista, Consultor) o suspender/activar el acceso de cualquier perfil, ve al módulo dedicado de gestión de usuarios.
+            </p>
+            <Button
+              onClick={() => router.push('/usuarios')}
+              className="gradient-brand text-white shadow-glow-brand"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Ir a Gestión de Usuarios
+            </Button>
           </CardContent>
         </Card>
       </motion.div>
@@ -217,7 +154,7 @@ export function ConfiguracionView() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              ['Aplicación', 'FAM Control v0.1.0'],
+              ['Aplicación', 'SIGFAM v0.1.0'],
               ['Empresa', 'Flota Sugamuxi S.A.'],
               ['Base de datos', 'Supabase (PostgreSQL)'],
               ['Autenticación', 'Supabase Auth'],

@@ -59,9 +59,10 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   fecha_incidente DATE NOT NULL,
   placa TEXT NOT NULL,
   numero_interno TEXT,
+  tipo_servicio TEXT,
   propietario TEXT NOT NULL,
   propietarios JSONB DEFAULT '[]'::jsonb,
-  tipo_reclamacion TEXT NOT NULL CHECK (tipo_reclamacion IN ('Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro')),
+  tipo_reclamacion TEXT NOT NULL,
   ciudad_origen TEXT,
   ciudad_destino TEXT,
   concepto TEXT,
@@ -84,6 +85,9 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   culpabilidad TEXT CHECK (culpabilidad IN ('Conductor', 'Tercero', 'Compartida', 'Sin definir')),
   valor_descuento_conductor NUMERIC(15,2),
   memorando_descuento TEXT,
+  estado_pago_conductor TEXT CHECK (estado_pago_conductor IN ('Pendiente', 'Pagado')),
+  fecha_pago_conductor DATE,
+  soporte_pago_conductor TEXT,
 
   -- Recobros
   valor_recobro_vehiculo NUMERIC(15,2),
@@ -97,6 +101,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   fecha_comite DATE,
   causa_raiz TEXT,
   observaciones_comite TEXT,
+  numero_acta TEXT,
 
   -- Autorización
   autorizado_por TEXT,
@@ -105,7 +110,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   memorando_pago_nombre TEXT,
   memorando_pago_storage_path TEXT,
   memorando_pago_archivo_nombre TEXT,
-  estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Revisado', 'Aprobado', 'Rechazado')),
+  estado TEXT NOT NULL DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Revisado', 'Aprobado', 'Rechazado', 'Inactivo')),
 
   -- Metadata
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -164,6 +169,7 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_expedientes_updated_at ON public.expedientes;
 CREATE TRIGGER update_expedientes_updated_at
   BEFORE UPDATE ON public.expedientes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -180,6 +186,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
@@ -194,40 +201,61 @@ ALTER TABLE public.catalogos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.perfiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas expedientes
+DROP POLICY IF EXISTS "expedientes_select" ON public.expedientes;
 CREATE POLICY "expedientes_select" ON public.expedientes FOR SELECT TO authenticated USING (deleted_at IS NULL);
+
+DROP POLICY IF EXISTS "expedientes_insert" ON public.expedientes;
 CREATE POLICY "expedientes_insert" ON public.expedientes FOR INSERT TO authenticated WITH CHECK (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "expedientes_update" ON public.expedientes;
 CREATE POLICY "expedientes_update" ON public.expedientes FOR UPDATE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "expedientes_delete" ON public.expedientes;
 CREATE POLICY "expedientes_delete" ON public.expedientes FOR DELETE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin' AND activo = true)
 );
 
 -- Políticas documentos
+DROP POLICY IF EXISTS "documentos_select" ON public.documentos;
 CREATE POLICY "documentos_select" ON public.documentos FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "documentos_insert" ON public.documentos;
 CREATE POLICY "documentos_insert" ON public.documentos FOR INSERT TO authenticated WITH CHECK (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "documentos_delete" ON public.documentos;
 CREATE POLICY "documentos_delete" ON public.documentos FOR DELETE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin' AND activo = true)
 );
 
 -- Políticas auditoría
+DROP POLICY IF EXISTS "auditoria_select" ON public.auditoria;
 CREATE POLICY "auditoria_select" ON public.auditoria FOR SELECT TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
+
+DROP POLICY IF EXISTS "auditoria_insert" ON public.auditoria;
 CREATE POLICY "auditoria_insert" ON public.auditoria FOR INSERT TO authenticated WITH CHECK (true);
 
 -- Políticas catálogos
+DROP POLICY IF EXISTS "catalogos_select" ON public.catalogos;
 CREATE POLICY "catalogos_select" ON public.catalogos FOR SELECT TO authenticated USING (activo = true);
+
+DROP POLICY IF EXISTS "catalogos_all" ON public.catalogos;
 CREATE POLICY "catalogos_all" ON public.catalogos FOR ALL TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
 
 -- Políticas perfiles
+DROP POLICY IF EXISTS "perfiles_select" ON public.perfiles;
 CREATE POLICY "perfiles_select" ON public.perfiles FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "perfiles_update" ON public.perfiles;
 CREATE POLICY "perfiles_update" ON public.perfiles FOR UPDATE TO authenticated USING (
   id = auth.uid() OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
@@ -238,11 +266,16 @@ CREATE POLICY "perfiles_update" ON public.perfiles FOR UPDATE TO authenticated U
 INSERT INTO storage.buckets (id, name, public) VALUES ('expedientes-documentos', 'expedientes-documentos', false)
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "storage_select" ON storage.objects;
 CREATE POLICY "storage_select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'expedientes-documentos');
+
+DROP POLICY IF EXISTS "storage_insert" ON storage.objects;
 CREATE POLICY "storage_insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (
   bucket_id = 'expedientes-documentos' AND
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "storage_delete" ON storage.objects;
 CREATE POLICY "storage_delete" ON storage.objects FOR DELETE TO authenticated USING (
   bucket_id = 'expedientes-documentos' AND
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin' AND activo = true)
@@ -259,3 +292,62 @@ INSERT INTO public.catalogos (tipo, valor, orden) VALUES
   ('CAUSA_RAIZ', 'Falla mecánica', 5),
   ('CAUSA_RAIZ', 'Tercero involucrado', 6)
 ON CONFLICT (tipo, valor) DO NOTHING;
+
+-- =====================
+-- TABLA: ingresos_fam
+-- =====================
+CREATE TABLE IF NOT EXISTS public.ingresos_fam (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  anio INTEGER NOT NULL,
+  mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
+  mes_nombre TEXT NOT NULL,
+  valor NUMERIC(15,2) NOT NULL DEFAULT 0,
+  concepto TEXT DEFAULT 'Aportes Mensuales FAM',
+  observaciones TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by UUID REFERENCES auth.users(id),
+  CONSTRAINT uq_ingresos_fam_anio_mes UNIQUE(anio, mes)
+);
+
+ALTER TABLE public.ingresos_fam ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ingresos_fam_select" ON public.ingresos_fam FOR SELECT TO authenticated USING (
+  EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
+);
+CREATE POLICY "ingresos_fam_insert" ON public.ingresos_fam FOR INSERT TO authenticated WITH CHECK (
+  EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
+);
+CREATE POLICY "ingresos_fam_update" ON public.ingresos_fam FOR UPDATE TO authenticated USING (
+  EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
+);
+CREATE POLICY "ingresos_fam_delete" ON public.ingresos_fam FOR DELETE TO authenticated USING (
+  EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
+);
+
+INSERT INTO public.ingresos_fam (anio, mes, mes_nombre, valor, concepto) VALUES
+  (2025, 1, 'Enero', 211667972, 'Aportes Mensuales FAM'),
+  (2025, 2, 'Febrero', 203140363, 'Aportes Mensuales FAM'),
+  (2025, 3, 'Marzo', 204418961, 'Aportes Mensuales FAM'),
+  (2025, 4, 'Abril', 205323061, 'Aportes Mensuales FAM'),
+  (2025, 5, 'Mayo', 200077286, 'Aportes Mensuales FAM'),
+  (2025, 6, 'Junio', 200227722, 'Aportes Mensuales FAM'),
+  (2025, 7, 'Julio', 197096022, 'Aportes Mensuales FAM'),
+  (2025, 8, 'Agosto', 197736597, 'Aportes Mensuales FAM'),
+  (2025, 9, 'Septiembre', 192642742, 'Aportes Mensuales FAM'),
+  (2025, 10, 'Octubre', 190050340, 'Aportes Mensuales FAM'),
+  (2025, 11, 'Noviembre', 190625812, 'Aportes Mensuales FAM'),
+  (2025, 12, 'Diciembre', 205896275, 'Aportes Mensuales FAM'),
+  (2026, 1, 'Enero', 203926938, 'Aportes Mensuales FAM'),
+  (2026, 2, 'Febrero', 201609101, 'Aportes Mensuales FAM'),
+  (2026, 3, 'Marzo', 203342553, 'Aportes Mensuales FAM'),
+  (2026, 4, 'Abril', 205968914, 'Aportes Mensuales FAM'),
+  (2026, 5, 'Mayo', 206231552, 'Aportes Mensuales FAM'),
+  (2026, 6, 'Junio', 200453564, 'Aportes Mensuales FAM'),
+  (2026, 7, 'Julio', 198089841, 'Aportes Mensuales FAM'),
+  (2026, 8, 'Agosto', 198089841, 'Aportes Mensuales FAM')
+ON CONFLICT (anio, mes) DO UPDATE SET
+  valor = EXCLUDED.valor,
+  mes_nombre = EXCLUDED.mes_nombre,
+  concepto = EXCLUDED.concepto;
+

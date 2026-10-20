@@ -34,6 +34,7 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth');
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/expedientes') ||
+    request.nextUrl.pathname.startsWith('/ingresos') ||
     request.nextUrl.pathname.startsWith('/reportes') ||
     request.nextUrl.pathname.startsWith('/configuracion') ||
     request.nextUrl.pathname.startsWith('/auditoria');

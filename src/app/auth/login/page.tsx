@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { LogIn, Bus, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { LogIn, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,16 +38,21 @@ export default function LoginPage() {
       let role: RolUsuario = 'consultor';
       let name = 'Consultor Invitado';
 
+      let cargo = '';
       if (isMock) {
-        if (data.email.toLowerCase().includes('admin')) {
+        if (data.email.toLowerCase().includes('admin') || data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
           role = 'admin';
-          name = 'Administrador FAM';
+          name = 'Administrador SIGFAM';
+          cargo = 'Administrador de Sistema';
         } else if (data.email.toLowerCase().includes('analista')) {
           role = 'analista';
           name = 'Analista de Casos';
+          cargo = 'Analista de Siniestros';
+        } else {
+          cargo = 'Consultor';
         }
         await new Promise((r) => setTimeout(r, 1000));
-        setMockUser(role, name);
+        setMockUser(role, name, cargo);
       } else {
         // Autenticación real de Supabase
         const supabase = createClient();
@@ -67,7 +72,7 @@ export default function LoginPage() {
         // Obtener el perfil real desde la base de datos
         const { data: profile, error: profileError } = (await supabase
           .from('perfiles')
-          .select('rol, nombre')
+          .select('rol, nombre, must_change_password, cargo')
           .eq('id', authData.user.id)
           .single()) as any;
 
@@ -80,7 +85,7 @@ export default function LoginPage() {
           if (authData.user.user_metadata?.rol) {
             role = authData.user.user_metadata.rol as RolUsuario;
           } else {
-            if (data.email.toLowerCase().includes('admin')) {
+            if (data.email.toLowerCase().includes('admin') || data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
               role = 'admin';
             } else if (data.email.toLowerCase().includes('analista')) {
               role = 'analista';
@@ -89,14 +94,32 @@ export default function LoginPage() {
         } else if (profile) {
           role = profile.rol as RolUsuario;
           name = profile.nombre || name;
+          cargo = profile.cargo || '';
+
+          if (data.email.toLowerCase() === 'sisflotasugamuxi@gmail.com') {
+            role = 'admin';
+          }
+          
+          if (profile.must_change_password) {
+            setMockUser(role, name, cargo, authData.user.email || '');
+            toast.info('Debes establecer una nueva contraseña antes de continuar.', {
+              description: 'El administrador requiere que cambies tu contraseña.',
+            });
+            router.push('/auth/change-password');
+            return;
+          }
         }
 
         // Sincronizar el estado de sesión local
-        setMockUser(role, name);
+        setMockUser(role, name, cargo, authData.user.email || '');
       }
 
-      toast.success('Bienvenido a FAM Control', {
-        description: `Ingresaste como ${name} (${role})`,
+      const userCargo = isMock 
+        ? cargo 
+        : (cargo || (role === 'admin' ? 'Administrador' : role === 'analista' ? 'Analista' : 'Consultor'));
+
+      toast.success('Bienvenido a SIGFAM', {
+        description: `Ingresaste como ${name} (${userCargo})`,
       });
 
       router.push('/dashboard');
@@ -118,23 +141,16 @@ export default function LoginPage() {
         <CardHeader className="text-center pb-2 pt-8">
           {/* Logo */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center shadow-glow-brand">
-              <Bus className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center shadow-md p-1.5 overflow-hidden">
+              <img src="/logo.png" alt="Logo Flota Sugamuxi" className="w-full h-full object-contain" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">FAM Control</h1>
+           <h1 className="text-2xl font-bold text-foreground">SIGFAM</h1>
           <p className="text-sm text-muted-foreground mt-1">Flota Sugamuxi S.A.</p>
-          <p className="text-xs text-muted-foreground">Fondo de Auxilio Mutuo</p>
+          <p className="text-xs text-muted-foreground">Sistema Integrado de Gestión del Fondo de Auxilio Mutuo</p>
         </CardHeader>
 
         <CardContent className="px-8 pb-8 pt-6">
-          <div className="mb-6 rounded-lg bg-secondary/40 border border-border p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground">Credenciales de prueba disponibles:</p>
-            <p>• Admin: <span className="font-mono text-primary">admin@flotasugamuxi.co</span> / password</p>
-            <p>• Analista: <span className="font-mono text-primary">analista@flotasugamuxi.co</span> / password</p>
-            <p>• Consultor: <span className="font-mono text-primary">consultor@flotasugamuxi.co</span> / password</p>
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="login-email">Correo Electrónico</Label>
@@ -178,7 +194,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full mt-2"
+              className="w-full mt-2 gradient-brand text-white shadow-glow-brand hover:opacity-95 transition-opacity border-0"
               disabled={isLoading}
               id="login-submit-btn"
             >
@@ -195,6 +211,10 @@ export default function LoginPage() {
             Sistema de uso exclusivo para personal autorizado de{' '}
             <span className="text-foreground font-medium">Flota Sugamuxi S.A.</span>
           </p>
+
+          <div className="text-center text-xs text-muted-foreground/80 mt-4 pt-2 pb-0.5 -mb-2 border-t border-border/50 font-semibold">
+            Desarrollado Por Julián Salgado | Flota Sugamuxi S.A.
+          </div>
         </CardContent>
       </Card>
     </motion.div>

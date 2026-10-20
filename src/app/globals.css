@@ -10,7 +10,7 @@
     --card-foreground: 222 47% 8%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 8%;
-    --primary: 217 91% 42%;
+    --primary: 203 100% 42%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 93%;
     --secondary-foreground: 222 47% 20%;
@@ -20,13 +20,13 @@
     --accent-foreground: 222 47% 8%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 88%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 42%;
+    --border: 200 2% 81%;
+    --input: 200 2% 86%;
+    --ring: 203 100% 42%;
     --radius: 0.625rem;
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
-    --info: 217 91% 60%;
+    --info: 203 100% 42%;
   }
 
   .dark {
@@ -36,7 +36,7 @@
     --card-foreground: 210 40% 95%;
     --popover: 222 39% 12%;
     --popover-foreground: 210 40% 95%;
-    --primary: 217 91% 55%;
+    --primary: 203 100% 50%;
     --primary-foreground: 0 0% 100%;
     --secondary: 222 32% 17%;
     --secondary-foreground: 210 40% 85%;
@@ -48,42 +48,113 @@
     --destructive-foreground: 0 0% 100%;
     --border: 222 26% 22%;
     --input: 222 32% 17%;
-    --ring: 217 91% 55%;
+    --ring: 203 100% 50%;
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
-    --info: 217 91% 60%;
+    --info: 203 100% 50%;
   }
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  * { 
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body { 
+    @apply bg-background text-foreground; 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Cross-browser scrollbar for Mac (Safari, Chrome, Firefox) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Normalize WebKit native inputs & pickers for Mac Safari */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  ::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  .dark ::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+  }
+
+  /* Fix Safari autofill background override */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: hsl(var(--foreground));
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--card)) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }
 
 @layer utilities {
+  /* Mac & WebKit glassmorphism hardware acceleration */
   .glass {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
   .glass-light {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
     border: 1px solid rgba(255, 255, 255, 0.4);
   }
   .gradient-brand {
-    background: linear-gradient(135deg, hsl(217,91%,42%) 0%, hsl(224,76%,48%) 100%);
+    background: linear-gradient(135deg, #012169 0%, #0084D5 100%);
   }
   .text-gradient {
-    background: linear-gradient(135deg, hsl(217,91%,60%) 0%, hsl(43,96%,52%) 100%);
+    background: linear-gradient(135deg, #0084D5 0%, #012169 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -94,5 +165,39 @@
   .number-font {
     font-family: var(--font-mono), monospace;
     font-feature-settings: 'tnum';
+  }
+  .animate-float-particle {
+    animation: float-up var(--particle-duration, 20s) linear infinite;
+    will-change: transform;
+  }
+
+  /* Safari Recharts flex overflow fix */
+  .recharts-responsive-container {
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+
+  /* Mac Safari touch smooth scrolling */
+  .overflow-y-auto, .overflow-x-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Dynamic Viewport height for iOS Safari & macOS Safari */
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .h-screen-safe {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-120vh);
   }
 }

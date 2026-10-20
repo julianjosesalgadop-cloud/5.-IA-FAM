@@ -17,22 +17,40 @@ export function formatCOP(value: number | null | undefined): string {
 
 export function formatDate(date: string | null | undefined): string {
   if (!date) return '—';
+  
+  // If the date string has a time part, don't append T00:00:00
+  const cleanDate = date.includes('T') || date.includes(' ') || date.length > 10
+    ? new Date(date)
+    : new Date(date + 'T00:00:00');
+  
+  if (isNaN(cleanDate.getTime())) {
+    const fallbackDate = new Date(date);
+    if (isNaN(fallbackDate.getTime())) return '—';
+    return new Intl.DateTimeFormat('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(fallbackDate);
+  }
+
   return new Intl.DateTimeFormat('es-CO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(new Date(date + 'T00:00:00'));
+  }).format(cleanDate);
 }
 
 export function formatDateTime(date: string | null | undefined): string {
   if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('es-CO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(d);
 }
 
 export function calcDeducible(valorNegociado: number, porcentaje: number): number {
@@ -54,6 +72,7 @@ export function getEstadoBadgeColor(estado: string): string {
     'Revisado': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
     'Aprobado': 'bg-green-500/15 text-green-400 border-green-500/30',
     'Rechazado': 'bg-red-500/15 text-red-400 border-red-500/30',
+    'Inactivo': 'bg-gray-500/15 text-gray-400 border-gray-500/30',
   };
   return colors[estado] || 'bg-gray-500/15 text-gray-400 border-gray-500/30';
 }

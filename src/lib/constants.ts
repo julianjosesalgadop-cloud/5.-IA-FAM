@@ -1,8 +1,16 @@
-export const TIPOS_RECLAMACION = ['Siniestro', 'Vidrios', 'Carrocería', 'Repuestos', 'Pérdida parcial', 'Otro'] as const;
+export const TIPOS_RECLAMACION = [
+  'Siniestro',
+  'Vidrios',
+  'Carrocería',
+  'Repuestos',
+  'Pérdida parcial',
+  'Afectación por orden público',
+  'Otro',
+] as const;
 
 export const CULPABILIDADES = ['Conductor', 'Tercero', 'Compartida', 'Sin definir'] as const;
 
-export const ESTADOS_EXPEDIENTE = ['Pendiente', 'Revisado', 'Aprobado', 'Rechazado'] as const;
+export const ESTADOS_EXPEDIENTE = ['Pendiente', 'Revisado', 'Aprobado', 'Rechazado', 'Inactivo'] as const;
 
 export const PORCENTAJES_DEDUCIBLE = [
   { label: '50%', value: 50 },
@@ -30,7 +38,10 @@ export const ROLES_USUARIO = {
 } as const;
 
 export const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
+  { href: '/dashboard', label: 'Dashboard Gastos', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
+  { href: '/dashboard/comparativo', label: 'Comparativo Gastos', icon: 'ArrowLeftRight', roles: ['admin', 'analista', 'consultor'] },
+  { href: '/ingresos', label: 'Ingresos FAM', icon: 'Coins', roles: ['admin', 'analista'] },
+  { href: '/dashboard/gasvsing', label: 'Ingresos Vs Gastos', icon: 'CircleDollarSign', roles: ['admin', 'analista', 'consultor'] },
   { href: '/expedientes', label: 'Expedientes', icon: 'FolderOpen', roles: ['admin', 'analista', 'consultor'] },
   { href: '/reportes', label: 'Reportes', icon: 'BarChart3', roles: ['admin', 'analista', 'consultor'] },
   { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin'] },
