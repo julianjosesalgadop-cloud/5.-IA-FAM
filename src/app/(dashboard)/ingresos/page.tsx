@@ -461,8 +461,8 @@ export default function IngresosPage() {
         data={chartMonthlyData}
         margin={{
           top: isExpanded ? 35 : 28,
-          right: isExpanded ? 30 : 15,
-          left: isExpanded ? 0 : -10,
+          right: isExpanded ? 30 : 20,
+          left: isExpanded ? 0 : -5,
           bottom: isExpanded ? 20 : 0,
         }}
       >
@@ -471,7 +471,7 @@ export default function IngresosPage() {
           dataKey="mes"
           stroke="currentColor"
           tick={{ fill: 'currentColor', opacity: 0.7 }}
-          fontSize={isExpanded ? 12 : 10}
+          fontSize={isExpanded ? 12 : 11}
           tickLine={false}
           interval={0}
         />
@@ -493,7 +493,7 @@ export default function IngresosPage() {
             label={{
               value: `Promedio: ${formatLabelAmountCompact(promedioMensual)}`,
               fill: 'hsl(43, 96%, 52%)',
-              fontSize: isExpanded ? 12 : 10,
+              fontSize: isExpanded ? 12 : 11,
               position: 'insideTopRight',
             }}
           />
@@ -503,14 +503,14 @@ export default function IngresosPage() {
           fill="hsl(203, 100%, 50%)"
           radius={[3, 3, 0, 0]}
           name={`Ingresos ${selectedAnio}`}
-          maxBarSize={isExpanded ? 48 : 32}
+          maxBarSize={isExpanded ? 48 : 38}
         >
           <LabelList
             dataKey="valor"
             position="top"
             formatter={formatLabelAmount}
             fill="currentColor"
-            style={{ fontSize: isExpanded ? 11 : 9, opacity: 0.85, fontWeight: 600 }}
+            style={{ fontSize: isExpanded ? 11 : 10, opacity: 0.9, fontWeight: 600 }}
           />
         </Bar>
       </BarChart>
@@ -524,19 +524,19 @@ export default function IngresosPage() {
           data={chartMonthlyData}
           margin={{
             top: isExpanded ? 35 : 28,
-            right: isExpanded ? 30 : 15,
-            left: isExpanded ? 0 : -10,
+            right: isExpanded ? 30 : 20,
+            left: isExpanded ? 0 : -5,
             bottom: isExpanded ? 20 : 0,
           }}
-          barGap={isExpanded ? 4 : 2}
-          barCategoryGap={isExpanded ? "20%" : "16%"}
+          barGap={isExpanded ? 4 : 3}
+          barCategoryGap={isExpanded ? "20%" : "18%"}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis
             dataKey="mes"
             stroke="currentColor"
             tick={{ fill: 'currentColor', opacity: 0.7 }}
-            fontSize={isExpanded ? 12 : 10}
+            fontSize={isExpanded ? 12 : 11}
             tickLine={false}
             interval={0}
           />
@@ -551,23 +551,23 @@ export default function IngresosPage() {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            iconSize={isExpanded ? 10 : 8}
+            iconSize={isExpanded ? 10 : 9}
             iconType="circle"
-            wrapperStyle={{ fontSize: isExpanded ? 12 : 10, paddingTop: 4 }}
+            wrapperStyle={{ fontSize: isExpanded ? 12 : 11, paddingTop: 4 }}
           />
           <Bar
             dataKey="valorPrev"
             fill="#64748b"
             radius={[3, 3, 0, 0]}
             name={`${selectedAnio - 1}`}
-            maxBarSize={isExpanded ? 32 : 18}
+            maxBarSize={isExpanded ? 32 : 24}
           >
             <LabelList
               dataKey="valorPrev"
               position="insideTop"
               formatter={formatLabelAmountCompact}
               fill="#ffffff"
-              style={{ fontSize: isExpanded ? 9 : 7.5, fontWeight: 700 }}
+              style={{ fontSize: isExpanded ? 9.5 : 8.5, fontWeight: 700 }}
             />
           </Bar>
           <Bar
@@ -575,14 +575,14 @@ export default function IngresosPage() {
             fill="hsl(203, 100%, 50%)"
             radius={[3, 3, 0, 0]}
             name={`${selectedAnio}`}
-            maxBarSize={isExpanded ? 32 : 18}
+            maxBarSize={isExpanded ? 32 : 24}
           >
             <LabelList
               dataKey="valor"
               position="top"
               formatter={formatLabelAmountCompact}
               fill="hsl(203, 100%, 50%)"
-              style={{ fontSize: isExpanded ? 10 : 8, fontWeight: 700 }}
+              style={{ fontSize: isExpanded ? 10.5 : 9.5, fontWeight: 700 }}
             />
           </Bar>
         </BarChart>
@@ -591,8 +591,8 @@ export default function IngresosPage() {
           data={chartMonthlyData}
           margin={{
             top: isExpanded ? 35 : 28,
-            right: isExpanded ? 30 : 15,
-            left: isExpanded ? 0 : -10,
+            right: isExpanded ? 30 : 20,
+            left: isExpanded ? 0 : -5,
             bottom: isExpanded ? 20 : 0,
           }}
         >
@@ -601,7 +601,7 @@ export default function IngresosPage() {
             dataKey="mes"
             stroke="currentColor"
             tick={{ fill: 'currentColor', opacity: 0.7 }}
-            fontSize={isExpanded ? 12 : 10}
+            fontSize={isExpanded ? 12 : 11}
             tickLine={false}
             interval={0}
           />
@@ -616,9 +616,9 @@ export default function IngresosPage() {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            iconSize={isExpanded ? 10 : 8}
+            iconSize={isExpanded ? 10 : 9}
             iconType="circle"
-            wrapperStyle={{ fontSize: isExpanded ? 12 : 10, paddingTop: 4 }}
+            wrapperStyle={{ fontSize: isExpanded ? 12 : 11, paddingTop: 4 }}
           />
           <Line
             name={`${selectedAnio - 1}`}
@@ -635,7 +635,7 @@ export default function IngresosPage() {
               position="top"
               formatter={formatLabelAmountCompact}
               fill="#64748b"
-              style={{ fontSize: isExpanded ? 10 : 8, opacity: 0.85, fontWeight: 600 }}
+              style={{ fontSize: isExpanded ? 10 : 8.5, opacity: 0.85, fontWeight: 600 }}
             />
           </Line>
           <Line
@@ -653,7 +653,7 @@ export default function IngresosPage() {
               position="top"
               formatter={formatLabelAmountCompact}
               fill="hsl(203, 100%, 50%)"
-              style={{ fontSize: isExpanded ? 10.5 : 8.5, fontWeight: 700 }}
+              style={{ fontSize: isExpanded ? 10.5 : 9, fontWeight: 700 }}
             />
           </Line>
         </LineChart>
@@ -1007,9 +1007,9 @@ export default function IngresosPage() {
           </Card>
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Main Monthly Bar Chart */}
+        {/* Charts: 2 Filas, una debajo de la otra */}
+        <div className="flex flex-col gap-6">
+          {/* Fila 1: Main Monthly Bar Chart */}
           <Card className="border-border bg-card shadow-sm flex flex-col">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1040,13 +1040,13 @@ export default function IngresosPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-2 flex-1">
-              <div className="h-[320px] w-full">
+              <div className="h-[340px] w-full">
                 {renderChartMensual(false)}
               </div>
             </CardContent>
           </Card>
 
-          {/* Comparative vs Previous Year */}
+          {/* Fila 2: Comparative vs Previous Year */}
           <Card className="border-border bg-card shadow-sm flex flex-col">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1100,7 +1100,7 @@ export default function IngresosPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-2 flex-1">
-              <div className="h-[320px] w-full">
+              <div className="h-[340px] w-full">
                 {renderChartComparativo(false)}
               </div>
             </CardContent>
