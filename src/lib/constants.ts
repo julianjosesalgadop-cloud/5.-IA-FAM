@@ -40,6 +40,7 @@ export const ROLES_USUARIO = {
 export const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
   { href: '/expedientes', label: 'Expedientes', icon: 'FolderOpen', roles: ['admin', 'analista', 'consultor'] },
+  { href: '/ingresos', label: 'Ingresos FAM', icon: 'Coins', roles: ['admin', 'analista'] },
   { href: '/reportes', label: 'Reportes', icon: 'BarChart3', roles: ['admin', 'analista', 'consultor'] },
   { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin'] },
   { href: '/auditoria', label: 'Auditoría', icon: 'Shield', roles: ['admin'] },

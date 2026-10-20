@@ -134,6 +134,19 @@ export interface UsuarioPerfil {
   created_at: string;
 }
 
+export interface IngresoFAM {
+  id: string;
+  anio: number;
+  mes: number;
+  mes_nombre: string;
+  valor: number;
+  concepto?: string | null;
+  observaciones?: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -161,6 +174,11 @@ export type Database = {
         Row: UsuarioPerfil;
         Insert: Omit<UsuarioPerfil, 'created_at'>;
         Update: Partial<UsuarioPerfil>;
+      };
+      ingresos_fam: {
+        Row: IngresoFAM;
+        Insert: Omit<IngresoFAM, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<IngresoFAM>;
       };
     };
   };

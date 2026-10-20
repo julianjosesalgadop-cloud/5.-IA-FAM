@@ -41,6 +41,7 @@ const NAV_GROUPS = [
     items: [
       { href: '/expedientes', label: 'Expedientes', icon: 'FolderOpen', roles: ['admin', 'analista', 'consultor'] },
       { href: '/expedientes/nuevo', label: 'Nuevo Expediente', icon: 'PlusCircle', roles: ['admin', 'analista'] },
+      { href: '/ingresos', label: 'Ingresos FAM', icon: 'Coins', roles: ['admin', 'analista'] },
       { href: '/reportes', label: 'Reportes', icon: 'BarChart3', roles: ['admin', 'analista', 'consultor'] },
     ],
   },

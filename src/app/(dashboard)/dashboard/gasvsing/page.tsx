@@ -1,8 +1,9 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { dbService } from '@/lib/services/dbService';
+import { dbService, getMockUser } from '@/lib/services/dbService';
 import type { Expediente } from '@/types/database';
 import { 
   TrendingUp, 
@@ -91,14 +92,16 @@ export default function GasVsIngPage() {
     setLoading(true);
     toast.loading('Cargando análisis de Gastos vs Ingresos...', { id: 'loading-gasvsing' });
     try {
-      const [expData, ingResponse] = await Promise.all([
+      const [expData, matrixData] = await Promise.all([
         dbService.getExpedientes(),
-        fetch('/api/ingresos').then(res => res.json()).catch(() => FALLBACK_INGRESOS)
+        dbService.getIngresosMatrix().catch(() =>
+          fetch('/api/ingresos').then(res => res.json()).catch(() => FALLBACK_INGRESOS)
+        )
       ]);
       setExpedientes(expData);
-      if (ingResponse && (ingResponse['2025'] || ingResponse['2026'])) {
-        setIngresos(ingResponse);
-        const inc26 = ingResponse['2026'] || [];
+      if (matrixData && (matrixData['2025'] || matrixData['2026'])) {
+        setIngresos(matrixData);
+        const inc26 = matrixData['2026'] || [];
         const lastActiveIndex = inc26.reduce((acc: number, val: number, idx: number) => val > 0 ? idx : acc, 0);
         if (lastActiveIndex >= 0) {
           setSelectedMonths(Array.from({ length: lastActiveIndex + 1 }, (_, i) => i));
@@ -535,6 +538,14 @@ export default function GasVsIngPage() {
         subtitle="SIGFAM — Análisis del balance financiero mensual, afectación y acumulados 2025 vs 2026" 
         action={
           <div className="flex items-center gap-2">
+            {getMockUser().rol !== 'consultor' && (
+              <Button asChild variant="default" size="sm" className="h-9 px-3 gradient-brand text-white shadow-glow-brand">
+                <Link href="/ingresos">
+                  <Coins className="w-4 h-4 mr-1.5" />
+                  Gestionar Ingresos FAM
+                </Link>
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm" 

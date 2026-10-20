@@ -1,6 +1,6 @@
 import { createClient as createActualBrowserClient } from '@/lib/supabase/client';
 const createBrowserClient = () => createActualBrowserClient() as any;
-import type { Expediente, Documento, AuditoriaEntry, RolUsuario } from '@/types/database';
+import type { Expediente, Documento, AuditoriaEntry, RolUsuario, IngresoFAM } from '@/types/database';
 
 const IS_MOCK_MODE =
   !process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -14,6 +14,7 @@ const MOCK_STORAGE_KEYS = {
   AUDITORIA: 'fam_mock_auditoria',
   USER: 'fam_mock_user',
   PERFILES: 'fam_mock_perfiles',
+  INGRESOS_FAM: 'fam_mock_ingresos_fam',
 };
 
 const formatCOPValue = (val: number | null | undefined): string => {
@@ -346,6 +347,31 @@ const INITIAL_PERFILES: Perfil[] = [
     must_change_password: false,
     created_at: '2025-01-03T00:00:00Z',
   },
+];
+
+export const INITIAL_INGRESOS_FAM: IngresoFAM[] = [
+  // 2025
+  { id: 'ing-2025-01', anio: 2025, mes: 1, mes_nombre: 'Enero', valor: 211667972, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-01-31T23:59:59Z', updated_at: '2025-01-31T23:59:59Z' },
+  { id: 'ing-2025-02', anio: 2025, mes: 2, mes_nombre: 'Febrero', valor: 203140363, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-02-28T23:59:59Z', updated_at: '2025-02-28T23:59:59Z' },
+  { id: 'ing-2025-03', anio: 2025, mes: 3, mes_nombre: 'Marzo', valor: 204418961, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-03-31T23:59:59Z', updated_at: '2025-03-31T23:59:59Z' },
+  { id: 'ing-2025-04', anio: 2025, mes: 4, mes_nombre: 'Abril', valor: 205323061, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-04-30T23:59:59Z', updated_at: '2025-04-30T23:59:59Z' },
+  { id: 'ing-2025-05', anio: 2025, mes: 5, mes_nombre: 'Mayo', valor: 200077286, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-05-31T23:59:59Z', updated_at: '2025-05-31T23:59:59Z' },
+  { id: 'ing-2025-06', anio: 2025, mes: 6, mes_nombre: 'Junio', valor: 200227722, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-06-30T23:59:59Z', updated_at: '2025-06-30T23:59:59Z' },
+  { id: 'ing-2025-07', anio: 2025, mes: 7, mes_nombre: 'Julio', valor: 197096022, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-07-31T23:59:59Z', updated_at: '2025-07-31T23:59:59Z' },
+  { id: 'ing-2025-08', anio: 2025, mes: 8, mes_nombre: 'Agosto', valor: 197736597, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-08-31T23:59:59Z', updated_at: '2025-08-31T23:59:59Z' },
+  { id: 'ing-2025-09', anio: 2025, mes: 9, mes_nombre: 'Septiembre', valor: 192642742, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-09-30T23:59:59Z', updated_at: '2025-09-30T23:59:59Z' },
+  { id: 'ing-2025-10', anio: 2025, mes: 10, mes_nombre: 'Octubre', valor: 190050340, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-10-31T23:59:59Z', updated_at: '2025-10-31T23:59:59Z' },
+  { id: 'ing-2025-11', anio: 2025, mes: 11, mes_nombre: 'Noviembre', valor: 190625812, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-11-30T23:59:59Z', updated_at: '2025-11-30T23:59:59Z' },
+  { id: 'ing-2025-12', anio: 2025, mes: 12, mes_nombre: 'Diciembre', valor: 205896275, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2025-12-31T23:59:59Z', updated_at: '2025-12-31T23:59:59Z' },
+  // 2026
+  { id: 'ing-2026-01', anio: 2026, mes: 1, mes_nombre: 'Enero', valor: 203926938, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-01-31T23:59:59Z', updated_at: '2026-01-31T23:59:59Z' },
+  { id: 'ing-2026-02', anio: 2026, mes: 2, mes_nombre: 'Febrero', valor: 201609101, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-02-28T23:59:59Z', updated_at: '2026-02-28T23:59:59Z' },
+  { id: 'ing-2026-03', anio: 2026, mes: 3, mes_nombre: 'Marzo', valor: 203342553, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-03-31T23:59:59Z', updated_at: '2026-03-31T23:59:59Z' },
+  { id: 'ing-2026-04', anio: 2026, mes: 4, mes_nombre: 'Abril', valor: 205968914, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-04-30T23:59:59Z', updated_at: '2026-04-30T23:59:59Z' },
+  { id: 'ing-2026-05', anio: 2026, mes: 5, mes_nombre: 'Mayo', valor: 206231552, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-05-31T23:59:59Z', updated_at: '2026-05-31T23:59:59Z' },
+  { id: 'ing-2026-06', anio: 2026, mes: 6, mes_nombre: 'Junio', valor: 200453564, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-06-30T23:59:59Z', updated_at: '2026-06-30T23:59:59Z' },
+  { id: 'ing-2026-07', anio: 2026, mes: 7, mes_nombre: 'Julio', valor: 198089841, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-07-31T23:59:59Z', updated_at: '2026-07-31T23:59:59Z' },
+  { id: 'ing-2026-08', anio: 2026, mes: 8, mes_nombre: 'Agosto', valor: 198089841, concepto: 'Aportes Mensuales FAM', observaciones: null, created_at: '2026-08-31T23:59:59Z', updated_at: '2026-08-31T23:59:59Z' },
 ];
 
 function formatExpedienteUppercase(e: any) {
@@ -1107,5 +1133,120 @@ export const dbService = {
     const perfil = await dbService.getPerfilById(id);
     if (!perfil) throw new Error('Perfil no encontrado');
     return dbService.updatePerfil(id, { activo: !perfil.activo });
+  },
+
+  // --- MÓDULO INGRESOS FAM ---
+  getIngresosFAM: async (anio?: number): Promise<IngresoFAM[]> => {
+    if (IS_MOCK_MODE) {
+      const all = getLocalData<IngresoFAM>(MOCK_STORAGE_KEYS.INGRESOS_FAM, INITIAL_INGRESOS_FAM);
+      if (anio) {
+        return all.filter((i) => i.anio === anio).sort((a, b) => a.mes - b.mes);
+      }
+      return all.sort((a, b) => a.anio - b.anio || a.mes - b.mes);
+    }
+    const supabase = createBrowserClient();
+    let query = supabase.from('ingresos_fam').select('*').order('anio', { ascending: true }).order('mes', { ascending: true });
+    if (anio) {
+      query = query.eq('anio', anio);
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error al obtener ingresos_fam de Supabase, fallback a local:', error);
+      const all = getLocalData<IngresoFAM>(MOCK_STORAGE_KEYS.INGRESOS_FAM, INITIAL_INGRESOS_FAM);
+      if (anio) return all.filter((i) => i.anio === anio).sort((a, b) => a.mes - b.mes);
+      return all.sort((a, b) => a.anio - b.anio || a.mes - b.mes);
+    }
+    if (!data || data.length === 0) {
+      return getLocalData<IngresoFAM>(MOCK_STORAGE_KEYS.INGRESOS_FAM, INITIAL_INGRESOS_FAM);
+    }
+    return data as IngresoFAM[];
+  },
+
+  saveIngresoFAM: async (payload: Omit<IngresoFAM, 'id' | 'created_at' | 'updated_at'> & { id?: string }): Promise<IngresoFAM> => {
+    const user = getMockUser();
+    const now = new Date().toISOString();
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<IngresoFAM>(MOCK_STORAGE_KEYS.INGRESOS_FAM, INITIAL_INGRESOS_FAM);
+      const existingIdx = list.findIndex(
+        (i) => (payload.id && i.id === payload.id) || (i.anio === payload.anio && i.mes === payload.mes)
+      );
+      if (existingIdx !== -1) {
+        const updated: IngresoFAM = {
+          ...list[existingIdx],
+          ...payload,
+          updated_at: now,
+        };
+        list[existingIdx] = updated;
+        setLocalData(MOCK_STORAGE_KEYS.INGRESOS_FAM, list);
+        return updated;
+      }
+      const newIngreso: IngresoFAM = {
+        id: payload.id || `ing-${payload.anio}-${String(payload.mes).padStart(2, '0')}`,
+        ...payload,
+        created_at: now,
+        updated_at: now,
+        created_by: user.id,
+      };
+      list.push(newIngreso);
+      setLocalData(MOCK_STORAGE_KEYS.INGRESOS_FAM, list);
+      return newIngreso;
+    }
+
+    const supabase = createBrowserClient();
+    const { data, error } = await supabase
+      .from('ingresos_fam')
+      .upsert({
+        ...payload,
+        updated_at: now,
+      }, { onConflict: 'anio,mes' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving ingreso_fam to Supabase:', error);
+      throw new Error(error.message || 'Error al guardar ingreso');
+    }
+    return data as IngresoFAM;
+  },
+
+  deleteIngresoFAM: async (id: string): Promise<void> => {
+    if (IS_MOCK_MODE) {
+      const list = getLocalData<IngresoFAM>(MOCK_STORAGE_KEYS.INGRESOS_FAM, INITIAL_INGRESOS_FAM);
+      const filtered = list.filter((i) => i.id !== id);
+      setLocalData(MOCK_STORAGE_KEYS.INGRESOS_FAM, filtered);
+      return;
+    }
+    const supabase = createBrowserClient();
+    const { error } = await supabase.from('ingresos_fam').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting ingreso_fam:', error);
+      throw new Error(error.message || 'Error al eliminar ingreso');
+    }
+  },
+
+  bulkSaveIngresosFAM: async (items: Array<Omit<IngresoFAM, 'id' | 'created_at' | 'updated_at'> & { id?: string }>): Promise<IngresoFAM[]> => {
+    const results: IngresoFAM[] = [];
+    for (const item of items) {
+      const saved = await dbService.saveIngresoFAM(item);
+      results.push(saved);
+    }
+    return results;
+  },
+
+  getIngresosMatrix: async (): Promise<Record<string, number[]>> => {
+    const all = await dbService.getIngresosFAM();
+    const matrix: Record<string, number[]> = {};
+    all.forEach((item) => {
+      const yearKey = String(item.anio);
+      if (!matrix[yearKey]) {
+        matrix[yearKey] = Array(12).fill(0);
+      }
+      if (item.mes >= 1 && item.mes <= 12) {
+        matrix[yearKey][item.mes - 1] = Number(item.valor) || 0;
+      }
+    });
+    if (!matrix['2025']) matrix['2025'] = Array(12).fill(0);
+    if (!matrix['2026']) matrix['2026'] = Array(12).fill(0);
+    return matrix;
   },
 };
