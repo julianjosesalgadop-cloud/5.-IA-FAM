@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS public.expedientes (
   culpabilidad TEXT CHECK (culpabilidad IN ('Conductor', 'Tercero', 'Compartida', 'Sin definir')),
   valor_descuento_conductor NUMERIC(15,2),
   memorando_descuento TEXT,
+  estado_pago_conductor TEXT CHECK (estado_pago_conductor IN ('Pendiente', 'Pagado')),
 
   -- Recobros
   valor_recobro_vehiculo NUMERIC(15,2),

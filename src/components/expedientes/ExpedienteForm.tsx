@@ -124,6 +124,7 @@ const baseSchema = z.object({
   celular_conductor: z.string().optional(),
   culpabilidad: z.string().optional().nullable(),
   valor_descuento_conductor: z.number().min(0).optional().nullable(),
+  estado_pago_conductor: z.enum(['Pendiente', 'Pagado']).optional().nullable(),
   memorando_descuento: z.string().optional(),
   valor_recobro_vehiculo: z.number().min(0).optional().nullable(),
   valor_recobro_abogado: z.number().min(0).optional().nullable(),
@@ -270,6 +271,7 @@ function getExpedienteSchema(campoConfig: Record<string, any>, currentStep: numb
     valor_descuento_conductor: isRequired('valor_descuento_conductor', false)
       ? z.number().min(0, 'Monto debe ser positivo')
       : z.number().min(0).optional().nullable(),
+    estado_pago_conductor: z.enum(['Pendiente', 'Pagado']).optional().nullable(),
     memorando_descuento: isRequired('memorando_descuento', false)
       ? z.string().min(1, 'Requerido')
       : z.string().optional().nullable(),
@@ -596,6 +598,7 @@ export function ExpedienteForm({
         ? defaultValues.propietarios
         : [{ nombre: defaultValues?.propietario || '', tipo_documento: 'CC', numero_documento: '' }],
       tipo_documento_conductor: defaultValues?.tipo_documento_conductor || 'CC',
+      estado_pago_conductor: defaultValues?.estado_pago_conductor || 'Pendiente',
       cotizaciones: defaultValues?.cotizaciones || [{ 
         id: '1', 
         proveedor: '', 
@@ -747,6 +750,21 @@ export function ExpedienteForm({
   const totalDeducible = activeCots.reduce((acc, c) => acc + Math.round(((c.valor_negociado || 0) * (c.porcentaje_deducible || 0)) / 100), 0);
   const totalAPagar = Math.max(0, totalNegociado - totalDeducible);
 
+  const watchTipoReclamacion = watch('tipo_reclamacion');
+  const isSiniestro = watchTipoReclamacion === 'Siniestro';
+  const watchEstadoPago = watch('estado_pago_conductor');
+  const valorPagarConductor = isSiniestro ? Math.round(totalAPagar * 0.10) : 0;
+
+  // Sincronizar automáticamente el 10% del conductor con valor_descuento_conductor y estado_pago_conductor cuando es Siniestro
+  React.useEffect(() => {
+    if (isSiniestro) {
+      if (!watch('estado_pago_conductor')) {
+        setValue('estado_pago_conductor', 'Pendiente');
+      }
+      setValue('valor_descuento_conductor', valorPagarConductor);
+    }
+  }, [isSiniestro, valorPagarConductor, setValue, watch]);
+
   // Sincronizar valor_final_aprobado con el cálculo neto a pagar (totalAPagar) si no es manual
   React.useEffect(() => {
     if (!isFinalAprobadoManual) {
@@ -794,8 +812,14 @@ export function ExpedienteForm({
       const finalTipoReclamacion = data.tipo_reclamacion === 'Otro' ? (tipo_reclamacion_otro || 'Otro') : data.tipo_reclamacion;
       const finalTipoServicio = data.tipo_servicio === 'Otro' ? (tipo_servicio_otro || 'Otro') : data.tipo_servicio;
       const finalClaseVehiculo = data.clase_vehiculo === 'Otro (Cúal...)' ? (clase_vehiculo_otro || 'Otro') : data.clase_vehiculo;
+      const isSiniestroSubmit = finalTipoReclamacion === 'Siniestro';
+      const finalEstadoPago = isSiniestroSubmit ? (data.estado_pago_conductor || 'Pendiente') : (data.estado_pago_conductor || null);
+      const finalValorDescuento = isSiniestroSubmit ? (data.valor_descuento_conductor ?? Math.round(finalAPagar * 0.10)) : (data.valor_descuento_conductor || 0);
+
       const finalData = {
         ...restData,
+        estado_pago_conductor: finalEstadoPago,
+        valor_descuento_conductor: finalValorDescuento,
         causa_raiz: finalCausaRaiz,
         tipo_reclamacion: finalTipoReclamacion,
         tipo_servicio: finalTipoServicio,
@@ -1569,6 +1593,65 @@ export function ExpedienteForm({
                       <span>{formConfig.campoConfig.valor_a_pagar?.label || 'Neto a Pagar (Desembolso)'}:</span>
                       <span className="number-font text-green-400">{formatCOPInput(totalAPagar)}</span>
                     </div>
+
+                    {isSiniestro && (
+                      <div className="mt-4 pt-3 border-t border-border/80">
+                        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
+                                  <span>👤</span> Valor a Pagar Conductor (10%)
+                                </span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/20">
+                                  Siniestro
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                10% adicional calculado sobre el total del Valor a Pagar ({formatCOPInput(totalAPagar)})
+                              </p>
+                            </div>
+                            <div className="text-left sm:text-right">
+                              <span className="text-lg font-bold number-font text-amber-600 dark:text-amber-400">
+                                {formatCOPInput(valorPagarConductor)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-amber-500/20">
+                            <span className="text-xs font-medium text-foreground">
+                              Estado de Pago del Conductor:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setValue('estado_pago_conductor', 'Pendiente')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  (watchEstadoPago || 'Pendiente') === 'Pendiente'
+                                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 dark:text-amber-300 shadow-sm'
+                                    : 'bg-background/80 border-border text-muted-foreground hover:bg-secondary'
+                                }`}
+                              >
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                                Pendiente
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setValue('estado_pago_conductor', 'Pagado')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  watchEstadoPago === 'Pagado'
+                                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                                    : 'bg-background/80 border-border text-muted-foreground hover:bg-secondary'
+                                }`}
+                              >
+                                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                Pagado
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <FieldGroup>
@@ -1682,7 +1765,17 @@ export function ExpedienteForm({
 
                 <FieldGroup>
                   {formConfig.campoConfig.valor_descuento_conductor?.visible && (
-                    <FormField label={formConfig.campoConfig.valor_descuento_conductor.label} required={formConfig.campoConfig.valor_descuento_conductor.requerido}>
+                    <FormField 
+                      label={formConfig.campoConfig.valor_descuento_conductor.label} 
+                      required={formConfig.campoConfig.valor_descuento_conductor.requerido}
+                      extra={
+                        isSiniestro ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
+                            10% Siniestro ({watchEstadoPago || 'Pendiente'})
+                          </span>
+                        ) : undefined
+                      }
+                    >
                       <CurrencyInputField
                         control={control}
                         name="valor_descuento_conductor"
@@ -1692,13 +1785,52 @@ export function ExpedienteForm({
                       {errors.valor_descuento_conductor && <p className="text-red-400 text-xs">{errors.valor_descuento_conductor.message}</p>}
                     </FormField>
                   )}
-                  {formConfig.campoConfig.memorando_descuento?.visible && (
+                  {isSiniestro ? (
+                    <FormField label="Estado Pago Conductor">
+                      <div className="flex items-center gap-2 h-10">
+                        <button
+                          type="button"
+                          onClick={() => setValue('estado_pago_conductor', 'Pendiente')}
+                          className={`flex-1 h-10 rounded-lg text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            (watchEstadoPago || 'Pendiente') === 'Pendiente'
+                              ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 dark:text-amber-300 shadow-sm'
+                              : 'bg-background border-border text-muted-foreground hover:bg-secondary'
+                          }`}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                          Pendiente
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setValue('estado_pago_conductor', 'Pagado')}
+                          className={`flex-1 h-10 rounded-lg text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            watchEstadoPago === 'Pagado'
+                              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                              : 'bg-background border-border text-muted-foreground hover:bg-secondary'
+                          }`}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          Pagado
+                        </button>
+                      </div>
+                    </FormField>
+                  ) : (
+                    formConfig.campoConfig.memorando_descuento?.visible && (
+                      <FormField label={formConfig.campoConfig.memorando_descuento.label} required={formConfig.campoConfig.memorando_descuento.requerido}>
+                        <Input placeholder={formConfig.campoConfig.memorando_descuento.placeholder} {...register('memorando_descuento')} className={inputClass} />
+                        {errors.memorando_descuento && <p className="text-red-400 text-xs">{errors.memorando_descuento.message}</p>}
+                      </FormField>
+                    )
+                  )}
+                </FieldGroup>
+                {isSiniestro && formConfig.campoConfig.memorando_descuento?.visible && (
+                  <FieldGroup>
                     <FormField label={formConfig.campoConfig.memorando_descuento.label} required={formConfig.campoConfig.memorando_descuento.requerido}>
                       <Input placeholder={formConfig.campoConfig.memorando_descuento.placeholder} {...register('memorando_descuento')} className={inputClass} />
                       {errors.memorando_descuento && <p className="text-red-400 text-xs">{errors.memorando_descuento.message}</p>}
                     </FormField>
-                  )}
-                </FieldGroup>
+                  </FieldGroup>
+                )}
 
                 {/* Recobros Section - only render if any recobro field is visible */}
                 {(formConfig.campoConfig.valor_recobro_vehiculo?.visible || 

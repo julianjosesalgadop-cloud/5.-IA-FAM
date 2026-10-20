@@ -78,6 +78,7 @@ const INITIAL_EXPEDIENTES: Expediente[] = [
     celular_conductor: '3124567890',
     culpabilidad: 'Conductor',
     valor_descuento_conductor: 1500000,
+    estado_pago_conductor: 'Pagado',
     memorando_descuento: 'MEMO-2025-001',
     valor_recobro_vehiculo: 2000000,
     porcentaje_recobro_vehiculo: 20,

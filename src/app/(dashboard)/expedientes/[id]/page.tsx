@@ -432,7 +432,7 @@ export default function ExpedienteDetailPage() {
       const condData = [
         ['Conductor:', expediente.nombre_conductor || '—', 'Identificación:', (expediente.tipo_documento_conductor ? `${expediente.tipo_documento_conductor} ` : '') + (expediente.id_conductor || '—')],
         ['Celular:', expediente.celular_conductor || '—', 'Culpabilidad:', expediente.culpabilidad || 'Sin definir'],
-        ['Descuento Conductor:', formatCOP(expediente.valor_descuento_conductor), 'Memo Descuento:', expediente.memorando_descuento || '—'],
+        ['Descuento Conductor' + (expediente.tipo_reclamacion === 'Siniestro' ? ' (10%):' : ':'), `${formatCOP(expediente.valor_descuento_conductor)}${expediente.tipo_reclamacion === 'Siniestro' ? ` (${expediente.estado_pago_conductor || 'Pendiente'})` : ''}`, 'Memo Descuento:', expediente.memorando_descuento || '—'],
         ['Recobro Vehículo:', `${formatCOP(expediente.valor_recobro_vehiculo)} (${expediente.porcentaje_recobro_vehiculo || 0}%)`, 'Recobro Empresa:', `${formatCOP(expediente.valor_recobro_empresa)} (${expediente.porcentaje_recobro_empresa || 0}%)`],
         ['Recobro Abogado:', `${formatCOP(expediente.valor_recobro_abogado)} (${expediente.porcentaje_recobro_abogado || 0}%)`, '', ''],
       ];
@@ -911,6 +911,28 @@ export default function ExpedienteDetailPage() {
                         <span>Valor Neto a Pagar:</span>
                         <span className="number-font text-green-400">{formatCOP(expediente.valor_a_pagar)}</span>
                       </div>
+                      {expediente.tipo_reclamacion === 'Siniestro' && (
+                        <>
+                          <Separator />
+                          <div className="flex justify-between items-center text-sm pt-1">
+                            <div>
+                              <span className="text-amber-500 font-semibold block">Valor a Pagar Conductor (10%):</span>
+                              <span className="text-xs text-muted-foreground">Obligación a cargo del conductor por siniestro</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="number-font text-amber-500 font-bold block">
+                                {formatCOP(expediente.valor_descuento_conductor ?? Math.round((expediente.valor_a_pagar || 0) * 0.10))}
+                              </span>
+                              <Badge
+                                variant={expediente.estado_pago_conductor === 'Pagado' ? 'success' : 'warning'}
+                                className="text-[10px] px-2 py-0.5 mt-0.5"
+                              >
+                                {expediente.estado_pago_conductor || 'Pendiente'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -959,7 +981,7 @@ export default function ExpedienteDetailPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                      <div className={`grid grid-cols-1 ${expediente.tipo_reclamacion === 'Siniestro' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 pt-2`}>
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">Culpabilidad Dictada</span>
                           <Badge variant={expediente.culpabilidad === 'Conductor' ? 'destructive' : 'outline'}>
@@ -967,11 +989,24 @@ export default function ExpedienteDetailPage() {
                           </Badge>
                         </div>
                         <div className="space-y-1">
-                          <span className="text-xs text-muted-foreground block">Descuento al Conductor</span>
+                          <span className="text-xs text-muted-foreground block">
+                            {expediente.tipo_reclamacion === 'Siniestro' ? 'Descuento Conductor (10%)' : 'Descuento al Conductor'}
+                          </span>
                           <span className="text-sm font-semibold text-foreground number-font">
                             {formatCOP(expediente.valor_descuento_conductor)}
                           </span>
                         </div>
+                        {expediente.tipo_reclamacion === 'Siniestro' && (
+                          <div className="space-y-1">
+                            <span className="text-xs text-muted-foreground block">Estado Pago Conductor</span>
+                            <Badge
+                              variant={expediente.estado_pago_conductor === 'Pagado' ? 'success' : 'warning'}
+                              className={expediente.estado_pago_conductor === 'Pagado' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'}
+                            >
+                              {expediente.estado_pago_conductor || 'Pendiente'}
+                            </Badge>
+                          </div>
+                        )}
                         <div className="space-y-1">
                           <span className="text-xs text-muted-foreground block">N° Memorando Descuento</span>
                           <span className="text-sm font-semibold text-foreground font-mono">{expediente.memorando_descuento || '—'}</span>
