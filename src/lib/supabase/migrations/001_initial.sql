@@ -169,6 +169,7 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_expedientes_updated_at ON public.expedientes;
 CREATE TRIGGER update_expedientes_updated_at
   BEFORE UPDATE ON public.expedientes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -185,6 +186,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
@@ -199,40 +201,61 @@ ALTER TABLE public.catalogos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.perfiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas expedientes
+DROP POLICY IF EXISTS "expedientes_select" ON public.expedientes;
 CREATE POLICY "expedientes_select" ON public.expedientes FOR SELECT TO authenticated USING (deleted_at IS NULL);
+
+DROP POLICY IF EXISTS "expedientes_insert" ON public.expedientes;
 CREATE POLICY "expedientes_insert" ON public.expedientes FOR INSERT TO authenticated WITH CHECK (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "expedientes_update" ON public.expedientes;
 CREATE POLICY "expedientes_update" ON public.expedientes FOR UPDATE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "expedientes_delete" ON public.expedientes;
 CREATE POLICY "expedientes_delete" ON public.expedientes FOR DELETE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin' AND activo = true)
 );
 
 -- Políticas documentos
+DROP POLICY IF EXISTS "documentos_select" ON public.documentos;
 CREATE POLICY "documentos_select" ON public.documentos FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "documentos_insert" ON public.documentos;
 CREATE POLICY "documentos_insert" ON public.documentos FOR INSERT TO authenticated WITH CHECK (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "documentos_delete" ON public.documentos;
 CREATE POLICY "documentos_delete" ON public.documentos FOR DELETE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin' AND activo = true)
 );
 
 -- Políticas auditoría
+DROP POLICY IF EXISTS "auditoria_select" ON public.auditoria;
 CREATE POLICY "auditoria_select" ON public.auditoria FOR SELECT TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
+
+DROP POLICY IF EXISTS "auditoria_insert" ON public.auditoria;
 CREATE POLICY "auditoria_insert" ON public.auditoria FOR INSERT TO authenticated WITH CHECK (true);
 
 -- Políticas catálogos
+DROP POLICY IF EXISTS "catalogos_select" ON public.catalogos;
 CREATE POLICY "catalogos_select" ON public.catalogos FOR SELECT TO authenticated USING (activo = true);
+
+DROP POLICY IF EXISTS "catalogos_all" ON public.catalogos;
 CREATE POLICY "catalogos_all" ON public.catalogos FOR ALL TO authenticated USING (
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
 
 -- Políticas perfiles
+DROP POLICY IF EXISTS "perfiles_select" ON public.perfiles;
 CREATE POLICY "perfiles_select" ON public.perfiles FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "perfiles_update" ON public.perfiles;
 CREATE POLICY "perfiles_update" ON public.perfiles FOR UPDATE TO authenticated USING (
   id = auth.uid() OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
 );
@@ -243,11 +266,16 @@ CREATE POLICY "perfiles_update" ON public.perfiles FOR UPDATE TO authenticated U
 INSERT INTO storage.buckets (id, name, public) VALUES ('expedientes-documentos', 'expedientes-documentos', false)
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "storage_select" ON storage.objects;
 CREATE POLICY "storage_select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'expedientes-documentos');
+
+DROP POLICY IF EXISTS "storage_insert" ON storage.objects;
 CREATE POLICY "storage_insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (
   bucket_id = 'expedientes-documentos' AND
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'analista') AND activo = true)
 );
+
+DROP POLICY IF EXISTS "storage_delete" ON storage.objects;
 CREATE POLICY "storage_delete" ON storage.objects FOR DELETE TO authenticated USING (
   bucket_id = 'expedientes-documentos' AND
   EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin' AND activo = true)
