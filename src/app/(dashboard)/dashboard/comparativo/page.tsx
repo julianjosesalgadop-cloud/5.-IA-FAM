@@ -1092,7 +1092,7 @@ export default function ComparativoPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header 
-        title="Comparativo de Gestión" 
+        title="Comparativo Gastos" 
         subtitle="SIGFAM — Análisis comparativo de siniestralidad, costos y gestión 2025 vs 2026" 
         action={
           <div className="flex items-center gap-2">

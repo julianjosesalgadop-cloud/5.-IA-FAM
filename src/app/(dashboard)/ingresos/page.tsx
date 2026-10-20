@@ -24,6 +24,7 @@ import {
   FileSpreadsheet,
   X,
   FileCheck,
+  CircleDollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,8 +44,9 @@ import {
   Tooltip,
   Legend,
   ReferenceLine,
+  LabelList,
 } from 'recharts';
-import { formatCOP } from '@/lib/utils';
+import { formatCOP, cn } from '@/lib/utils';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
 
@@ -58,13 +60,34 @@ const MONTH_SHORT = [
   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
 ];
 
-const CUSTOM_TOOLTIP_STYLE = {
-  backgroundColor: 'hsla(var(--card), 0.95)',
-  backdropFilter: 'blur(8px)',
-  border: '1px solid hsl(var(--border))',
-  borderRadius: '8px',
-  color: 'hsl(var(--foreground))',
-  fontSize: '12px',
+const formatLabelAmount = (val: any) => {
+  if (!val || val === 0) return '';
+  const num = Number(val);
+  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `$${(num / 1000).toFixed(0)}K`;
+  return `$${num}`;
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const dataObj = payload[0].payload;
+    const title = dataObj?.mesCompleto || label;
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-slate-800 dark:text-slate-100">
+        <p className="font-bold text-slate-900 dark:text-white mb-1">{title}</p>
+        {payload.map((p: any) => (
+          <div key={p.dataKey} className="flex items-center gap-4 justify-between">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.fill || p.stroke }} />
+              <span className="text-muted-foreground">{p.name}:</span>
+            </span>
+            <span className="font-bold font-mono">{formatCOP(p.value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 export default function IngresosPage() {
@@ -436,7 +459,7 @@ export default function IngresosPage() {
     <>
       <Header
         title="Ingresos FAM"
-        subtitle="Módulo oficial de registro y control de ingresos mensuales por aportes (Reemplazo Excel)"
+        subtitle="SIGFAM — Módulo de registro y control de aportes e ingresos mensuales (Fondo de Auxilio Mutuo)"
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -444,15 +467,15 @@ export default function IngresosPage() {
               size="sm"
               onClick={loadData}
               disabled={loading}
-              className="h-9 px-3 border-white/10 bg-white/5 hover:bg-white/10 text-foreground"
+              className="h-9 px-2.5 sm:px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors"
             >
-              <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
-              Actualizar
+              <RefreshCw className={`w-4 h-4 sm:mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar</span>
             </Button>
-            <Button asChild variant="default" size="sm" className="h-9 px-3 gradient-brand">
+            <Button asChild variant="outline" size="sm" className="h-9 px-2.5 sm:px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors">
               <Link href="/dashboard/gasvsing">
-                <ArrowLeftRight className="w-4 h-4 mr-1.5" />
-                Gastos Vs Ingresos
+                <CircleDollarSign className="w-4 h-4 sm:mr-1.5 text-primary" />
+                <span className="hidden sm:inline">Gastos Vs Ingresos</span>
               </Link>
             </Button>
           </div>
@@ -464,30 +487,34 @@ export default function IngresosPage() {
         <div className="bg-card border border-border p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">Año Fiscal:</span>
+              <Calendar className="w-5 h-5 text-primary" />
+              <span className="text-sm font-bold text-foreground">Año Fiscal:</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-secondary/50 p-1 rounded-lg border border-border">
-              {availableYears.map((yr) => (
-                <button
-                  key={yr}
-                  onClick={() => setSelectedAnio(yr)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                    selectedAnio === yr
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                  }`}
-                >
-                  {yr}
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5">
+              {availableYears.map((yr) => {
+                const isSelected = selectedAnio === yr;
+                return (
+                  <button
+                    key={yr}
+                    onClick={() => setSelectedAnio(yr)}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200",
+                      isSelected
+                        ? "bg-primary text-white border-transparent shadow-glow-brand"
+                        : "bg-secondary/10 border-border text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
+                    )}
+                  >
+                    {yr}
+                  </button>
+                );
+              })}
               <button
                 onClick={() => {
                   const nextYear = Math.max(...availableYears) + 1;
                   setSelectedAnio(nextYear);
                   handleOpenModal();
                 }}
-                className="px-2 py-1.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 border border-primary/20 transition-colors"
                 title="Añadir nuevo año"
               >
                 + Añadir Año
@@ -532,13 +559,13 @@ export default function IngresosPage() {
 
         {/* KPIs Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="border-border bg-card">
-            <CardContent className="p-4 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Total Ingresos {selectedAnio}</span>
-                <DollarSign className="w-4 h-4 text-emerald-400" />
-              </div>
-              <p className="text-xl font-bold number-font text-emerald-400">
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Ingresos {selectedAnio}</CardTitle>
+              <Coins className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <p className="text-xl font-bold font-mono text-foreground">
                 {formatCOP(totalAnio)}
               </p>
               <p className="text-[11px] text-muted-foreground">
@@ -547,13 +574,13 @@ export default function IngresosPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
-            <CardContent className="p-4 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Promedio Mensual</span>
-                <TrendingUp className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-xl font-bold number-font text-foreground">
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Promedio Mensual</CardTitle>
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <p className="text-xl font-bold font-mono text-foreground">
                 {formatCOP(promedioMensual)}
               </p>
               <p className="text-[11px] text-muted-foreground">
@@ -562,47 +589,51 @@ export default function IngresosPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
-            <CardContent className="p-4 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Mes Más Alto</span>
-                <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-              </div>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mes Más Alto</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent className="space-y-1">
               <p className="text-base font-bold text-foreground truncate">
                 {mesMayor ? mesMayor.mes_nombre : '—'}
               </p>
-              <p className="text-xs font-bold number-font text-emerald-400">
+              <p className="text-xs font-bold font-mono text-emerald-500">
                 {mesMayor ? formatCOP(mesMayor.valor) : '$0'}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
-            <CardContent className="p-4 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Mes Más Bajo</span>
-                <ArrowDownRight className="w-4 h-4 text-amber-500" />
-              </div>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mes Más Bajo</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent className="space-y-1">
               <p className="text-base font-bold text-foreground truncate">
                 {mesMenor ? mesMenor.mes_nombre : '—'}
               </p>
-              <p className="text-xs font-bold number-font text-amber-400">
+              <p className="text-xs font-bold font-mono text-amber-500">
                 {mesMenor ? formatCOP(mesMenor.valor) : '$0'}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
-            <CardContent className="p-4 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Variación vs {selectedAnio - 1}</span>
-                <Coins className="w-4 h-4 text-gold-500" />
-              </div>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Variación vs {selectedAnio - 1}</CardTitle>
+              <CircleDollarSign className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent className="space-y-1">
               <div className="flex items-center gap-1.5">
-                <span className={`text-xl font-bold number-font ${comparativoPrevYear.diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={cn(
+                  "flex items-center text-xl font-bold font-mono",
+                  comparativoPrevYear.diff >= 0 ? "text-emerald-500" : "text-rose-500"
+                )}>
+                  {comparativoPrevYear.diff >= 0 ? <ArrowUpRight className="w-4 h-4 mr-0.5" /> : <ArrowDownRight className="w-4 h-4 mr-0.5" />}
                   {comparativoPrevYear.diff >= 0 ? '+' : ''}{comparativoPrevYear.pct}%
                 </span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground font-mono">
                   ({formatCOP(Math.abs(comparativoPrevYear.diff))})
                 </span>
               </div>
@@ -616,47 +647,46 @@ export default function IngresosPage() {
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Monthly Bar Chart */}
-          <Card className="lg:col-span-8 border-border bg-card">
+          <Card className="lg:col-span-8 border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">Evolución Mensual de Ingresos ({selectedAnio})</CardTitle>
+                  <CardTitle className="text-base font-bold text-foreground">Evolución Mensual de Ingresos ({selectedAnio})</CardTitle>
                   <CardDescription className="text-xs">
                     Comportamiento de los aportes percibidos mes a mes por el Fondo de Auxilio Mutuo
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="text-xs font-mono">
+                <Badge variant="outline" className="text-xs font-mono font-semibold bg-secondary/30">
                   Promedio: {formatCOP(promedioMensual)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="h-[280px] w-full">
+              <div className="h-[290px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartMonthlyData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} vertical={false} />
-                    <XAxis dataKey="mes" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} />
+                  <BarChart data={chartMonthlyData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+                    <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
                     <YAxis
-                      stroke="hsl(var(--muted-foreground))"
+                      stroke="currentColor"
+                      tick={{ fill: 'currentColor', opacity: 0.7 }}
                       fontSize={10}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
                     />
-                    <Tooltip
-                      contentStyle={CUSTOM_TOOLTIP_STYLE}
-                      formatter={(val: any) => [formatCOP(val), 'Ingreso FAM']}
-                      labelFormatter={(_label, payload) => payload?.[0]?.payload?.mesCompleto || _label}
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                     {promedioMensual > 0 && (
                       <ReferenceLine
                         y={promedioMensual}
-                        stroke="#f59e0b"
+                        stroke="hsl(43, 96%, 52%)"
                         strokeDasharray="4 4"
-                        label={{ value: 'Promedio', fill: '#f59e0b', fontSize: 10, position: 'insideTopRight' }}
+                        label={{ value: `Promedio: ${formatLabelAmount(promedioMensual)}`, fill: 'hsl(43, 96%, 52%)', fontSize: 10, position: 'insideTopRight' }}
                       />
                     )}
-                    <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Ingresos" />
+                    <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`Ingresos ${selectedAnio}`} maxBarSize={32}>
+                      <LabelList dataKey="valor" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 9, opacity: 0.85, fontWeight: 600 }} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -664,34 +694,35 @@ export default function IngresosPage() {
           </Card>
 
           {/* Comparative vs Previous Year */}
-          <Card className="lg:col-span-4 border-border bg-card">
+          <Card className="lg:col-span-4 border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Comparativo {selectedAnio} vs {selectedAnio - 1}</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">Comparativo {selectedAnio} vs {selectedAnio - 1}</CardTitle>
               <CardDescription className="text-xs">
-                Contraste mensual interanual
+                Contraste mensual interanual de aportes
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="h-[280px] w-full">
+              <div className="h-[290px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartMonthlyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
-                    <XAxis dataKey="mes" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} />
+                  <BarChart data={chartMonthlyData} margin={{ top: 20, right: 10, left: -15, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+                    <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
                     <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={9}
+                      stroke="currentColor"
+                      tick={{ fill: 'currentColor', opacity: 0.7 }}
+                      fontSize={10}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
                     />
-                    <Tooltip
-                      contentStyle={CUSTOM_TOOLTIP_STYLE}
-                      formatter={(val: any, name: any) => [formatCOP(val), name]}
-                      labelFormatter={(_label, payload) => payload?.[0]?.payload?.mesCompleto || _label}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-                    <Bar dataKey="valorPrev" fill="#64748b" radius={[3, 3, 0, 0]} name={`${selectedAnio - 1}`} />
-                    <Bar dataKey="valor" fill="#10b981" radius={[3, 3, 0, 0]} name={`${selectedAnio}`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                    <Bar dataKey="valorPrev" fill="#64748b" radius={[3, 3, 0, 0]} name={`${selectedAnio - 1}`} maxBarSize={18}>
+                      <LabelList dataKey="valorPrev" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
+                    </Bar>
+                    <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`${selectedAnio}`} maxBarSize={18}>
+                      <LabelList dataKey="valor" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.85, fontWeight: 600 }} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -769,7 +800,7 @@ export default function IngresosPage() {
                         </td>
                         <td className="py-3 px-4 text-right number-font font-bold">
                           {hasData ? (
-                            <span className="text-emerald-500 dark:text-emerald-400">
+                            <span className="text-sky-500 dark:text-sky-400">
                               {formatCOP(val)}
                             </span>
                           ) : (
@@ -821,7 +852,7 @@ export default function IngresosPage() {
                     <td colSpan={2} className="py-3.5 px-4 text-foreground uppercase tracking-wider text-xs">
                       TOTAL AÑO {selectedAnio}
                     </td>
-                    <td className="py-3.5 px-4 text-right number-font text-base text-emerald-500 dark:text-emerald-400">
+                    <td className="py-3.5 px-4 text-right number-font text-base text-sky-500 dark:text-sky-400 font-bold">
                       {formatCOP(totalAnio)}
                     </td>
                     <td className="py-3.5 px-4 text-center text-xs font-mono text-foreground">
@@ -927,7 +958,7 @@ export default function IngresosPage() {
                           setFormValor(new Intl.NumberFormat('es-CO').format(num));
                         }
                       }}
-                      className="h-10 pl-7 text-sm font-bold number-font text-emerald-400 bg-emerald-500/5 border-emerald-500/30 focus:border-emerald-500"
+                      className="h-10 pl-7 text-sm font-bold font-mono text-sky-500 bg-sky-500/5 border-sky-500/30 focus:border-sky-500"
                       required
                     />
                   </div>
@@ -1027,7 +1058,7 @@ export default function IngresosPage() {
                         <tr key={i} className="hover:bg-secondary/10">
                           <td className="py-2 px-3 font-bold text-foreground">{item.anio}</td>
                           <td className="py-2 px-3 font-sans">{item.mes_nombre}</td>
-                          <td className="py-2 px-3 text-right font-bold text-emerald-400">
+                          <td className="py-2 px-3 text-right font-bold text-sky-500">
                             {formatCOP(item.valor)}
                           </td>
                         </tr>

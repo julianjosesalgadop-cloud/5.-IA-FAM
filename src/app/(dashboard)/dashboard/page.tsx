@@ -356,7 +356,7 @@ export default function DashboardPage() {
   return (
     <>
       <Header 
-        title="Dashboard Ejecutivo" 
+        title="Dashboard Gastos" 
         subtitle="SIGFAM — Sistema Integrado de Gestión del Fondo de Auxilio Mutuo" 
         action={
           <div className="flex items-center gap-2">
