@@ -90,7 +90,7 @@ export default function GasVsIngPage() {
 
   const loadData = async () => {
     setLoading(true);
-    toast.loading('Cargando análisis de Gastos vs Ingresos...', { id: 'loading-gasvsing' });
+    toast.loading('Cargando análisis de Ingresos vs Gastos...', { id: 'loading-gasvsing' });
     try {
       const [expData, matrixData] = await Promise.all([
         dbService.getExpedientes(),
@@ -534,7 +534,7 @@ export default function GasVsIngPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header 
-        title="Gastos vs Ingresos (GasVsIng)" 
+        title="Ingresos Vs Gastos" 
         subtitle="SIGFAM — Análisis del balance financiero mensual, afectación y acumulados 2025 vs 2026" 
         action={
           <div className="flex items-center gap-2">
@@ -822,7 +822,7 @@ export default function GasVsIngPage() {
               </Card>
             </div>
 
-            {/* Row 1: Gastos vs Ingresos (2025 vs 2026) Side-by-Side */}
+            {/* Row 1: Ingresos vs Gastos (2025 vs 2026) Side-by-Side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* 2025 Chart */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -830,7 +830,7 @@ export default function GasVsIngPage() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                        Gastos vs Ingresos 2025
+                        Ingresos vs Gastos 2025
                         {filterMonth !== null && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                             Filtro: {MONTHS_NAMES[filterMonth]}
@@ -845,7 +845,7 @@ export default function GasVsIngPage() {
                       className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                       onClick={() => setExpandedChart({
                         id: 'monthly-2025',
-                        title: 'Gastos vs Ingresos Año 2025',
+                        title: 'Ingresos vs Gastos Año 2025',
                         description: 'Comparación detallada mensual de ingresos recibidos contra egresos aprobados en el 2025'
                       })}
                     >
@@ -864,7 +864,7 @@ export default function GasVsIngPage() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                        Gastos vs Ingresos 2026
+                        Ingresos vs Gastos 2026
                         {filterMonth !== null && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                             Filtro: {MONTHS_NAMES[filterMonth]}
@@ -879,7 +879,7 @@ export default function GasVsIngPage() {
                       className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                       onClick={() => setExpandedChart({
                         id: 'monthly-2026',
-                        title: 'Gastos vs Ingresos Año 2026',
+                        title: 'Ingresos vs Gastos Año 2026',
                         description: 'Comparación detallada mensual de ingresos recibidos contra egresos aprobados en el 2026'
                       })}
                     >
@@ -935,7 +935,7 @@ export default function GasVsIngPage() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                        Acumulado Gastos vs Ingresos 2025
+                        Acumulado Ingresos vs Gastos 2025
                         {filterMonth !== null && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                             Filtro: {MONTHS_NAMES[filterMonth]}
@@ -969,7 +969,7 @@ export default function GasVsIngPage() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                     <div className="flex flex-col gap-1">
                       <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                        Acumulado Gastos vs Ingresos 2026
+                        Acumulado Ingresos vs Gastos 2026
                         {filterMonth !== null && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                             Filtro: {MONTHS_NAMES[filterMonth]}

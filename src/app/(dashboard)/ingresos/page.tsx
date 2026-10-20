@@ -475,7 +475,7 @@ export default function IngresosPage() {
             <Button asChild variant="outline" size="sm" className="h-9 px-2.5 sm:px-3 border-white/10 bg-white/5 hover:bg-white/10 hover:text-white text-slate-200 transition-colors">
               <Link href="/dashboard/gasvsing">
                 <CircleDollarSign className="w-4 h-4 sm:mr-1.5 text-primary" />
-                <span className="hidden sm:inline">Gastos Vs Ingresos</span>
+                <span className="hidden sm:inline">Ingresos Vs Gastos</span>
               </Link>
             </Button>
           </div>

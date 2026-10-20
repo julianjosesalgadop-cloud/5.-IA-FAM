@@ -35,7 +35,7 @@ const NAV_GROUPS = [
       { href: '/dashboard', label: 'Dashboard Gastos', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
       { href: '/dashboard/comparativo', label: 'Comparativo Gastos', icon: 'ArrowLeftRight', roles: ['admin', 'analista', 'consultor'] },
       { href: '/ingresos', label: 'Ingresos FAM', icon: 'Coins', roles: ['admin', 'analista'] },
-      { href: '/dashboard/gasvsing', label: 'Gastos Vs Ingresos', icon: 'CircleDollarSign', roles: ['admin', 'analista', 'consultor'] },
+      { href: '/dashboard/gasvsing', label: 'Ingresos Vs Gastos', icon: 'CircleDollarSign', roles: ['admin', 'analista', 'consultor'] },
     ],
   },
   {

@@ -41,7 +41,7 @@ export const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard Gastos', icon: 'LayoutDashboard', roles: ['admin', 'analista', 'consultor'] },
   { href: '/dashboard/comparativo', label: 'Comparativo Gastos', icon: 'ArrowLeftRight', roles: ['admin', 'analista', 'consultor'] },
   { href: '/ingresos', label: 'Ingresos FAM', icon: 'Coins', roles: ['admin', 'analista'] },
-  { href: '/dashboard/gasvsing', label: 'Gastos Vs Ingresos', icon: 'CircleDollarSign', roles: ['admin', 'analista', 'consultor'] },
+  { href: '/dashboard/gasvsing', label: 'Ingresos Vs Gastos', icon: 'CircleDollarSign', roles: ['admin', 'analista', 'consultor'] },
   { href: '/expedientes', label: 'Expedientes', icon: 'FolderOpen', roles: ['admin', 'analista', 'consultor'] },
   { href: '/reportes', label: 'Reportes', icon: 'BarChart3', roles: ['admin', 'analista', 'consultor'] },
   { href: '/configuracion', label: 'Configuración', icon: 'Settings', roles: ['admin'] },
