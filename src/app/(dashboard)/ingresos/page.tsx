@@ -68,12 +68,24 @@ const formatLabelAmount = (val: any) => {
   return `$${num}`;
 };
 
+const formatLabelAmountCompact = (val: any) => {
+  if (!val || val === 0) return '';
+  const num = Number(val);
+  if (num >= 1000000) return `$${Math.round(num / 1000000)}M`;
+  if (num >= 1000) return `$${Math.round(num / 1000)}K`;
+  return `$${num}`;
+};
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const dataObj = payload[0].payload;
     const title = dataObj?.mesCompleto || label;
+    const hasBoth = payload.length >= 2 && payload[0]?.value > 0 && payload[1]?.value > 0;
+    const diff = hasBoth ? payload[1].value - payload[0].value : null;
+    const diffPct = hasBoth && payload[0].value > 0 ? ((diff! / payload[0].value) * 100).toFixed(1) : null;
+
     return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-slate-800 dark:text-slate-100">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs space-y-1.5 text-slate-800 dark:text-slate-100 min-w-[200px]">
         <p className="font-bold text-slate-900 dark:text-white mb-1">{title}</p>
         {payload.map((p: any) => (
           <div key={p.dataKey} className="flex items-center gap-4 justify-between">
@@ -84,6 +96,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="font-bold font-mono">{formatCOP(p.value)}</span>
           </div>
         ))}
+        {diff !== null && diffPct !== null && (
+          <div className="border-t border-border/60 pt-1.5 mt-1.5 flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground font-semibold">Diferencia:</span>
+            <span className={cn("font-bold font-mono", diff >= 0 ? "text-emerald-500" : "text-rose-500")}>
+              {diff >= 0 ? '+' : ''}{formatCOP(diff)} ({diffPct}%)
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -95,6 +115,7 @@ export default function IngresosPage() {
   const [loading, setLoading] = useState(true);
   const [selectedAnio, setSelectedAnio] = useState<number>(2026);
   const [userRole, setUserRole] = useState<string>('admin');
+  const [comparativoType, setComparativoType] = useState<'bar' | 'line'>('bar');
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -645,34 +666,35 @@ export default function IngresosPage() {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Main Monthly Bar Chart */}
-          <Card className="lg:col-span-8 border-border bg-card shadow-sm">
+          <Card className="border-border bg-card shadow-sm flex flex-col">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div>
                   <CardTitle className="text-base font-bold text-foreground">Evolución Mensual de Ingresos ({selectedAnio})</CardTitle>
                   <CardDescription className="text-xs">
                     Comportamiento de los aportes percibidos mes a mes por el Fondo de Auxilio Mutuo
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="text-xs font-mono font-semibold bg-secondary/30">
+                <Badge variant="outline" className="text-xs font-mono font-semibold bg-secondary/30 shrink-0">
                   Promedio: {formatCOP(promedioMensual)}
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="pt-2">
-              <div className="h-[290px] w-full">
+            <CardContent className="pt-2 flex-1">
+              <div className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartMonthlyData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+                  <BarChart data={chartMonthlyData} margin={{ top: 28, right: 15, left: -10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
-                    <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
+                    <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} interval={0} />
                     <YAxis
                       stroke="currentColor"
                       tick={{ fill: 'currentColor', opacity: 0.7 }}
                       fontSize={10}
                       tickLine={false}
                       axisLine={false}
+                      domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
                       tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
                     />
                     <Tooltip content={<CustomTooltip />} />
@@ -681,7 +703,7 @@ export default function IngresosPage() {
                         y={promedioMensual}
                         stroke="hsl(43, 96%, 52%)"
                         strokeDasharray="4 4"
-                        label={{ value: `Promedio: ${formatLabelAmount(promedioMensual)}`, fill: 'hsl(43, 96%, 52%)', fontSize: 10, position: 'insideTopRight' }}
+                        label={{ value: `Promedio: ${formatLabelAmountCompact(promedioMensual)}`, fill: 'hsl(43, 96%, 52%)', fontSize: 10, position: 'insideTopRight' }}
                       />
                     )}
                     <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`Ingresos ${selectedAnio}`} maxBarSize={32}>
@@ -694,36 +716,121 @@ export default function IngresosPage() {
           </Card>
 
           {/* Comparative vs Previous Year */}
-          <Card className="lg:col-span-4 border-border bg-card shadow-sm">
+          <Card className="border-border bg-card shadow-sm flex flex-col">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-bold text-foreground">Comparativo {selectedAnio} vs {selectedAnio - 1}</CardTitle>
-              <CardDescription className="text-xs">
-                Contraste mensual interanual de aportes
-              </CardDescription>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <CardTitle className="text-base font-bold text-foreground">Comparativo {selectedAnio} vs {selectedAnio - 1}</CardTitle>
+                  <CardDescription className="text-xs">
+                    Contraste mensual interanual de aportes
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-1 bg-secondary/50 p-0.5 rounded-lg border border-border shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setComparativoType('bar')}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                      comparativoType === 'bar'
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                  >
+                    Barras
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComparativoType('line')}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                      comparativoType === 'line'
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                  >
+                    Líneas
+                  </button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="pt-2">
-              <div className="h-[290px] w-full">
+            <CardContent className="pt-2 flex-1">
+              <div className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartMonthlyData} margin={{ top: 20, right: 10, left: -15, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
-                    <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} />
-                    <YAxis
-                      stroke="currentColor"
-                      tick={{ fill: 'currentColor', opacity: 0.7 }}
-                      fontSize={10}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                    <Bar dataKey="valorPrev" fill="#64748b" radius={[3, 3, 0, 0]} name={`${selectedAnio - 1}`} maxBarSize={18}>
-                      <LabelList dataKey="valorPrev" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.8 }} />
-                    </Bar>
-                    <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`${selectedAnio}`} maxBarSize={18}>
-                      <LabelList dataKey="valor" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 8, opacity: 0.85, fontWeight: 600 }} />
-                    </Bar>
-                  </BarChart>
+                  {comparativoType === 'bar' ? (
+                    <BarChart data={chartMonthlyData} margin={{ top: 28, right: 15, left: -10, bottom: 0 }} barGap={2} barCategoryGap="16%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+                      <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} interval={0} />
+                      <YAxis
+                        stroke="currentColor"
+                        tick={{ fill: 'currentColor', opacity: 0.7 }}
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+                        tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                      <Bar dataKey="valorPrev" fill="#64748b" radius={[3, 3, 0, 0]} name={`${selectedAnio - 1}`} maxBarSize={18}>
+                        <LabelList
+                          dataKey="valorPrev"
+                          position="insideTop"
+                          formatter={formatLabelAmountCompact}
+                          fill="#ffffff"
+                          style={{ fontSize: 7.5, fontWeight: 700 }}
+                        />
+                      </Bar>
+                      <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`${selectedAnio}`} maxBarSize={18}>
+                        <LabelList
+                          dataKey="valor"
+                          position="top"
+                          formatter={formatLabelAmountCompact}
+                          fill="hsl(203, 100%, 50%)"
+                          style={{ fontSize: 8, fontWeight: 700 }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  ) : (
+                    <LineChart data={chartMonthlyData} margin={{ top: 28, right: 15, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+                      <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} interval={0} />
+                      <YAxis
+                        stroke="currentColor"
+                        tick={{ fill: 'currentColor', opacity: 0.7 }}
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+                        tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                      <Line
+                        name={`${selectedAnio - 1}`}
+                        type="monotone"
+                        dataKey="valorPrev"
+                        stroke="#64748b"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={{ r: 3.5, fill: '#64748b' }}
+                        activeDot={{ r: 5 }}
+                      >
+                        <LabelList dataKey="valorPrev" position="top" formatter={formatLabelAmountCompact} fill="#64748b" style={{ fontSize: 8, opacity: 0.85, fontWeight: 600 }} />
+                      </Line>
+                      <Line
+                        name={`${selectedAnio}`}
+                        type="monotone"
+                        dataKey="valor"
+                        stroke="hsl(203, 100%, 50%)"
+                        strokeWidth={2.5}
+                        connectNulls
+                        dot={{ r: 4, fill: 'hsl(203, 100%, 50%)' }}
+                        activeDot={{ r: 6 }}
+                      >
+                        <LabelList dataKey="valor" position="top" formatter={formatLabelAmountCompact} fill="hsl(203, 100%, 50%)" style={{ fontSize: 8.5, fontWeight: 700 }} />
+                      </Line>
+                    </LineChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             </CardContent>
