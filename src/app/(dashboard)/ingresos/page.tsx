@@ -25,6 +25,7 @@ import {
   X,
   FileCheck,
   CircleDollarSign,
+  Maximize2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +117,11 @@ export default function IngresosPage() {
   const [selectedAnio, setSelectedAnio] = useState<number>(2026);
   const [userRole, setUserRole] = useState<string>('admin');
   const [comparativoType, setComparativoType] = useState<'bar' | 'line'>('bar');
+  const [expandedView, setExpandedView] = useState<{
+    id: 'chart-mensual' | 'chart-comparativo' | 'tabla-ingresos';
+    title: string;
+    description: string;
+  } | null>(null);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -448,6 +454,342 @@ export default function IngresosPage() {
     }
   };
 
+  // Render functions for normal and maximized modal views
+  const renderChartMensual = (isExpanded = false) => (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={chartMonthlyData}
+        margin={{
+          top: isExpanded ? 35 : 28,
+          right: isExpanded ? 30 : 15,
+          left: isExpanded ? 0 : -10,
+          bottom: isExpanded ? 20 : 0,
+        }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+        <XAxis
+          dataKey="mes"
+          stroke="currentColor"
+          tick={{ fill: 'currentColor', opacity: 0.7 }}
+          fontSize={isExpanded ? 12 : 10}
+          tickLine={false}
+          interval={0}
+        />
+        <YAxis
+          stroke="currentColor"
+          tick={{ fill: 'currentColor', opacity: 0.7 }}
+          fontSize={isExpanded ? 11 : 10}
+          tickLine={false}
+          axisLine={false}
+          domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+          tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        {promedioMensual > 0 && (
+          <ReferenceLine
+            y={promedioMensual}
+            stroke="hsl(43, 96%, 52%)"
+            strokeDasharray="4 4"
+            label={{
+              value: `Promedio: ${formatLabelAmountCompact(promedioMensual)}`,
+              fill: 'hsl(43, 96%, 52%)',
+              fontSize: isExpanded ? 12 : 10,
+              position: 'insideTopRight',
+            }}
+          />
+        )}
+        <Bar
+          dataKey="valor"
+          fill="hsl(203, 100%, 50%)"
+          radius={[3, 3, 0, 0]}
+          name={`Ingresos ${selectedAnio}`}
+          maxBarSize={isExpanded ? 48 : 32}
+        >
+          <LabelList
+            dataKey="valor"
+            position="top"
+            formatter={formatLabelAmount}
+            fill="currentColor"
+            style={{ fontSize: isExpanded ? 11 : 9, opacity: 0.85, fontWeight: 600 }}
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+
+  const renderChartComparativo = (isExpanded = false) => (
+    <ResponsiveContainer width="100%" height="100%">
+      {comparativoType === 'bar' ? (
+        <BarChart
+          data={chartMonthlyData}
+          margin={{
+            top: isExpanded ? 35 : 28,
+            right: isExpanded ? 30 : 15,
+            left: isExpanded ? 0 : -10,
+            bottom: isExpanded ? 20 : 0,
+          }}
+          barGap={isExpanded ? 4 : 2}
+          barCategoryGap={isExpanded ? "20%" : "16%"}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+          <XAxis
+            dataKey="mes"
+            stroke="currentColor"
+            tick={{ fill: 'currentColor', opacity: 0.7 }}
+            fontSize={isExpanded ? 12 : 10}
+            tickLine={false}
+            interval={0}
+          />
+          <YAxis
+            stroke="currentColor"
+            tick={{ fill: 'currentColor', opacity: 0.7 }}
+            fontSize={isExpanded ? 11 : 10}
+            tickLine={false}
+            axisLine={false}
+            domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+            tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            iconSize={isExpanded ? 10 : 8}
+            iconType="circle"
+            wrapperStyle={{ fontSize: isExpanded ? 12 : 10, paddingTop: 4 }}
+          />
+          <Bar
+            dataKey="valorPrev"
+            fill="#64748b"
+            radius={[3, 3, 0, 0]}
+            name={`${selectedAnio - 1}`}
+            maxBarSize={isExpanded ? 32 : 18}
+          >
+            <LabelList
+              dataKey="valorPrev"
+              position="insideTop"
+              formatter={formatLabelAmountCompact}
+              fill="#ffffff"
+              style={{ fontSize: isExpanded ? 9 : 7.5, fontWeight: 700 }}
+            />
+          </Bar>
+          <Bar
+            dataKey="valor"
+            fill="hsl(203, 100%, 50%)"
+            radius={[3, 3, 0, 0]}
+            name={`${selectedAnio}`}
+            maxBarSize={isExpanded ? 32 : 18}
+          >
+            <LabelList
+              dataKey="valor"
+              position="top"
+              formatter={formatLabelAmountCompact}
+              fill="hsl(203, 100%, 50%)"
+              style={{ fontSize: isExpanded ? 10 : 8, fontWeight: 700 }}
+            />
+          </Bar>
+        </BarChart>
+      ) : (
+        <LineChart
+          data={chartMonthlyData}
+          margin={{
+            top: isExpanded ? 35 : 28,
+            right: isExpanded ? 30 : 15,
+            left: isExpanded ? 0 : -10,
+            bottom: isExpanded ? 20 : 0,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+          <XAxis
+            dataKey="mes"
+            stroke="currentColor"
+            tick={{ fill: 'currentColor', opacity: 0.7 }}
+            fontSize={isExpanded ? 12 : 10}
+            tickLine={false}
+            interval={0}
+          />
+          <YAxis
+            stroke="currentColor"
+            tick={{ fill: 'currentColor', opacity: 0.7 }}
+            fontSize={isExpanded ? 11 : 10}
+            tickLine={false}
+            axisLine={false}
+            domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+            tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            iconSize={isExpanded ? 10 : 8}
+            iconType="circle"
+            wrapperStyle={{ fontSize: isExpanded ? 12 : 10, paddingTop: 4 }}
+          />
+          <Line
+            name={`${selectedAnio - 1}`}
+            type="monotone"
+            dataKey="valorPrev"
+            stroke="#64748b"
+            strokeWidth={isExpanded ? 2.5 : 2}
+            strokeDasharray="4 4"
+            dot={{ r: isExpanded ? 4.5 : 3.5, fill: '#64748b' }}
+            activeDot={{ r: 6 }}
+          >
+            <LabelList
+              dataKey="valorPrev"
+              position="top"
+              formatter={formatLabelAmountCompact}
+              fill="#64748b"
+              style={{ fontSize: isExpanded ? 10 : 8, opacity: 0.85, fontWeight: 600 }}
+            />
+          </Line>
+          <Line
+            name={`${selectedAnio}`}
+            type="monotone"
+            dataKey="valor"
+            stroke="hsl(203, 100%, 50%)"
+            strokeWidth={isExpanded ? 3 : 2.5}
+            connectNulls
+            dot={{ r: isExpanded ? 5 : 4, fill: 'hsl(203, 100%, 50%)' }}
+            activeDot={{ r: 7 }}
+          >
+            <LabelList
+              dataKey="valor"
+              position="top"
+              formatter={formatLabelAmountCompact}
+              fill="hsl(203, 100%, 50%)"
+              style={{ fontSize: isExpanded ? 10.5 : 8.5, fontWeight: 700 }}
+            />
+          </Line>
+        </LineChart>
+      )}
+    </ResponsiveContainer>
+  );
+
+  const renderTablaIngresos = (isExpanded = false) => (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border bg-secondary/30 text-xs text-muted-foreground uppercase tracking-wider text-left">
+            <th className="py-3 px-4 font-semibold w-12 text-center">N°</th>
+            <th className="py-3 px-4 font-semibold">Mes</th>
+            <th className="py-3 px-4 font-semibold text-right">Valor Ingreso (COP)</th>
+            <th className="py-3 px-4 font-semibold text-center">% Part. Anual</th>
+            <th className="py-3 px-4 font-semibold text-right">Var. vs Mes Anterior</th>
+            <th className="py-3 px-4 font-semibold">Concepto</th>
+            <th className="py-3 px-4 font-semibold">Observaciones</th>
+            <th className="py-3 px-4 font-semibold text-center w-28">Acciones</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/40">
+          {currentYearItems.map((item, idx) => {
+            const val = Number(item.valor) || 0;
+            const prevVal = idx > 0 ? Number(currentYearItems[idx - 1].valor) || 0 : 0;
+            const hasData = val > 0;
+            const partPct = totalAnio > 0 && hasData ? ((val / totalAnio) * 100).toFixed(1) : '—';
+            
+            let varMoMText = '—';
+            let varMoMColor = 'text-muted-foreground';
+            if (idx > 0 && prevVal > 0 && hasData) {
+              const diff = val - prevVal;
+              const pct = ((diff / prevVal) * 100).toFixed(1);
+              varMoMText = `${diff >= 0 ? '+' : ''}${pct}%`;
+              varMoMColor = diff >= 0 ? 'text-emerald-500 font-semibold' : 'text-rose-500 font-semibold';
+            }
+
+            return (
+              <tr
+                key={item.mes}
+                className={`hover:bg-secondary/20 transition-colors ${!hasData ? 'opacity-60 bg-secondary/5' : ''}`}
+              >
+                <td className="py-3 px-4 text-center text-xs text-muted-foreground font-mono">
+                  {item.mes}
+                </td>
+                <td className="py-3 px-4 font-medium text-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className={isExpanded ? "text-base font-semibold" : ""}>{item.mes_nombre}</span>
+                    {hasData ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                        Sin registro
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="py-3 px-4 text-right number-font font-bold">
+                  {hasData ? (
+                    <span className={`text-sky-500 dark:text-sky-400 ${isExpanded ? 'text-base' : ''}`}>
+                      {formatCOP(val)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">$0</span>
+                  )}
+                </td>
+                <td className="py-3 px-4 text-center font-mono text-xs">
+                  {partPct !== '—' ? (
+                    <span className="inline-flex items-center gap-1.5 justify-center">
+                      <span>{partPct}%</span>
+                      {isExpanded && (
+                        <div className="w-20 h-1.5 bg-secondary rounded-full overflow-hidden inline-block ml-1">
+                          <div className="h-full bg-sky-500 rounded-full" style={{ width: `${Math.min(100, parseFloat(partPct) * 4)}%` }} />
+                        </div>
+                      )}
+                    </span>
+                  ) : '—'}
+                </td>
+                <td className={`py-3 px-4 text-right text-xs font-mono ${varMoMColor}`}>
+                  {varMoMText}
+                </td>
+                <td className={`py-3 px-4 text-xs text-muted-foreground ${isExpanded ? 'max-w-md' : 'max-w-[200px] truncate'}`}>
+                  {item.concepto || 'Aportes Mensuales FAM'}
+                </td>
+                <td className={`py-3 px-4 text-xs text-muted-foreground ${isExpanded ? 'max-w-md' : 'max-w-[200px] truncate'}`}>
+                  {item.observaciones || '—'}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-primary hover:bg-primary/10"
+                      onClick={() => handleOpenModal(item)}
+                      title="Editar ingreso del mes"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    {hasData && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-rose-400 hover:bg-rose-500/10 hover:text-rose-500"
+                        onClick={() => handleDelete(item)}
+                        title="Eliminar registro"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-border bg-secondary/40 font-bold">
+            <td colSpan={2} className="py-3.5 px-4 text-foreground uppercase tracking-wider text-xs">
+              TOTAL AÑO {selectedAnio}
+            </td>
+            <td className={`py-3.5 px-4 text-right number-font font-bold text-sky-500 dark:text-sky-400 ${isExpanded ? 'text-lg' : 'text-base'}`}>
+              {formatCOP(totalAnio)}
+            </td>
+            <td className="py-3.5 px-4 text-center text-xs font-mono text-foreground">
+              100%
+            </td>
+            <td colSpan={4} className="py-3.5 px-4 text-xs text-muted-foreground">
+              Consolidado anual de aportes e ingresos recibidos
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+
   // Access Control: Only Administrador and Analista
   const isAuthorized = userRole === 'admin' || userRole === 'analista';
 
@@ -677,40 +1019,29 @@ export default function IngresosPage() {
                     Comportamiento de los aportes percibidos mes a mes por el Fondo de Auxilio Mutuo
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="text-xs font-mono font-semibold bg-secondary/30 shrink-0">
-                  Promedio: {formatCOP(promedioMensual)}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-mono font-semibold bg-secondary/30 shrink-0">
+                    Promedio: {formatCOP(promedioMensual)}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    onClick={() => setExpandedView({
+                      id: 'chart-mensual',
+                      title: `Evolución Mensual de Ingresos (${selectedAnio})`,
+                      description: 'Análisis detallado en pantalla completa de los aportes mensuales percibidos por el Fondo de Auxilio Mutuo'
+                    })}
+                    title="Ampliar gráfico"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pt-2 flex-1">
               <div className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartMonthlyData} margin={{ top: 28, right: 15, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
-                    <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} interval={0} />
-                    <YAxis
-                      stroke="currentColor"
-                      tick={{ fill: 'currentColor', opacity: 0.7 }}
-                      fontSize={10}
-                      tickLine={false}
-                      axisLine={false}
-                      domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
-                      tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    {promedioMensual > 0 && (
-                      <ReferenceLine
-                        y={promedioMensual}
-                        stroke="hsl(43, 96%, 52%)"
-                        strokeDasharray="4 4"
-                        label={{ value: `Promedio: ${formatLabelAmountCompact(promedioMensual)}`, fill: 'hsl(43, 96%, 52%)', fontSize: 10, position: 'insideTopRight' }}
-                      />
-                    )}
-                    <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`Ingresos ${selectedAnio}`} maxBarSize={32}>
-                      <LabelList dataKey="valor" position="top" formatter={formatLabelAmount} fill="currentColor" style={{ fontSize: 9, opacity: 0.85, fontWeight: 600 }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {renderChartMensual(false)}
               </div>
             </CardContent>
           </Card>
@@ -725,113 +1056,52 @@ export default function IngresosPage() {
                     Contraste mensual interanual de aportes
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-1 bg-secondary/50 p-0.5 rounded-lg border border-border shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setComparativoType('bar')}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
-                      comparativoType === 'bar'
-                        ? "bg-primary text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    )}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-secondary/50 p-0.5 rounded-lg border border-border shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setComparativoType('bar')}
+                      className={cn(
+                        "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                        comparativoType === 'bar'
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      )}
+                    >
+                      Barras
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setComparativoType('line')}
+                      className={cn(
+                        "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                        comparativoType === 'line'
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      )}
+                    >
+                      Líneas
+                    </button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    onClick={() => setExpandedView({
+                      id: 'chart-comparativo',
+                      title: `Comparativo de Ingresos ${selectedAnio} vs ${selectedAnio - 1}`,
+                      description: 'Contraste detallado mensual interanual de aportes en pantalla completa'
+                    })}
+                    title="Ampliar gráfico"
                   >
-                    Barras
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setComparativoType('line')}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
-                      comparativoType === 'line'
-                        ? "bg-primary text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    )}
-                  >
-                    Líneas
-                  </button>
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-2 flex-1">
               <div className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  {comparativoType === 'bar' ? (
-                    <BarChart data={chartMonthlyData} margin={{ top: 28, right: 15, left: -10, bottom: 0 }} barGap={2} barCategoryGap="16%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
-                      <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} interval={0} />
-                      <YAxis
-                        stroke="currentColor"
-                        tick={{ fill: 'currentColor', opacity: 0.7 }}
-                        fontSize={10}
-                        tickLine={false}
-                        axisLine={false}
-                        domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
-                        tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                      <Bar dataKey="valorPrev" fill="#64748b" radius={[3, 3, 0, 0]} name={`${selectedAnio - 1}`} maxBarSize={18}>
-                        <LabelList
-                          dataKey="valorPrev"
-                          position="insideTop"
-                          formatter={formatLabelAmountCompact}
-                          fill="#ffffff"
-                          style={{ fontSize: 7.5, fontWeight: 700 }}
-                        />
-                      </Bar>
-                      <Bar dataKey="valor" fill="hsl(203, 100%, 50%)" radius={[3, 3, 0, 0]} name={`${selectedAnio}`} maxBarSize={18}>
-                        <LabelList
-                          dataKey="valor"
-                          position="top"
-                          formatter={formatLabelAmountCompact}
-                          fill="hsl(203, 100%, 50%)"
-                          style={{ fontSize: 8, fontWeight: 700 }}
-                        />
-                      </Bar>
-                    </BarChart>
-                  ) : (
-                    <LineChart data={chartMonthlyData} margin={{ top: 28, right: 15, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
-                      <XAxis dataKey="mes" stroke="currentColor" tick={{ fill: 'currentColor', opacity: 0.7 }} fontSize={10} tickLine={false} interval={0} />
-                      <YAxis
-                        stroke="currentColor"
-                        tick={{ fill: 'currentColor', opacity: 0.7 }}
-                        fontSize={10}
-                        tickLine={false}
-                        axisLine={false}
-                        domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
-                        tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                      <Line
-                        name={`${selectedAnio - 1}`}
-                        type="monotone"
-                        dataKey="valorPrev"
-                        stroke="#64748b"
-                        strokeWidth={2}
-                        strokeDasharray="4 4"
-                        dot={{ r: 3.5, fill: '#64748b' }}
-                        activeDot={{ r: 5 }}
-                      >
-                        <LabelList dataKey="valorPrev" position="top" formatter={formatLabelAmountCompact} fill="#64748b" style={{ fontSize: 8, opacity: 0.85, fontWeight: 600 }} />
-                      </Line>
-                      <Line
-                        name={`${selectedAnio}`}
-                        type="monotone"
-                        dataKey="valor"
-                        stroke="hsl(203, 100%, 50%)"
-                        strokeWidth={2.5}
-                        connectNulls
-                        dot={{ r: 4, fill: 'hsl(203, 100%, 50%)' }}
-                        activeDot={{ r: 6 }}
-                      >
-                        <LabelList dataKey="valor" position="top" formatter={formatLabelAmountCompact} fill="hsl(203, 100%, 50%)" style={{ fontSize: 8.5, fontWeight: 700 }} />
-                      </Line>
-                    </LineChart>
-                  )}
-                </ResponsiveContainer>
+                {renderChartComparativo(false)}
               </div>
             </CardContent>
           </Card>
@@ -849,129 +1119,28 @@ export default function IngresosPage() {
                 Haga clic en el botón de edición para actualizar el valor o concepto de cualquier mes
               </CardDescription>
             </div>
-            <span className="text-xs text-muted-foreground font-mono">
-              Total Acumulado: <strong className="text-foreground">{formatCOP(totalAnio)}</strong>
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground font-mono">
+                Total Acumulado: <strong className="text-foreground">{formatCOP(totalAnio)}</strong>
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                onClick={() => setExpandedView({
+                  id: 'tabla-ingresos',
+                  title: `Matriz Mensual de Ingresos — Año ${selectedAnio}`,
+                  description: 'Vista detallada en pantalla completa de todos los aportes e ingresos mensuales'
+                })}
+                title="Ampliar tabla a pantalla completa"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
 
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/30 text-xs text-muted-foreground uppercase tracking-wider text-left">
-                    <th className="py-3 px-4 font-semibold w-12 text-center">N°</th>
-                    <th className="py-3 px-4 font-semibold">Mes</th>
-                    <th className="py-3 px-4 font-semibold text-right">Valor Ingreso (COP)</th>
-                    <th className="py-3 px-4 font-semibold text-center">% Part. Anual</th>
-                    <th className="py-3 px-4 font-semibold text-right">Var. vs Mes Anterior</th>
-                    <th className="py-3 px-4 font-semibold">Concepto</th>
-                    <th className="py-3 px-4 font-semibold">Observaciones</th>
-                    <th className="py-3 px-4 font-semibold text-center w-28">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {currentYearItems.map((item, idx) => {
-                    const val = Number(item.valor) || 0;
-                    const prevVal = idx > 0 ? Number(currentYearItems[idx - 1].valor) || 0 : 0;
-                    const hasData = val > 0;
-                    const partPct = totalAnio > 0 && hasData ? ((val / totalAnio) * 100).toFixed(1) : '—';
-                    
-                    let varMoMText = '—';
-                    let varMoMColor = 'text-muted-foreground';
-                    if (idx > 0 && prevVal > 0 && hasData) {
-                      const diff = val - prevVal;
-                      const pct = ((diff / prevVal) * 100).toFixed(1);
-                      varMoMText = `${diff >= 0 ? '+' : ''}${pct}%`;
-                      varMoMColor = diff >= 0 ? 'text-emerald-500 font-semibold' : 'text-rose-500 font-semibold';
-                    }
-
-                    return (
-                      <tr
-                        key={item.mes}
-                        className={`hover:bg-secondary/20 transition-colors ${!hasData ? 'opacity-60 bg-secondary/5' : ''}`}
-                      >
-                        <td className="py-3 px-4 text-center text-xs text-muted-foreground font-mono">
-                          {item.mes}
-                        </td>
-                        <td className="py-3 px-4 font-medium text-foreground">
-                          <div className="flex items-center gap-2">
-                            <span>{item.mes_nombre}</span>
-                            {hasData ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            ) : (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                                Sin registro
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-right number-font font-bold">
-                          {hasData ? (
-                            <span className="text-sky-500 dark:text-sky-400">
-                              {formatCOP(val)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">$0</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-center font-mono text-xs">
-                          {partPct !== '—' ? `${partPct}%` : '—'}
-                        </td>
-                        <td className={`py-3 px-4 text-right text-xs font-mono ${varMoMColor}`}>
-                          {varMoMText}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-muted-foreground max-w-[200px] truncate">
-                          {item.concepto || 'Aportes Mensuales FAM'}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-muted-foreground max-w-[200px] truncate">
-                          {item.observaciones || '—'}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-primary hover:bg-primary/10"
-                              onClick={() => handleOpenModal(item)}
-                              title="Editar ingreso del mes"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-                            {hasData && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-rose-400 hover:bg-rose-500/10 hover:text-rose-500"
-                                onClick={() => handleDelete(item)}
-                                title="Eliminar registro"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-border bg-secondary/40 font-bold">
-                    <td colSpan={2} className="py-3.5 px-4 text-foreground uppercase tracking-wider text-xs">
-                      TOTAL AÑO {selectedAnio}
-                    </td>
-                    <td className="py-3.5 px-4 text-right number-font text-base text-sky-500 dark:text-sky-400 font-bold">
-                      {formatCOP(totalAnio)}
-                    </td>
-                    <td className="py-3.5 px-4 text-center text-xs font-mono text-foreground">
-                      100%
-                    </td>
-                    <td colSpan={4} className="py-3.5 px-4 text-xs text-muted-foreground">
-                      Consolidado anual de aportes e ingresos recibidos
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            {renderTablaIngresos(false)}
           </CardContent>
         </Card>
       </div>
@@ -1194,6 +1363,103 @@ export default function IngresosPage() {
                 >
                   {isSaving ? 'Importando...' : 'Confirmar e Importar'}
                 </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL EXPANDIR GRÁFICO O TABLA A PANTALLA COMPLETA */}
+      <AnimatePresence>
+        {expandedView && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full max-w-[96vw] lg:max-w-7xl h-[88vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-border bg-secondary/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl gradient-brand flex items-center justify-center text-white shadow-glow-brand">
+                    {expandedView.id === 'tabla-ingresos' ? (
+                      <FileSpreadsheet className="w-5 h-5" />
+                    ) : (
+                      <Coins className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">{expandedView.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{expandedView.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {expandedView.id === 'chart-comparativo' && (
+                    <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border mr-2">
+                      <button
+                        type="button"
+                        onClick={() => setComparativoType('bar')}
+                        className={cn(
+                          "px-3 py-1 rounded-md text-xs font-semibold transition-all",
+                          comparativoType === 'bar'
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        )}
+                      >
+                        Barras
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setComparativoType('line')}
+                        className={cn(
+                          "px-3 py-1 rounded-md text-xs font-semibold transition-all",
+                          comparativoType === 'line'
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        )}
+                      >
+                        Líneas
+                      </button>
+                    </div>
+                  )}
+                  {expandedView.id === 'tabla-ingresos' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportExcel}
+                      className="h-8 text-xs border-border mr-2"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1.5" />
+                      Exportar Excel
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 w-9 p-0 rounded-full hover:bg-secondary/80 text-foreground"
+                    onClick={() => setExpandedView(null)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex-1 p-6 overflow-auto bg-background/50">
+                {expandedView.id === 'chart-mensual' && (
+                  <div className="w-full h-full min-h-[450px]">
+                    {renderChartMensual(true)}
+                  </div>
+                )}
+                {expandedView.id === 'chart-comparativo' && (
+                  <div className="w-full h-full min-h-[450px]">
+                    {renderChartComparativo(true)}
+                  </div>
+                )}
+                {expandedView.id === 'tabla-ingresos' && (
+                  <div className="w-full h-full overflow-auto">
+                    {renderTablaIngresos(true)}
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
