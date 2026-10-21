@@ -460,7 +460,7 @@ export default function IngresosPage() {
       <BarChart
         data={chartMonthlyData}
         margin={{
-          top: isExpanded ? 35 : 28,
+          top: isExpanded ? 35 : 30,
           right: isExpanded ? 30 : 20,
           left: isExpanded ? 0 : -5,
           bottom: isExpanded ? 20 : 0,
@@ -481,7 +481,7 @@ export default function IngresosPage() {
           fontSize={isExpanded ? 11 : 10}
           tickLine={false}
           axisLine={false}
-          domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+          domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.22) / 10000000) * 10000000]}
           tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
         />
         <Tooltip content={<CustomTooltip />} />
@@ -508,9 +508,11 @@ export default function IngresosPage() {
           <LabelList
             dataKey="valor"
             position="top"
+            offset={6}
             formatter={formatLabelAmount}
-            fill="currentColor"
-            style={{ fontSize: isExpanded ? 11 : 10, opacity: 0.9, fontWeight: 600 }}
+            fill="hsl(203, 100%, 50%)"
+            className="fill-sky-500 dark:fill-sky-400"
+            style={{ fontSize: isExpanded ? 11 : 10, fontWeight: 700 }}
           />
         </Bar>
       </BarChart>
@@ -523,13 +525,13 @@ export default function IngresosPage() {
         <BarChart
           data={chartMonthlyData}
           margin={{
-            top: isExpanded ? 35 : 28,
+            top: isExpanded ? 35 : 30,
             right: isExpanded ? 30 : 20,
             left: isExpanded ? 0 : -5,
             bottom: isExpanded ? 20 : 0,
           }}
-          barGap={isExpanded ? 4 : 3}
-          barCategoryGap={isExpanded ? "20%" : "18%"}
+          barGap={isExpanded ? 6 : 5}
+          barCategoryGap={isExpanded ? "18%" : "14%"}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis
@@ -546,7 +548,7 @@ export default function IngresosPage() {
             fontSize={isExpanded ? 11 : 10}
             tickLine={false}
             axisLine={false}
-            domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+            domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.22) / 10000000) * 10000000]}
             tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
           />
           <Tooltip content={<CustomTooltip />} />
@@ -560,14 +562,16 @@ export default function IngresosPage() {
             fill="#64748b"
             radius={[3, 3, 0, 0]}
             name={`${selectedAnio - 1}`}
-            maxBarSize={isExpanded ? 32 : 24}
+            maxBarSize={isExpanded ? 36 : 28}
           >
             <LabelList
               dataKey="valorPrev"
-              position="insideTop"
+              position="top"
+              offset={6}
               formatter={formatLabelAmountCompact}
-              fill="#ffffff"
-              style={{ fontSize: isExpanded ? 9.5 : 8.5, fontWeight: 700 }}
+              fill="currentColor"
+              className="text-slate-600 dark:text-slate-300 fill-current"
+              style={{ fontSize: isExpanded ? 10.5 : 9, fontWeight: 700 }}
             />
           </Bar>
           <Bar
@@ -575,14 +579,16 @@ export default function IngresosPage() {
             fill="hsl(203, 100%, 50%)"
             radius={[3, 3, 0, 0]}
             name={`${selectedAnio}`}
-            maxBarSize={isExpanded ? 32 : 24}
+            maxBarSize={isExpanded ? 36 : 28}
           >
             <LabelList
               dataKey="valor"
               position="top"
+              offset={6}
               formatter={formatLabelAmountCompact}
               fill="hsl(203, 100%, 50%)"
-              style={{ fontSize: isExpanded ? 10.5 : 9.5, fontWeight: 700 }}
+              className="fill-sky-500 dark:fill-sky-400"
+              style={{ fontSize: isExpanded ? 11 : 9.5, fontWeight: 700 }}
             />
           </Bar>
         </BarChart>
@@ -590,7 +596,7 @@ export default function IngresosPage() {
         <LineChart
           data={chartMonthlyData}
           margin={{
-            top: isExpanded ? 35 : 28,
+            top: isExpanded ? 35 : 30,
             right: isExpanded ? 30 : 20,
             left: isExpanded ? 0 : -5,
             bottom: isExpanded ? 20 : 0,
@@ -611,7 +617,7 @@ export default function IngresosPage() {
             fontSize={isExpanded ? 11 : 10}
             tickLine={false}
             axisLine={false}
-            domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.18) / 10000000) * 10000000]}
+            domain={[0, (dataMax: number) => Math.ceil((dataMax * 1.22) / 10000000) * 10000000]}
             tickFormatter={(val) => `$${(val / 1000000).toFixed(0)}M`}
           />
           <Tooltip content={<CustomTooltip />} />
@@ -633,9 +639,11 @@ export default function IngresosPage() {
             <LabelList
               dataKey="valorPrev"
               position="top"
+              offset={6}
               formatter={formatLabelAmountCompact}
-              fill="#64748b"
-              style={{ fontSize: isExpanded ? 10 : 8.5, opacity: 0.85, fontWeight: 600 }}
+              fill="currentColor"
+              className="text-slate-600 dark:text-slate-300 fill-current"
+              style={{ fontSize: isExpanded ? 10 : 8.5, opacity: 0.9, fontWeight: 600 }}
             />
           </Line>
           <Line
@@ -651,8 +659,10 @@ export default function IngresosPage() {
             <LabelList
               dataKey="valor"
               position="top"
+              offset={6}
               formatter={formatLabelAmountCompact}
               fill="hsl(203, 100%, 50%)"
+              className="fill-sky-500 dark:fill-sky-400"
               style={{ fontSize: isExpanded ? 10.5 : 9, fontWeight: 700 }}
             />
           </Line>

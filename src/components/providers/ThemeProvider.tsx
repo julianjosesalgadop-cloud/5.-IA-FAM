@@ -18,7 +18,7 @@ const ThemeContext = React.createContext<{
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'dark',
+  defaultTheme = 'light',
   attribute = 'class',
   disableTransitionOnChange = false,
 }: ThemeProviderProps) {
